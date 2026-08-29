@@ -89,8 +89,9 @@
   .stock:active{transform:scale(.985);}
   .logo{width:44px; height:44px; border-radius:14px; display:grid; place-items:center; font-size:22px; flex-shrink:0;}
   .stock .mid{flex:1; min-width:0;} .stock .nm{font-size:15px; font-weight:800;}
-  .stock .own{font-size:12px; color:var(--gray2); font-weight:600; margin-top:2px;} .stock .own b{color:var(--gray);} .stock .own .pl.up{color:var(--red);} .stock .own .pl.down{color:var(--blue);}
-  .stock .rt{text-align:right;}
+  .stock .own{font-size:12px; color:var(--gray2); font-weight:600; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .stock .own b{color:var(--gray);} .stock .own .pl.up{color:var(--red);} .stock .own .pl.down{color:var(--blue);}
+  .stock .mini-chart{width:48px; height:26px; flex-shrink:0;}
+  .stock .rt{text-align:right; flex-shrink:0;}
   .stock .price{font-size:15px; font-weight:800; padding:2px 6px; border-radius:8px; display:inline-block;}
   .stock .price.flash-up{animation:flashUp .6s;} .stock .price.flash-down{animation:flashDown .6s;}
   .stock .chg{font-size:13px; font-weight:800; margin-top:2px;}
@@ -106,9 +107,13 @@
   .mini-btn:active{background:var(--blue-press);} .mini-btn.done{background:var(--line); color:var(--gray2);} .mini-btn.off{background:var(--field); color:var(--gray3);}
 
   .cta-wrap{position:fixed; left:0; right:0; bottom:0; z-index:30; pointer-events:none; display:flex; justify-content:center;}
-  .cta-inner{width:100%; max-width:460px; padding:12px 16px calc(14px + var(--safe-b)); background:linear-gradient(180deg,rgba(242,244,246,0) 0%,var(--bg) 32%); pointer-events:auto;}
-  .cta{width:100%; border:none; color:#fff; font-size:17px; font-weight:900; padding:17px; border-radius:16px; cursor:pointer; background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 8px 24px rgba(49,130,246,.34); transition:transform .08s;}
-  .cta:active{transform:translateY(1px);} .cta .yr{font-size:12px; font-weight:700; opacity:.85; display:block; margin-top:2px;}
+  .cta-inner{width:100%; max-width:460px; padding:10px 20px calc(14px + var(--safe-b)); background:linear-gradient(180deg,rgba(242,244,246,0) 0%,var(--bg) 32%); pointer-events:none;}
+  .month-progress{background:var(--card); border-radius:16px; padding:12px 16px; box-shadow:var(--shadow);}
+  .mp-label{display:flex; justify-content:space-between; align-items:center; font-size:12.5px; font-weight:700; color:var(--gray); margin-bottom:8px;}
+  .mp-label b{color:var(--ink); font-weight:800;}
+  .mp-bar{height:7px; background:var(--line); border-radius:999px; overflow:hidden;}
+  .mp-bar>i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,#3182F6,#00c2ff); transition:width .12s linear;}
+  .mp-bar.paused>i{background:linear-gradient(90deg,#b0b8c1,#c7cdd4);}
 
   .scrim{position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:40; opacity:0; pointer-events:none; transition:.25s;} .scrim.on{opacity:1; pointer-events:auto;}
   .sheet{position:fixed; left:0; right:0; bottom:0; z-index:50; margin:0 auto; max-width:460px; background:var(--card); border-radius:24px 24px 0 0; padding:8px 20px calc(20px + var(--safe-b)); transform:translateY(110%); transition:transform .3s cubic-bezier(.2,.9,.2,1); box-shadow:0 -8px 30px rgba(0,0,0,.12); max-height:92vh; overflow-y:auto;}
@@ -180,7 +185,10 @@
     <div class="panel" id="panelStock"></div>
     <div class="panel hide" id="panelLife"></div>
     <div class="cta-wrap"><div class="cta-inner">
-      <button class="cta" id="nextBtn">다음 달로 <span class="yr" id="ctaYr"></span></button>
+      <div class="month-progress">
+        <div class="mp-label"><span id="mpStatus">⏱️ 다음 달까지</span><b id="mpYr"></b></div>
+        <div class="mp-bar" id="mpBar"><i id="monthBar"></i></div>
+      </div>
     </div></div>
   </div>
 </div>
@@ -325,7 +333,7 @@ function startRun(){
      tags:{invest:0,realty:0,career:0,family:0,exp:0,biz:0}, travelCount:0, done:{}};
   STOCKS.forEach(s=>{S.hold[s.id]=0;S.avg[s.id]=0;S.price[s.id]=s.price;S.dayOpen[s.id]=s.price;let a=[],x=s.price;for(let i=0;i<8;i++){a.unshift(Math.max(1000,Math.round(x)));x=x/(1+s.vol*0.5*randn());}a.push(s.price);S.phist[s.id]=a;});
   S.maxNet=netWorth(); S.hist=[netWorth()];
-  META.runs++; saveMeta(); saveRun(); showScreen('game'); render(); startLiveTicker();
+  META.runs++; saveMeta(); saveRun(); showScreen('game'); render(); startLiveTicker(); startMonthTimer();
 }
 function loadRun(){try{const r=localStorage.getItem(RUN_KEY);if(r){S=JSON.parse(r);
   if(!S.dayOpen){S.dayOpen={};STOCKS.forEach(s=>S.dayOpen[s.id]=S.price[s.id]);}
@@ -384,7 +392,8 @@ function animNum(el,from,to){cancelAnimationFrame(animRAF);const t0=performance.
 function render(animate){
   const {age,y,m}=info();
   $('dateChip').textContent=`${age}세 · ${y}.${String(m).padStart(2,'0')}`;
-  $('ctaYr').textContent=`${y}년 ${m}월`;
+  const nm=S.month+1,ny=2026+Math.floor(nm/12),nmo=nm%12+1;
+  $('mpYr').textContent=`${ny}년 ${nmo}월`;
   const net=netWorth();
   if(animate&&S.prevNet!==null)animNum($('netWorth'),S.prevNet,net);else $('netWorth').textContent=fmtWon(net);
   const de=$('netDelta');
@@ -416,14 +425,21 @@ function drawSpark(){const h=S.hist,svg=$('spark');if(h.length<2){svg.innerHTML=
   const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');const up=h[h.length-1]>=h[0],col=up?'#ff6b78':'#7fb0ff';
   svg.innerHTML=`<defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".35"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><path d="${line} L${W-4} ${H} L4 ${H} Z" fill="url(#sg)"/><path d="${line}" fill="none" stroke="${col}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`;}
 let lastPrice={};
+const CLS_COL={up:'#f04452',down:'#3182F6',flat:'#b0b8c1'};
+function miniChartSvg(id,col){
+  const h=[...S.phist[id].slice(-11),S.price[id]];
+  const W=48,H=26,pts=poly(h,W,H,3);
+  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  return `<path d="${line}" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
 function renderStocks(){
   const el=$('panelStock');
   el.innerHTML='<div class="section-title">국내 주식</div>'+STOCKS.map((s,i)=>{
     const p=S.price[s.id],base=S.dayOpen[s.id]||s.price,chg=(p-base)/base*100,own=S.hold[s.id];
     const cls=chg>0.05?'up':chg<-0.05?'down':'flat',arw=chg>0.05?'▲':chg<-0.05?'▼':'−';
-    let ownTxt='미보유';if(own>0){const pl=(p-S.avg[s.id])*own,plp=(p-S.avg[s.id])/S.avg[s.id]*100;ownTxt=`보유 <b>${own}주</b> · <span class="pl ${pl>=0?'up':'down'}">${pl>=0?'+':''}${fmtWon(pl)} (${plp>=0?'+':''}${plp.toFixed(1)}%)</span>`;}
+    let ownTxt='미보유';if(own>0){const pl=(p-S.avg[s.id])*own,plp=(p-S.avg[s.id])/S.avg[s.id]*100;ownTxt=`<b>${own}주</b> · <span class="pl ${pl>=0?'up':'down'}">${plp>=0?'+':''}${plp.toFixed(1)}%</span>`;}
     const flash=lastPrice[s.id]!==undefined&&p!==lastPrice[s.id]?(p>lastPrice[s.id]?'flash-up':'flash-down'):'';
-    return `<div class="stock" data-stock="${s.id}" style="animation-delay:${i*45}ms"><div class="logo" style="background:${s.bg}">${s.emo}</div><div class="mid"><div class="nm">${s.name}</div><div class="own">${ownTxt}</div></div><div class="rt"><div class="price ${flash}">${won(p)}</div><div class="chg ${cls}">${arw} ${Math.abs(chg).toFixed(1)}%</div></div></div>`;
+    return `<div class="stock" data-stock="${s.id}" style="animation-delay:${i*45}ms"><div class="logo" style="background:${s.bg}">${s.emo}</div><div class="mid"><div class="nm">${s.name}</div><div class="own">${ownTxt}</div></div><svg class="mini-chart" viewBox="0 0 48 26">${miniChartSvg(s.id,CLS_COL[cls])}</svg><div class="rt"><div class="price ${flash}">${won(p)}</div><div class="chg ${cls}">${arw} ${Math.abs(chg).toFixed(1)}%</div></div></div>`;
   }).join('');
   el.querySelectorAll('.stock').forEach(n=>n.onclick=()=>{sfx.click();openSheet(n.dataset.stock);});
   STOCKS.forEach(s=>lastPrice[s.id]=S.price[s.id]);
@@ -434,14 +450,15 @@ function updateStockPricesLive(){
     if(!el)return;
     const p=S.price[s.id],base=S.dayOpen[s.id]||s.price,chg=(p-base)/base*100;
     const cls=chg>0.05?'up':chg<-0.05?'down':'flat',arw=chg>0.05?'▲':chg<-0.05?'▼':'−';
-    const priceEl=el.querySelector('.price'),chgEl=el.querySelector('.chg'),ownEl=el.querySelector('.own');
+    const priceEl=el.querySelector('.price'),chgEl=el.querySelector('.chg'),ownEl=el.querySelector('.own'),miniEl=el.querySelector('.mini-chart');
     const flash=lastPrice[s.id]!==undefined&&p!==lastPrice[s.id]?(p>lastPrice[s.id]?'flash-up':'flash-down'):'';
     priceEl.className='price';void priceEl.offsetWidth;if(flash)priceEl.classList.add(flash);
     priceEl.textContent=won(p);
     chgEl.className='chg '+cls;chgEl.textContent=arw+' '+Math.abs(chg).toFixed(1)+'%';
+    if(miniEl)miniEl.innerHTML=miniChartSvg(s.id,CLS_COL[cls]);
     const own=S.hold[s.id];
     if(own>0&&ownEl){const pl=(p-S.avg[s.id])*own,plp=(p-S.avg[s.id])/S.avg[s.id]*100;
-      ownEl.innerHTML=`보유 <b>${own}주</b> · <span class="pl ${pl>=0?'up':'down'}">${pl>=0?'+':''}${fmtWon(pl)} (${plp>=0?'+':''}${plp.toFixed(1)}%)</span>`;}
+      ownEl.innerHTML=`<b>${own}주</b> · <span class="pl ${pl>=0?'up':'down'}">${plp>=0?'+':''}${plp.toFixed(1)}%</span>`;}
   });
   STOCKS.forEach(s=>lastPrice[s.id]=S.price[s.id]);
 }
@@ -457,12 +474,28 @@ function liveTick(){
     const s=STOCKS.find(x=>x.id===sheetId),p=S.price[sheetId],base=S.dayOpen[sheetId]||s.price,chg=(p-base)/base*100;
     $('shPx').textContent=won(p)+' / 주';
     $('shChg').textContent=(chg>=0?'+':'')+chg.toFixed(1)+'%';$('shChg').style.color=chg>=0?'var(--red)':'var(--blue)';
-    renderPos(sheetId);updateSheet();
+    drawChart(sheetId);renderPos(sheetId);updateSheet();
   }
   saveRun();
 }
 function startLiveTicker(){stopLiveTicker();liveTimer=setInterval(liveTick,2200);}
 function stopLiveTicker(){if(liveTimer){clearInterval(liveTimer);liveTimer=null;}}
+
+/* month auto-advance (replaces manual next-month button) */
+const MONTH_MS=7000;
+let monthTimer=null,monthElapsed=0;
+function isBlocked(){return $('modal').classList.contains('on')||$('sheet').classList.contains('on');}
+function monthTick(){
+  if(!S)return;
+  const bar=$('mpBar'),status=$('mpStatus');
+  if(isBlocked()){bar.classList.add('paused');status.textContent='⏸️ 잠시 멈춤';return;}
+  bar.classList.remove('paused');status.textContent='⏱️ 다음 달까지';
+  monthElapsed+=100;
+  $('monthBar').style.width=Math.min(100,monthElapsed/MONTH_MS*100)+'%';
+  if(monthElapsed>=MONTH_MS){monthElapsed=0;$('monthBar').style.width='0%';advance();}
+}
+function startMonthTimer(){stopMonthTimer();monthElapsed=0;if($('monthBar'))$('monthBar').style.width='0%';monthTimer=setInterval(monthTick,100);}
+function stopMonthTimer(){if(monthTimer){clearInterval(monthTimer);monthTimer=null;}}
 function renderLife(){
   const el=$('panelLife');
   el.innerHTML='<div class="section-title">인생 이벤트</div>'+LIFE.map((l,i)=>{
@@ -492,7 +525,7 @@ function openSheet(id){sheetId=id;qty=0;const s=STOCKS.find(x=>x.id===id),p=S.pr
   const chg=(p-(S.dayOpen[id]||s.price))/(S.dayOpen[id]||s.price)*100;$('shChg').textContent=(chg>=0?'+':'')+chg.toFixed(1)+'%';$('shChg').style.color=chg>=0?'var(--red)':'var(--blue)';
   drawChart(id);renderPos(id);updateSheet();$('scrim').classList.add('on');$('sheet').classList.add('on');}
 function closeSheet(){$('scrim').classList.remove('on');$('sheet').classList.remove('on');}
-function drawChart(id){const h=S.phist[id],svg=$('chart'),W=400,H=120,pts=poly(h,W,H,8);
+function drawChart(id){const h=[...S.phist[id],S.price[id]],svg=$('chart'),W=400,H=120,pts=poly(h,W,H,8);
   const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');const up=h[h.length-1]>=h[0],col=up?'#f04452':'#3182F6';let avgLine='';
   if(S.hold[id]>0){const min=Math.min(...h),max=Math.max(...h),rng=(max-min)||1,ay=H-8-(S.avg[id]-min)/rng*(H-16);if(ay>0&&ay<H)avgLine=`<line x1="8" y1="${ay.toFixed(1)}" x2="${W-8}" y2="${ay.toFixed(1)}" stroke="#8b95a1" stroke-width="1.2" stroke-dasharray="5 4"/>`;}
   svg.innerHTML=`<defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".22"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><path d="${line} L${W-8} ${H} L8 ${H} Z" fill="url(#cg)"/>${avgLine}<path d="${line}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`;
@@ -554,7 +587,7 @@ function judgeRetire(){
   return {e:'😅',t:'빠듯한 노후',d:'조금 아쉬운 은퇴네요. 다음 판을 노려봐요!',bonus:0};
 }
 function endRun(kind){
-  stopLiveTicker();
+  stopLiveTicker();stopMonthTimer();
   const {age}=info(),net=netWorth();let rank,earn=Math.floor(S.maxNet/30000000),win=true;
   if(kind==='fire'){rank= age<35?{e:'👑',t:'전설의 파이어족',d:`${age}세, 남들보다 훨씬 빠르게 경제적 자유를 이뤘어요.`}:age<45?{e:'🔥',t:'젊은 파이어족',d:`${age}세에 파이어를 달성했어요!`}:{e:'🌴',t:'파이어족',d:`${age}세, 경제적 자유를 얻고 은퇴했어요.`};earn+=6;}
   else if(kind==='retire'){rank=judgeRetire();earn+=rank.bonus||0;}
@@ -596,7 +629,7 @@ function renderHome(){
     <button class="start-btn" id="startBtn">게임 시작<small>27세 · 현금 ${fmtWon(20000000+perkLv('seed')*10000000)}로 시작</small></button>
     <div style="text-align:center;font-size:11px;color:var(--gray3);margin-top:18px;font-weight:600">엔딩은 8가지 이상! 파산해도 유산은 쌓여요 🧬</div>`;
   $('startBtn').onclick=()=>{sfx.click();
-    if(loadRunExists())confirmModal('이어서 할까요?','진행 중인 게임이 있어요.','이어하기','새 게임',()=>{loadRun();showScreen('game');render();startLiveTicker();},()=>startRun());
+    if(loadRunExists())confirmModal('이어서 할까요?','진행 중인 게임이 있어요.','이어하기','새 게임',()=>{loadRun();showScreen('game');render();startLiveTicker();startMonthTimer();},()=>startRun());
     else startRun();};
   $('home').querySelectorAll('[data-perk]').forEach(n=>n.onclick=()=>buyPerk(n.dataset.perk));
 }
@@ -607,9 +640,8 @@ function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classL
 let toastT;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),1600);}
 function confirmModal(t,d,yes,no,onYes,onNo){$('modalBox').innerHTML=`<div class="emo">🎮</div><div class="tt">${t}</div><div class="dc">${d}</div><button class="ok" id="cY">${yes}</button><button class="ok ghost" id="cN">${no}</button>`;$('modal').classList.add('on');$('cY').onclick=()=>{sfx.click();$('modal').classList.remove('on');onYes();};$('cN').onclick=()=>{sfx.click();$('modal').classList.remove('on');onNo();};}
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{sfx.click();S.tab=t.dataset.tab;saveRun();document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.tab===S.tab));$('panelStock').classList.toggle('hide',S.tab!=='stock');$('panelLife').classList.toggle('hide',S.tab!=='life');});
-$('nextBtn').onclick=advance;
 $('muteBtn').onclick=()=>{META.mute=!META.mute;saveMeta();$('muteBtn').textContent=META.mute?'🔇':'🔊';if(!META.mute)sfx.click();};
-$('homeBtn').onclick=()=>confirmModal('홈으로 나갈까요?','진행 상황은 저장돼요. 언제든 이어서 할 수 있어요.','나가기','계속하기',()=>{stopLiveTicker();saveRun();showScreen('home');renderHome();},()=>{});
+$('homeBtn').onclick=()=>confirmModal('홈으로 나갈까요?','진행 상황은 저장돼요. 언제든 이어서 할 수 있어요.','나가기','계속하기',()=>{stopLiveTicker();stopMonthTimer();saveRun();showScreen('home');renderHome();},()=>{});
 
 /* boot */
 loadMeta();$('muteBtn').textContent=META.mute?'🔇':'🔊';renderHome();showScreen('home');

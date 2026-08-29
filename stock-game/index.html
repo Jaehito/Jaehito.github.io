@@ -54,7 +54,7 @@
   .top-right{display:flex; gap:8px; align-items:center;}
   .date-chip{font-size:13px; font-weight:700; color:var(--gray); background:var(--card); padding:7px 12px; border-radius:999px; box-shadow:var(--shadow);}
   .icon-btn{border:none; background:var(--card); color:var(--gray); width:36px; height:36px; border-radius:12px; font-size:15px; box-shadow:var(--shadow); display:grid; place-items:center; cursor:pointer;}
-  .hero{padding:16px 20px 10px; position:relative; border-radius:24px; margin:0 12px; background:linear-gradient(135deg,#0b1b3a 0%,#12336e 55%,#1d4fb0 100%); color:#fff; overflow:hidden;}
+  .hero{padding:14px 20px 8px; position:relative; border-radius:24px; margin:0 12px; background:linear-gradient(135deg,#0b1b3a 0%,#12336e 55%,#1d4fb0 100%); color:#fff; overflow:hidden;}
   .hero::after{content:""; position:absolute; top:-40%; right:-20%; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle,#4c8dff55,transparent 70%);}
   .hero-top{display:flex; justify-content:space-between; align-items:flex-start; position:relative; z-index:1;}
   .hero-id{display:flex; align-items:center; gap:9px;}
@@ -63,43 +63,54 @@
   .hero-own{font-size:11.5px; color:#9fc0ff; font-weight:600; margin-top:2px;}
   .hero-net{font-size:11.5px; color:#9fc0ff; font-weight:700; text-align:right;}
   .hero-net b{display:block; color:#fff; font-size:13.5px; font-weight:800; margin-top:2px;}
-  .hero-price{font-size:34px; font-weight:900; letter-spacing:-.04em; margin-top:14px; position:relative; z-index:1;}
-  .hero-chg{font-size:14.5px; font-weight:800; margin-top:2px; position:relative; z-index:1;}
+  .hero-price-row{display:flex; align-items:baseline; gap:10px; margin-top:10px; position:relative; z-index:1;}
+  .hero-price{font-size:31px; font-weight:900; letter-spacing:-.04em;}
+  .hero-chg{font-size:14px; font-weight:800;}
   .hero-chg.up{color:#ff6b78;} .hero-chg.down{color:#7fb0ff;} .hero-chg.flat{color:#c7d4ea;}
-  .hero-chart{width:100%; height:128px; display:block; margin-top:8px; position:relative; z-index:1;}
-  .hero-range{display:flex; justify-content:space-between; font-size:11px; color:#9fc0ff; font-weight:700; padding:2px 2px 4px; position:relative; z-index:1;}
-  .net-card{margin:10px 20px 4px; background:var(--card); border-radius:16px; padding:12px 14px; box-shadow:var(--shadow);}
-  .net-card-top{display:flex; justify-content:space-between; align-items:center; font-size:12.5px; font-weight:700; color:var(--gray2); margin-bottom:8px;}
-  .net-card-top b{color:var(--ink); font-size:15px; font-weight:800;}
+  .hero-chart{width:100%; height:86px; display:block; margin-top:4px; position:relative; z-index:1;}
+  .hero-range{display:flex; justify-content:space-between; font-size:11px; color:#9fc0ff; font-weight:700; padding:2px 2px 2px; position:relative; z-index:1;}
+  /* 짧은 화면에서는 차트를 줄여 종목 카드가 접히지 않게 */
+  @media (max-height:760px){
+    .hero{padding:11px 18px 6px;}
+    .hero-chart{height:58px;}
+    .hero-price{font-size:26px;}
+    .hero-price-row{margin-top:6px;}
+    .hero-range{display:none;}
+    .stock{padding:8px 12px; margin-bottom:6px;}
+    .logo{width:34px; height:34px; font-size:17px; border-radius:11px;}
+    .tabs{padding:8px 20px 6px;}
+  }
+  .goal-strip{margin:10px 20px 0; padding:0 2px;}
+  .gs-row{display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:5px;}
+  .gs-name{font-size:12.5px; font-weight:800; color:var(--gray); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .gs-pct{font-size:12.5px; font-weight:800; color:var(--blue); flex-shrink:0;}
+  .gs-bar{height:5px; background:var(--line); border-radius:999px; overflow:hidden;}
+  .gs-bar>i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,#3182F6,#00c2ff); transition:width .5s cubic-bezier(.2,.8,.2,1);}
+  .net-card{margin:14px 20px 4px; background:var(--card); border-radius:16px; padding:14px; box-shadow:var(--shadow);}
+  .net-card-top{display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:12.5px; font-weight:800; color:var(--gray2); margin-bottom:9px;}
+  .nc-goal{font-weight:600; color:var(--gray3); font-size:11.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .breakdown{display:flex; gap:8px;}
   .bd{flex:1; background:var(--field); border-radius:12px; padding:9px 10px; text-align:center;}
   .bd .k{font-size:11px; color:var(--gray2); font-weight:700;} .bd .v{font-size:13.5px; font-weight:800; margin-top:3px; color:var(--ink);} .bd .v.debt{color:var(--red);}
 
-  /* GOAL card */
-  .goal{margin:14px 20px 4px; background:var(--card); border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow);}
-  .goal .row{display:flex; justify-content:space-between; align-items:center;}
-  .goal .t{font-size:13px; font-weight:800; color:var(--gray2);}
-  .goal .pct{font-size:14px; font-weight:900; color:var(--blue);}
-  .goal .gname{font-size:16px; font-weight:800; margin:6px 0 10px;}
   .bar{height:10px; background:var(--line); border-radius:999px; overflow:hidden;}
   .bar>i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,#3182F6,#00c2ff); transition:width .6s cubic-bezier(.2,.8,.2,1);}
-  .goal .hint{font-size:12.5px; color:var(--gray2); font-weight:600; margin-top:8px;}
-  .chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:12px;}
+  .chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:11px;}
   .chip{font-size:11.5px; font-weight:800; padding:5px 10px; border-radius:999px; background:var(--field); color:var(--gray3); transition:.2s;}
   .chip.on{color:#fff;}
   .chip.on.invest{background:#3182F6;} .chip.on.realty{background:#00b894;} .chip.on.career{background:#7a5cff;}
   .chip.on.family{background:#ff7a9c;} .chip.on.exp{background:#ff9f43;} .chip.on.biz{background:#e17055;}
 
-  .tabs{display:flex; gap:6px; padding:16px 20px 8px;}
+  .tabs{display:flex; gap:6px; padding:11px 20px 7px;}
   .tab{flex:1; text-align:center; padding:10px; border-radius:14px; font-size:14px; font-weight:800; color:var(--gray2); background:transparent; border:none; cursor:pointer; transition:.15s;}
   .tab.on{background:var(--ink); color:#fff;}
   .panel{padding:4px 16px;} .panel.hide{display:none;}
   .section-title{font-size:13px; font-weight:800; color:var(--gray2); margin:14px 6px 8px;}
 
-  .stock{background:var(--card); border-radius:18px; padding:14px 16px; box-shadow:var(--shadow); margin-bottom:10px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:transform .1s; animation:rise .4s backwards;}
+  .stock{background:var(--card); border-radius:16px; padding:10px 14px; box-shadow:var(--shadow); margin-bottom:8px; display:flex; align-items:center; gap:11px; cursor:pointer; transition:transform .1s; animation:rise .4s backwards;}
   .stock:active{transform:scale(.985);}
   .stock.selected{box-shadow:0 0 0 2px var(--blue), 0 4px 20px rgba(0,0,0,.06);}
-  .logo{width:44px; height:44px; border-radius:14px; display:grid; place-items:center; font-size:22px; flex-shrink:0;}
+  .logo{width:38px; height:38px; border-radius:12px; display:grid; place-items:center; font-size:19px; flex-shrink:0;}
   .stock .mid{flex:1; min-width:0;} .stock .nm{font-size:15px; font-weight:800;}
   .stock .own{font-size:12px; color:var(--gray2); font-weight:600; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .stock .own b{color:var(--gray);} .stock .own .pl.up{color:var(--red);} .stock .own .pl.down{color:var(--blue);}
   .stock .mini-chart{width:48px; height:26px; flex-shrink:0;}
@@ -179,25 +190,13 @@
         <div class="hero-id"><span class="hero-emo" id="heroEmo"></span><div><div class="hero-nm" id="heroNm"></div><div class="hero-own" id="heroOwn"></div></div></div>
         <div class="hero-net">순자산<b id="netWorthMini">0원</b></div>
       </div>
-      <div class="hero-price" id="heroPrice">0원</div>
-      <div class="hero-chg" id="heroChg"></div>
+      <div class="hero-price-row"><span class="hero-price" id="heroPrice">0원</span><span class="hero-chg" id="heroChg"></span></div>
       <svg class="hero-chart" id="heroChart" viewBox="0 0 420 128" preserveAspectRatio="none"></svg>
       <div class="hero-range"><span id="heroLo"></span><span id="heroHi"></span></div>
     </div>
-    <div class="net-card">
-      <div class="net-card-top"><span>자산 현황</span></div>
-      <div class="breakdown">
-        <div class="bd"><div class="k">현금</div><div class="v" id="bdCash">0원</div></div>
-        <div class="bd"><div class="k">투자자산</div><div class="v" id="bdStock">0원</div></div>
-        <div class="bd"><div class="k">부채</div><div class="v debt" id="bdDebt">0원</div></div>
-      </div>
-    </div>
-    <div class="goal">
-      <div class="row"><div class="t">🎯 다음 목표</div><div class="pct" id="goalPct"></div></div>
-      <div class="gname" id="goalName">—</div>
-      <div class="bar"><i id="goalBar"></i></div>
-      <div class="hint" id="goalHint"></div>
-      <div class="chips" id="chips"></div>
+    <div class="goal-strip">
+      <div class="gs-row"><span class="gs-name" id="goalName">—</span><span class="gs-pct" id="goalPct"></span></div>
+      <div class="gs-bar"><i id="goalBar"></i></div>
     </div>
     <div class="tabs">
       <button class="tab on" data-tab="stock">📈 투자</button>
@@ -205,6 +204,15 @@
     </div>
     <div class="panel" id="panelStock"></div>
     <div class="panel hide" id="panelLife"></div>
+    <div class="net-card">
+      <div class="net-card-top"><span>자산 현황</span><span class="nc-goal" id="goalHint"></span></div>
+      <div class="breakdown">
+        <div class="bd"><div class="k">현금</div><div class="v" id="bdCash">0원</div></div>
+        <div class="bd"><div class="k">투자자산</div><div class="v" id="bdStock">0원</div></div>
+        <div class="bd"><div class="k">부채</div><div class="v debt" id="bdDebt">0원</div></div>
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
     <div class="cta-wrap"><div class="cta-inner">
       <button class="cta" id="tradeBtn">
         <span class="tb-emo" id="tbEmo"></span>
@@ -421,16 +429,18 @@ function render(){
 }
 function renderGoal(net){
   const ms=nextMilestone();
+  const setBar=pct=>{$('goalPct').textContent=Math.floor(pct)+'%';$('goalBar').style.width=pct+'%';$('goalBar').parentElement.style.visibility='';};
   if(ms){
-    $('goalName').textContent=ms.name;
-    if(ms.target){const pct=Math.max(0,Math.min(100,net/ms.target*100));$('goalPct').textContent=Math.floor(pct)+'%';$('goalBar').style.width=pct+'%';$('goalBar').parentElement.style.display='';$('goalHint').textContent=`${fmtWon(net)} / ${fmtWon(ms.target)}`;}
-    else{$('goalPct').textContent='';$('goalBar').parentElement.style.display='none';
-      $('goalHint').textContent=ms.id==='wed'?'💍 인생 탭에서 결혼하면 달성':ms.id==='home'?'🏠 인생 탭에서 내 집을 마련하면 달성':ms.id==='trip'?'✈️ 여행을 3번 다녀오면 달성':'';}
+    $('goalName').textContent='🎯 '+ms.name;
+    if(ms.target){setBar(Math.max(0,Math.min(100,net/ms.target*100)));
+      $('goalHint').textContent=`${fmtWon(net)} / ${fmtWon(ms.target)}`;}
+    else{$('goalPct').textContent='';$('goalBar').style.width='0%';$('goalBar').parentElement.style.visibility='hidden';
+      $('goalHint').textContent=ms.id==='wed'?'💍 인생 탭에서 결혼하면 달성':ms.id==='home'?'🏠 인생 탭에서 내 집 마련하면 달성':ms.id==='trip'?'✈️ 여행 3번이면 달성':'';}
   }else{
-    const ft=fireTarget(),pct=Math.max(0,Math.min(100,net/ft*100));
+    const ft=fireTarget();
     $('goalName').textContent=S.done.fire?'🏁 60세 은퇴까지':'🔥 경제적 자유 (파이어)';
-    $('goalPct').textContent=Math.floor(pct)+'%';$('goalBar').parentElement.style.display='';$('goalBar').style.width=pct+'%';
-    $('goalHint').textContent=S.done.fire?`${info().age}세 · 나만의 엔딩을 향해`:`목표 ${fmtWon(ft)} 도달 시 은퇴 선언 가능`;
+    setBar(Math.max(0,Math.min(100,net/ft*100)));
+    $('goalHint').textContent=S.done.fire?`${info().age}세 · 나만의 엔딩을 향해`:`목표 ${fmtWon(ft)}`;
   }
 }
 function renderChips(){
@@ -473,7 +483,7 @@ function miniChartSvg(id,col){
 }
 function renderStocks(){
   const el=$('panelStock');
-  el.innerHTML='<div class="section-title">국내 주식</div>'+STOCKS.map((s,i)=>{
+  el.innerHTML=STOCKS.map((s,i)=>{
     const p=S.price[s.id],base=S.dayOpen[s.id]||s.price,chg=(p-base)/base*100,own=S.hold[s.id];
     const cls=chg>0.05?'up':chg<-0.05?'down':'flat',arw=chg>0.05?'▲':chg<-0.05?'▼':'−';
     let ownTxt='미보유';if(own>0){const pl=(p-S.avg[s.id])*own,plp=(p-S.avg[s.id])/S.avg[s.id]*100;ownTxt=`<b>${own}주</b> · <span class="pl ${pl>=0?'up':'down'}">${plp>=0?'+':''}${plp.toFixed(1)}%</span>`;}
@@ -528,7 +538,7 @@ function startMonthTimer(){stopMonthTimer();monthTimer=setInterval(()=>{if(!isBl
 function stopMonthTimer(){if(monthTimer){clearInterval(monthTimer);monthTimer=null;}}
 function renderLife(){
   const el=$('panelLife');
-  el.innerHTML='<div class="section-title">인생 이벤트</div>'+LIFE.map((l,i)=>{
+  el.innerHTML=LIFE.map((l,i)=>{
     let done=l.id==='car'?S.car:l.id==='wed'?S.married:l.id==='home'?!!S.home:false;
     const afford=S.cash>=l.cost;let btn;
     if(done&&!l.repeat)btn='<button class="mini-btn done">완료</button>';

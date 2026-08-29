@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#3182F6">
-<title>머니로드 · 파이어족 도전</title>
-<meta name="description" content="주식 투자로 차·집·결혼·여행을 이루고 파이어족에 도전하는 로그라이크 인생 시뮬레이션 게임">
+<title>머니로드 · 인생 투자 시뮬레이션</title>
+<meta name="description" content="주식 투자로 인생 목표를 이루고 나만의 엔딩에 도달하는 로그라이크 인생 시뮬레이션 게임">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
   :root{
@@ -18,24 +18,18 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
-  body{
-    font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-    background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased;
-    line-height:1.4; letter-spacing:-.02em; overflow-x:hidden;
-  }
+  body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; line-height:1.4; letter-spacing:-.02em; overflow-x:hidden;}
   #app{max-width:460px; margin:0 auto; min-height:100vh; position:relative;}
   .screen{display:none;} .screen.on{display:block;}
   #game{padding-bottom:calc(120px + var(--safe-b));}
 
-  /* ===================== HOME ===================== */
-  #home{padding:0 20px calc(40px + var(--safe-b)); min-height:100vh;
-    background:radial-gradient(1200px 500px at 50% -10%, #dbe9ff 0%, var(--bg) 55%);}
-  .home-hero{padding:56px 4px 20px; text-align:center;}
-  .home-logo{font-size:44px; font-weight:900; letter-spacing:-.04em;
-    background:linear-gradient(135deg,#3182F6,#00c2ff 60%,#7a5cff);
-    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;}
+  /* HOME */
+  #home{padding:0 20px calc(40px + var(--safe-b)); min-height:100vh; background:radial-gradient(1200px 500px at 50% -10%, #dbe9ff 0%, var(--bg) 55%);}
+  .home-hero{padding:52px 4px 18px; text-align:center;}
+  .home-emoji{font-size:58px; margin-bottom:6px; filter:drop-shadow(0 8px 16px rgba(49,130,246,.25));}
+  .home-logo{font-size:44px; font-weight:900; letter-spacing:-.04em; background:linear-gradient(135deg,#3182F6,#00c2ff 60%,#7a5cff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;}
   .home-tag{font-size:15px; color:var(--gray); font-weight:600; margin-top:8px;}
-  .home-emoji{font-size:60px; margin:14px 0 4px; filter:drop-shadow(0 8px 16px rgba(49,130,246,.25));}
   .record{background:var(--card); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow); margin-bottom:14px;}
   .record .rt{font-size:13px; font-weight:800; color:var(--gray2); margin-bottom:12px;}
   .rec-grid{display:flex; gap:10px;}
@@ -45,58 +39,45 @@
   .legacy-head{display:flex; align-items:center; justify-content:space-between; margin:22px 4px 12px;}
   .legacy-head .t{font-size:17px; font-weight:800;}
   .legacy-bal{font-size:14px; font-weight:800; color:var(--gold); background:#fff7e6; padding:6px 12px; border-radius:999px;}
-  .perk{background:var(--card); border-radius:16px; padding:14px 16px; box-shadow:var(--shadow); margin-bottom:10px;
-    display:flex; align-items:center; gap:12px;}
+  .perk{background:var(--card); border-radius:16px; padding:14px 16px; box-shadow:var(--shadow); margin-bottom:10px; display:flex; align-items:center; gap:12px;}
   .perk .emo{font-size:26px; width:46px; height:46px; border-radius:13px; background:var(--field); display:grid; place-items:center; flex-shrink:0;}
-  .perk .mid{flex:1; min-width:0;}
-  .perk .nm{font-size:14.5px; font-weight:800;}
-  .perk .ds{font-size:12px; color:var(--gray2); font-weight:600; margin-top:2px;}
-  .dots{display:flex; gap:4px; margin-top:6px;}
-  .dots i{width:16px; height:5px; border-radius:3px; background:var(--line);}
-  .dots i.f{background:linear-gradient(90deg,#3182F6,#00c2ff);}
-  .perk-buy{border:none; border-radius:12px; padding:9px 12px; font-size:12.5px; font-weight:800; cursor:pointer; white-space:nowrap; flex-shrink:0;
-    background:#fff7e6; color:var(--gold);}
-  .perk-buy:active{filter:brightness(.96);}
-  .perk-buy.max{background:var(--line); color:var(--gray2);}
-  .perk-buy.no{background:var(--field); color:var(--gray3);}
-  .start-btn{width:100%; border:none; border-radius:18px; padding:18px; margin-top:20px; cursor:pointer;
-    font-size:18px; font-weight:900; color:#fff; letter-spacing:-.02em;
-    background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 10px 28px rgba(49,130,246,.36);}
-  .start-btn:active{transform:translateY(1px);}
-  .start-btn small{display:block; font-size:12px; font-weight:700; opacity:.85; margin-top:3px;}
+  .perk .mid{flex:1; min-width:0;} .perk .nm{font-size:14.5px; font-weight:800;} .perk .ds{font-size:12px; color:var(--gray2); font-weight:600; margin-top:2px;}
+  .dots{display:flex; gap:4px; margin-top:6px;} .dots i{width:16px; height:5px; border-radius:3px; background:var(--line);} .dots i.f{background:linear-gradient(90deg,#3182F6,#00c2ff);}
+  .perk-buy{border:none; border-radius:12px; padding:9px 12px; font-size:12.5px; font-weight:800; cursor:pointer; white-space:nowrap; flex-shrink:0; background:#fff7e6; color:var(--gold);}
+  .perk-buy.max{background:var(--line); color:var(--gray2);} .perk-buy.no{background:var(--field); color:var(--gray3);}
+  .start-btn{width:100%; border:none; border-radius:18px; padding:18px; margin-top:20px; cursor:pointer; font-size:18px; font-weight:900; color:#fff; background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 10px 28px rgba(49,130,246,.36);}
+  .start-btn:active{transform:translateY(1px);} .start-btn small{display:block; font-size:12px; font-weight:700; opacity:.85; margin-top:3px;}
 
-  /* ===================== GAME HEADER ===================== */
-  .topbar{position:sticky; top:0; z-index:20; background:var(--bg);
-    display:flex; align-items:center; justify-content:space-between; padding:14px 20px 8px;}
-  .topbar .brand{font-size:18px; font-weight:800;}
-  .topbar .brand span{color:var(--blue);}
+  /* GAME HEADER */
+  .topbar{position:sticky; top:0; z-index:20; background:var(--bg); display:flex; align-items:center; justify-content:space-between; padding:14px 20px 8px;}
+  .topbar .brand{font-size:18px; font-weight:800;} .topbar .brand span{color:var(--blue);}
   .top-right{display:flex; gap:8px; align-items:center;}
   .date-chip{font-size:13px; font-weight:700; color:var(--gray); background:var(--card); padding:7px 12px; border-radius:999px; box-shadow:var(--shadow);}
   .icon-btn{border:none; background:var(--card); color:var(--gray); width:36px; height:36px; border-radius:12px; font-size:15px; box-shadow:var(--shadow); display:grid; place-items:center; cursor:pointer;}
-
-  .hero{padding:8px 20px 4px; position:relative; border-radius:24px; margin:0 12px;
-    background:linear-gradient(135deg,#0b1b3a 0%,#12336e 55%,#1d4fb0 100%); color:#fff; overflow:hidden;}
-  .hero::after{content:""; position:absolute; top:-40%; right:-20%; width:220px; height:220px; border-radius:50%;
-    background:radial-gradient(circle,#4c8dff55,transparent 70%);}
+  .hero{padding:8px 20px 4px; position:relative; border-radius:24px; margin:0 12px; background:linear-gradient(135deg,#0b1b3a 0%,#12336e 55%,#1d4fb0 100%); color:#fff; overflow:hidden;}
+  .hero::after{content:""; position:absolute; top:-40%; right:-20%; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle,#4c8dff55,transparent 70%);}
   .hero .label{font-size:13px; color:#9fc0ff; font-weight:700; padding-top:8px;}
   .hero .net{font-size:34px; font-weight:900; letter-spacing:-.04em; margin:2px 0; display:flex; align-items:baseline; gap:8px;}
-  .hero .delta{font-size:14px; font-weight:800;}
-  .hero .delta.up{color:#ff6b78;} .hero .delta.down{color:#7fb0ff;}
+  .hero .delta{font-size:14px; font-weight:800;} .hero .delta.up{color:#ff6b78;} .hero .delta.down{color:#7fb0ff;}
   .spark{width:100%; height:52px; display:block; margin-top:2px;}
   .breakdown{display:flex; gap:8px; margin:12px 0 4px; padding-bottom:14px; position:relative; z-index:1;}
-  .bd{flex:1; background:#ffffff1a; backdrop-filter:blur(4px); border-radius:14px; padding:10px 12px;}
-  .bd .k{font-size:11px; color:#a9c4ff; font-weight:700;}
-  .bd .v{font-size:14.5px; font-weight:800; margin-top:3px; letter-spacing:-.03em; color:#fff;}
-  .bd .v.debt{color:#ff8a94;}
+  .bd{flex:1; background:#ffffff1a; border-radius:14px; padding:10px 12px;}
+  .bd .k{font-size:11px; color:#a9c4ff; font-weight:700;} .bd .v{font-size:14.5px; font-weight:800; margin-top:3px; color:#fff;} .bd .v.debt{color:#ff8a94;}
 
-  .fire{margin:14px 20px 4px; background:var(--card); border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow);}
-  .fire .row{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
-  .fire .t{font-size:14px; font-weight:800;} .fire .t b{color:var(--blue);}
-  .fire .pct{font-size:15px; font-weight:900; color:var(--blue);}
+  /* GOAL card */
+  .goal{margin:14px 20px 4px; background:var(--card); border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow);}
+  .goal .row{display:flex; justify-content:space-between; align-items:center;}
+  .goal .t{font-size:13px; font-weight:800; color:var(--gray2);}
+  .goal .pct{font-size:14px; font-weight:900; color:var(--blue);}
+  .goal .gname{font-size:16px; font-weight:800; margin:6px 0 10px;}
   .bar{height:10px; background:var(--line); border-radius:999px; overflow:hidden;}
-  .bar>i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,#3182F6,#00c2ff);
-    transition:width .6s cubic-bezier(.2,.8,.2,1);}
-  .fire .sub{font-size:12px; color:var(--gray2); margin-top:8px; font-weight:600;}
+  .bar>i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,#3182F6,#00c2ff); transition:width .6s cubic-bezier(.2,.8,.2,1);}
+  .goal .hint{font-size:12.5px; color:var(--gray2); font-weight:600; margin-top:8px;}
+  .chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:12px;}
+  .chip{font-size:11.5px; font-weight:800; padding:5px 10px; border-radius:999px; background:var(--field); color:var(--gray3); transition:.2s;}
+  .chip.on{color:#fff;}
+  .chip.on.invest{background:#3182F6;} .chip.on.realty{background:#00b894;} .chip.on.career{background:#7a5cff;}
+  .chip.on.family{background:#ff7a9c;} .chip.on.exp{background:#ff9f43;} .chip.on.biz{background:#e17055;}
 
   .tabs{display:flex; gap:6px; padding:16px 20px 8px;}
   .tab{flex:1; text-align:center; padding:10px; border-radius:14px; font-size:14px; font-weight:800; color:var(--gray2); background:transparent; border:none; cursor:pointer; transition:.15s;}
@@ -104,15 +85,11 @@
   .panel{padding:4px 16px;} .panel.hide{display:none;}
   .section-title{font-size:13px; font-weight:800; color:var(--gray2); margin:14px 6px 8px;}
 
-  .stock{background:var(--card); border-radius:18px; padding:14px 16px; box-shadow:var(--shadow); margin-bottom:10px;
-    display:flex; align-items:center; gap:12px; cursor:pointer; transition:transform .1s;
-    animation:rise .4s backwards;}
+  .stock{background:var(--card); border-radius:18px; padding:14px 16px; box-shadow:var(--shadow); margin-bottom:10px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:transform .1s; animation:rise .4s backwards;}
   .stock:active{transform:scale(.985);}
   .logo{width:44px; height:44px; border-radius:14px; display:grid; place-items:center; font-size:22px; flex-shrink:0;}
-  .stock .mid{flex:1; min-width:0;}
-  .stock .nm{font-size:15px; font-weight:800;}
-  .stock .own{font-size:12px; color:var(--gray2); font-weight:600; margin-top:2px;}
-  .stock .own b{color:var(--gray);} .stock .own .pl.up{color:var(--red);} .stock .own .pl.down{color:var(--blue);}
+  .stock .mid{flex:1; min-width:0;} .stock .nm{font-size:15px; font-weight:800;}
+  .stock .own{font-size:12px; color:var(--gray2); font-weight:600; margin-top:2px;} .stock .own b{color:var(--gray);} .stock .own .pl.up{color:var(--red);} .stock .own .pl.down{color:var(--blue);}
   .stock .rt{text-align:right;}
   .stock .price{font-size:15px; font-weight:800; padding:2px 6px; border-radius:8px; display:inline-block;}
   .stock .price.flash-up{animation:flashUp .6s;} .stock .price.flash-down{animation:flashDown .6s;}
@@ -124,91 +101,52 @@
 
   .life{background:var(--card); border-radius:18px; padding:16px; box-shadow:var(--shadow); margin-bottom:10px; display:flex; align-items:center; gap:14px; animation:rise .4s backwards;}
   .life .emo{font-size:30px; width:52px; height:52px; border-radius:16px; background:var(--field); display:grid; place-items:center; flex-shrink:0;}
-  .life .mid{flex:1; min-width:0;}
-  .life .nm{font-size:15px; font-weight:800;}
-  .life .ds{font-size:12.5px; color:var(--gray2); font-weight:600; margin-top:3px; line-height:1.35;}
-  .life .cost{font-size:13px; color:var(--gray); font-weight:700; margin-top:5px;}
+  .life .mid{flex:1; min-width:0;} .life .nm{font-size:15px; font-weight:800;} .life .ds{font-size:12.5px; color:var(--gray2); font-weight:600; margin-top:3px; line-height:1.35;} .life .cost{font-size:13px; color:var(--gray); font-weight:700; margin-top:5px;}
   .mini-btn{border:none; background:var(--blue); color:#fff; font-weight:800; font-size:14px; padding:10px 16px; border-radius:12px; cursor:pointer; white-space:nowrap; flex-shrink:0;}
-  .mini-btn:active{background:var(--blue-press);}
-  .mini-btn.done{background:var(--line); color:var(--gray2);}
-  .mini-btn.off{background:var(--field); color:var(--gray3);}
+  .mini-btn:active{background:var(--blue-press);} .mini-btn.done{background:var(--line); color:var(--gray2);} .mini-btn.off{background:var(--field); color:var(--gray3);}
 
-  /* ===================== CTA ===================== */
   .cta-wrap{position:fixed; left:0; right:0; bottom:0; z-index:30; pointer-events:none; display:flex; justify-content:center;}
-  .cta-inner{width:100%; max-width:460px; padding:12px 16px calc(14px + var(--safe-b));
-    background:linear-gradient(180deg,rgba(242,244,246,0) 0%,var(--bg) 32%); pointer-events:auto;}
-  .cta{width:100%; border:none; color:#fff; font-size:17px; font-weight:900; padding:17px; border-radius:16px; cursor:pointer; letter-spacing:-.02em;
-    background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 8px 24px rgba(49,130,246,.34); transition:transform .08s;}
-  .cta:active{transform:translateY(1px);}
-  .cta .yr{font-size:12px; font-weight:700; opacity:.85; display:block; margin-top:2px;}
+  .cta-inner{width:100%; max-width:460px; padding:12px 16px calc(14px + var(--safe-b)); background:linear-gradient(180deg,rgba(242,244,246,0) 0%,var(--bg) 32%); pointer-events:auto;}
+  .cta{width:100%; border:none; color:#fff; font-size:17px; font-weight:900; padding:17px; border-radius:16px; cursor:pointer; background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 8px 24px rgba(49,130,246,.34); transition:transform .08s;}
+  .cta:active{transform:translateY(1px);} .cta .yr{font-size:12px; font-weight:700; opacity:.85; display:block; margin-top:2px;}
 
-  /* ===================== SHEET ===================== */
-  .scrim{position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:40; opacity:0; pointer-events:none; transition:.25s;}
-  .scrim.on{opacity:1; pointer-events:auto;}
-  .sheet{position:fixed; left:0; right:0; bottom:0; z-index:50; margin:0 auto; max-width:460px;
-    background:var(--card); border-radius:24px 24px 0 0; padding:8px 20px calc(20px + var(--safe-b));
-    transform:translateY(110%); transition:transform .3s cubic-bezier(.2,.9,.2,1); box-shadow:0 -8px 30px rgba(0,0,0,.12); max-height:92vh; overflow-y:auto;}
+  .scrim{position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:40; opacity:0; pointer-events:none; transition:.25s;} .scrim.on{opacity:1; pointer-events:auto;}
+  .sheet{position:fixed; left:0; right:0; bottom:0; z-index:50; margin:0 auto; max-width:460px; background:var(--card); border-radius:24px 24px 0 0; padding:8px 20px calc(20px + var(--safe-b)); transform:translateY(110%); transition:transform .3s cubic-bezier(.2,.9,.2,1); box-shadow:0 -8px 30px rgba(0,0,0,.12); max-height:92vh; overflow-y:auto;}
   .sheet.on{transform:translateY(0);}
   .grab{width:40px; height:4px; background:var(--line); border-radius:999px; margin:6px auto 14px;}
   .sh-head{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
-  .sh-head .nm{font-size:18px; font-weight:800;}
-  .sh-head .px{font-size:13px; color:var(--gray); font-weight:700; margin-top:2px;}
-  .sh-head .chg{font-size:13px; font-weight:800;}
+  .sh-head .nm{font-size:18px; font-weight:800;} .sh-head .px{font-size:13px; color:var(--gray); font-weight:700; margin-top:2px;} .sh-head .chg{font-size:13px; font-weight:800;}
   .chart-wrap{background:var(--field); border-radius:16px; padding:10px 8px 6px; margin-bottom:12px;}
-  .chart{width:100%; height:120px; display:block;}
-  .chart-lbl{display:flex; justify-content:space-between; font-size:11px; color:var(--gray2); font-weight:700; padding:2px 6px 0;}
+  .chart{width:100%; height:120px; display:block;} .chart-lbl{display:flex; justify-content:space-between; font-size:11px; color:var(--gray2); font-weight:700; padding:2px 6px 0;}
   .pos{display:flex; gap:8px; margin-bottom:12px;}
-  .pos .c{flex:1; background:var(--field); border-radius:12px; padding:10px 6px; text-align:center;}
-  .pos .k{font-size:11px; color:var(--gray2); font-weight:700;}
-  .pos .v{font-size:14px; font-weight:800; margin-top:3px;}
-  .pos .v.up{color:var(--red);} .pos .v.down{color:var(--blue);}
+  .pos .c{flex:1; background:var(--field); border-radius:12px; padding:10px 6px; text-align:center;} .pos .k{font-size:11px; color:var(--gray2); font-weight:700;} .pos .v{font-size:14px; font-weight:800; margin-top:3px;} .pos .v.up{color:var(--red);} .pos .v.down{color:var(--blue);}
   .qty{display:flex; align-items:center; justify-content:space-between; background:var(--field); border-radius:16px; padding:8px 10px; margin-bottom:12px;}
-  .qty button{width:44px; height:44px; border:none; background:var(--card); border-radius:12px; font-size:22px; font-weight:700; color:var(--ink); box-shadow:var(--shadow); cursor:pointer;}
-  .qty .q{font-size:24px; font-weight:800;} .qty .q small{font-size:13px; color:var(--gray2); font-weight:700; margin-left:3px;}
-  .quicks{display:flex; gap:7px; margin-bottom:14px;}
-  .quicks button{flex:1; border:none; background:var(--field); color:var(--gray); font-weight:700; font-size:13px; padding:11px 0; border-radius:12px; cursor:pointer;}
-  .quicks button:active{background:var(--blue-weak); color:var(--blue);}
-  .sh-info{display:flex; justify-content:space-between; font-size:14px; font-weight:600; color:var(--gray); padding:6px 2px;}
-  .sh-info b{color:var(--ink); font-weight:800;}
-  .sh-actions{display:flex; gap:10px; margin-top:14px;}
-  .sh-actions button{flex:1; border:none; padding:16px; border-radius:15px; font-size:16px; font-weight:800; cursor:pointer;}
-  .btn-buy{background:var(--red); color:#fff;} .btn-sell{background:var(--blue); color:#fff;}
-  .btn-buy:disabled,.btn-sell:disabled{background:var(--line); color:var(--gray3); cursor:default;}
+  .qty button{width:44px; height:44px; border:none; background:var(--card); border-radius:12px; font-size:22px; font-weight:700; color:var(--ink); box-shadow:var(--shadow); cursor:pointer;} .qty .q{font-size:24px; font-weight:800;} .qty .q small{font-size:13px; color:var(--gray2); font-weight:700; margin-left:3px;}
+  .quicks{display:flex; gap:7px; margin-bottom:14px;} .quicks button{flex:1; border:none; background:var(--field); color:var(--gray); font-weight:700; font-size:13px; padding:11px 0; border-radius:12px; cursor:pointer;} .quicks button:active{background:var(--blue-weak); color:var(--blue);}
+  .sh-info{display:flex; justify-content:space-between; font-size:14px; font-weight:600; color:var(--gray); padding:6px 2px;} .sh-info b{color:var(--ink); font-weight:800;}
+  .sh-actions{display:flex; gap:10px; margin-top:14px;} .sh-actions button{flex:1; border:none; padding:16px; border-radius:15px; font-size:16px; font-weight:800; cursor:pointer;}
+  .btn-buy{background:var(--red); color:#fff;} .btn-sell{background:var(--blue); color:#fff;} .btn-buy:disabled,.btn-sell:disabled{background:var(--line); color:var(--gray3); cursor:default;}
 
-  /* ===================== MODAL ===================== */
-  .modal{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:28px; background:rgba(0,0,0,.5);}
-  .modal.on{display:flex;}
-  .modal .box{width:100%; max-width:360px; background:var(--card); border-radius:26px; padding:30px 24px 22px; text-align:center; animation:pop .3s cubic-bezier(.2,1.2,.4,1); position:relative; z-index:2;}
+  .modal{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:28px; background:rgba(0,0,0,.5);} .modal.on{display:flex;}
+  .modal .box{width:100%; max-width:360px; background:var(--card); border-radius:26px; padding:30px 24px 22px; text-align:center; animation:pop .3s cubic-bezier(.2,1.2,.4,1);}
   @keyframes pop{from{transform:scale(.85);opacity:0;}to{transform:scale(1);opacity:1;}}
   .modal .emo{font-size:56px;} .modal .emo.big{font-size:70px;}
-  .modal .tt{font-size:21px; font-weight:900; margin:12px 0 6px;}
-  .modal .dc{font-size:14.5px; color:var(--gray); font-weight:600; line-height:1.5;}
-  .modal .impact{font-size:18px; font-weight:900; margin:14px 0 4px;}
-  .impact.up{color:var(--red);} .impact.down{color:var(--blue);} .impact.gold{color:var(--gold);}
-  .modal .ok{margin-top:18px; width:100%; border:none; color:#fff; font-size:16px; font-weight:800; padding:15px; border-radius:15px; cursor:pointer; background:linear-gradient(135deg,#3182F6,#4c8dff);}
-  .modal .ok.ghost{background:var(--field); color:var(--gray); margin-top:8px;}
+  .modal .tt{font-size:21px; font-weight:900; margin:12px 0 6px;} .modal .dc{font-size:14.5px; color:var(--gray); font-weight:600; line-height:1.5;}
+  .modal .impact{font-size:18px; font-weight:900; margin:14px 0 4px;} .impact.up{color:var(--red);} .impact.down{color:var(--blue);}
+  .modal .tagline{font-size:13px; font-weight:800; color:var(--blue); margin-top:10px;}
+  .modal .ok{margin-top:18px; width:100%; border:none; color:#fff; font-size:16px; font-weight:800; padding:15px; border-radius:15px; cursor:pointer; background:linear-gradient(135deg,#3182F6,#4c8dff);} .modal .ok.ghost{background:var(--field); color:var(--gray); margin-top:8px;}
   .choice-opts{display:flex; flex-direction:column; gap:10px; margin-top:18px;}
-  .choice-opts button{border:2px solid var(--line); background:var(--card); border-radius:16px; padding:15px; font-size:15px; font-weight:800; color:var(--ink); cursor:pointer; text-align:left; transition:.12s;}
-  .choice-opts button:active{border-color:var(--blue); background:var(--blue-weak);}
+  .choice-opts button{border:2px solid var(--line); background:var(--card); border-radius:16px; padding:15px; font-size:15px; font-weight:800; color:var(--ink); cursor:pointer; text-align:left; transition:.12s;} .choice-opts button:active{border-color:var(--blue); background:var(--blue-weak);}
   .choice-opts button small{display:block; font-size:12px; font-weight:600; color:var(--gray2); margin-top:3px;}
-  .stat-grid{display:flex; gap:10px; margin:16px 0 4px;}
-  .stat-grid .s{flex:1; background:var(--field); border-radius:14px; padding:12px 6px;}
-  .stat-grid .s .k{font-size:11px; color:var(--gray2); font-weight:700;}
-  .stat-grid .s .v{font-size:15px; font-weight:800; margin-top:3px;}
+  .stat-grid{display:flex; gap:10px; margin:16px 0 4px;} .stat-grid .s{flex:1; background:var(--field); border-radius:14px; padding:12px 6px;} .stat-grid .s .k{font-size:11px; color:var(--gray2); font-weight:700;} .stat-grid .s .v{font-size:15px; font-weight:800; margin-top:3px;}
   .legacy-earn{margin-top:14px; font-size:14px; font-weight:800; color:var(--gold); background:#fff7e6; border-radius:14px; padding:12px;}
-
-  #confetti{position:fixed; inset:0; z-index:61; pointer-events:none; display:none;}
-  #confetti.on{display:block;}
-  .toast{position:fixed; left:50%; bottom:160px; translate:-50% 0; background:rgba(25,31,40,.92); color:#fff; font-size:13.5px; font-weight:700; padding:11px 18px; border-radius:14px; z-index:70; opacity:0; transition:.25s; pointer-events:none; max-width:88%; text-align:center;}
-  .toast.on{opacity:1;}
+  #confetti{position:fixed; inset:0; z-index:61; pointer-events:none; display:none;} #confetti.on{display:block;}
+  .toast{position:fixed; left:50%; bottom:160px; translate:-50% 0; background:rgba(25,31,40,.92); color:#fff; font-size:13.5px; font-weight:700; padding:11px 18px; border-radius:14px; z-index:70; opacity:0; transition:.25s; pointer-events:none; max-width:88%; text-align:center;} .toast.on{opacity:1;}
 </style>
 </head>
 <body>
 <div id="app">
-  <!-- ============ HOME ============ -->
   <div class="screen on" id="home"></div>
-
-  <!-- ============ GAME ============ -->
   <div class="screen" id="game">
     <div class="topbar">
       <div class="brand">머니<span>로드</span></div>
@@ -228,10 +166,12 @@
         <div class="bd"><div class="k">부채</div><div class="v debt" id="bdDebt">0원</div></div>
       </div>
     </div>
-    <div class="fire">
-      <div class="row"><div class="t">🔥 <b>파이어족</b>까지</div><div class="pct" id="firePct">0%</div></div>
-      <div class="bar"><i id="fireBar"></i></div>
-      <div class="sub" id="fireSub"></div>
+    <div class="goal">
+      <div class="row"><div class="t">🎯 다음 목표</div><div class="pct" id="goalPct"></div></div>
+      <div class="gname" id="goalName">—</div>
+      <div class="bar"><i id="goalBar"></i></div>
+      <div class="hint" id="goalHint"></div>
+      <div class="chips" id="chips"></div>
     </div>
     <div class="tabs">
       <button class="tab on" data-tab="stock">📈 투자</button>
@@ -239,42 +179,23 @@
     </div>
     <div class="panel" id="panelStock"></div>
     <div class="panel hide" id="panelLife"></div>
-
     <div class="cta-wrap"><div class="cta-inner">
       <button class="cta" id="nextBtn">다음 달로 <span class="yr" id="ctaYr"></span></button>
     </div></div>
   </div>
 </div>
 
-<!-- trade sheet -->
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet">
   <div class="grab"></div>
-  <div class="sh-head">
-    <div class="logo" id="shLogo"></div>
-    <div style="flex:1"><div class="nm" id="shName"></div><div class="px" id="shPx"></div></div>
-    <div class="chg" id="shChg"></div>
-  </div>
-  <div class="chart-wrap">
-    <svg class="chart" id="chart" viewBox="0 0 400 120" preserveAspectRatio="none"></svg>
-    <div class="chart-lbl"><span id="chLo"></span><span id="chHi"></span></div>
-  </div>
+  <div class="sh-head"><div class="logo" id="shLogo"></div><div style="flex:1"><div class="nm" id="shName"></div><div class="px" id="shPx"></div></div><div class="chg" id="shChg"></div></div>
+  <div class="chart-wrap"><svg class="chart" id="chart" viewBox="0 0 400 120" preserveAspectRatio="none"></svg><div class="chart-lbl"><span id="chLo"></span><span id="chHi"></span></div></div>
   <div class="pos" id="posBox"></div>
-  <div class="qty">
-    <button id="qMinus">−</button>
-    <div class="q"><span id="qNum">0</span><small>주</small></div>
-    <button id="qPlus">+</button>
-  </div>
-  <div class="quicks">
-    <button data-q="1">+1</button><button data-q="10">+10</button>
-    <button data-q="100">+100</button><button data-q="max" id="qMax">최대</button>
-  </div>
+  <div class="qty"><button id="qMinus">−</button><div class="q"><span id="qNum">0</span><small>주</small></div><button id="qPlus">+</button></div>
+  <div class="quicks"><button data-q="1">+1</button><button data-q="10">+10</button><button data-q="100">+100</button><button data-q="max" id="qMax">최대</button></div>
   <div class="sh-info"><span>주문 금액</span><b id="shTotal">0원</b></div>
   <div class="sh-info"><span>주문 후 현금</span><b id="shBal">0원</b></div>
-  <div class="sh-actions">
-    <button class="btn-buy" id="doBuy">매수</button>
-    <button class="btn-sell" id="doSell">매도</button>
-  </div>
+  <div class="sh-actions"><button class="btn-buy" id="doBuy">매수</button><button class="btn-sell" id="doSell">매도</button></div>
 </div>
 
 <div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
@@ -284,41 +205,19 @@
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
-const RUN_KEY='moneyroad_run_v2', META_KEY='moneyroad_meta_v2';
+const RUN_KEY='moneyroad_run_v3', META_KEY='moneyroad_meta_v3';
 
-/* ---------- format ---------- */
-function fmtWon(v){
-  const neg=v<0; let x=Math.round(Math.abs(v));
-  if(x<10000) return (neg?'-':'')+x.toLocaleString()+'원';
-  const eok=Math.floor(x/100000000), man=Math.floor((x%100000000)/10000);
-  let s=''; if(eok)s+=eok+'억'; if(man)s+=(s?' ':'')+man.toLocaleString()+'만';
-  return (neg?'-':'')+s+'원';
-}
+function fmtWon(v){const neg=v<0;let x=Math.round(Math.abs(v));if(x<10000)return (neg?'-':'')+x.toLocaleString()+'원';
+  const eok=Math.floor(x/100000000),man=Math.floor((x%100000000)/10000);let s='';if(eok)s+=eok+'억';if(man)s+=(s?' ':'')+man.toLocaleString()+'만';return (neg?'-':'')+s+'원';}
 const won=n=>Math.round(n).toLocaleString()+'원';
 function randn(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
 
-/* ---------- audio ---------- */
+/* audio */
 let AC=null;
-function beep(freq,dur,type='sine',vol=.15){
-  if(META.mute) return;
-  try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)();
-    const o=AC.createOscillator(), g=AC.createGain();
-    o.type=type; o.frequency.value=freq; o.connect(g); g.connect(AC.destination);
-    g.gain.setValueAtTime(vol,AC.currentTime); g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+dur);
-    o.start(); o.stop(AC.currentTime+dur);
-  }catch(e){}
-}
-const sfx={
-  click:()=>beep(660,.06,'triangle',.12),
-  buy:()=>{beep(520,.07,'square',.1);setTimeout(()=>beep(780,.09,'square',.1),60);},
-  cash:()=>{beep(880,.08,'sine',.13);setTimeout(()=>beep(1180,.12,'sine',.12),70);},
-  next:()=>beep(320,.12,'sine',.1),
-  win:()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.18,'triangle',.16),i*120));},
-  lose:()=>{[400,300,200].forEach((f,i)=>setTimeout(()=>beep(f,.2,'sawtooth',.12),i*140));},
-  event:()=>beep(700,.1,'triangle',.13),
-};
+function beep(f,d,t='sine',vol=.15){if(META.mute)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;o.connect(g);g.connect(AC.destination);g.gain.setValueAtTime(vol,AC.currentTime);g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.start();o.stop(AC.currentTime+d);}catch(e){}}
+const sfx={click:()=>beep(660,.06,'triangle',.12),buy:()=>{beep(520,.07,'square',.1);setTimeout(()=>beep(780,.09,'square',.1),60);},cash:()=>{beep(880,.08,'sine',.13);setTimeout(()=>beep(1180,.12,'sine',.12),70);},next:()=>beep(320,.12,'sine',.1),win:()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.18,'triangle',.16),i*120));},lose:()=>{[400,300,200].forEach((f,i)=>setTimeout(()=>beep(f,.2,'sawtooth',.12),i*140));},event:()=>beep(700,.1,'triangle',.13)};
 
-/* ================= CONFIG ================= */
+/* config */
 const STOCKS=[
   {id:'tom',name:'토마토전자',  emo:'📱',bg:'#fdece8',drift:0.006,vol:0.10,div:0,    price:68000},
   {id:'kim',name:'김치반도체',  emo:'💾',bg:'#e8f2ff',drift:0.011,vol:0.18,div:0,    price:132000},
@@ -341,32 +240,32 @@ const EVENTS=[
 ];
 const CHOICES=[
   {emo:'💼',t:'이직 제안',d:'경쟁사에서 스카웃 제안이 왔어요.',opts:[
-    {l:'이직한다',s:'연봉을 높였어요',f:S=>{S.salary+=800000;return '월급 +80만원';}},
+    {l:'이직한다',s:'연봉을 높였어요',tag:{career:1},f:S=>{S.salary+=800000;return '월급 +80만원';}},
     {l:'남는다',s:'안정을 택했어요',f:S=>{S.cash+=1000000;return '잔류 보너스 +100만원';}}]},
   {emo:'📈',t:'주식 리딩방 광고',d:'"수익률 300% 보장" 문자가 왔어요.',opts:[
-    {l:'가입한다 (도박)',s:'큰 손익이 걸려요',f:S=>{const w=Math.random()<0.35;const a=w?5000000+Math.random()*8000000:-(3000000+Math.random()*5000000);S.cash+=a;return (a>0?'+':'')+fmtWon(a);}},
+    {l:'가입한다 (도박)',s:'큰 손익이 걸려요',tag:{invest:1},f:S=>{const w=Math.random()<0.35;const a=w?5000000+Math.random()*8000000:-(3000000+Math.random()*5000000);S.cash+=a;return (a>0?'+':'')+fmtWon(a);}},
     {l:'무시한다',s:'현명한 선택',f:S=>'변화 없음'}]},
   {emo:'🎰',t:'로또 한 장?',d:'퇴근길 복권방을 지나쳐요.',opts:[
     {l:'산다',s:'대부분 꽝이에요',f:S=>{S.cash-=10000;const r=Math.random();let a=r<0.001?200000000:r<0.02?1000000:0;S.cash+=a;return a>0?('당첨! +'+fmtWon(a)):'꽝... -1만원';}},
     {l:'안 산다',s:'',f:S=>'변화 없음'}]},
   {emo:'👨‍👩‍👧',t:'부모님 병환',d:'부모님 수술비 지원이 필요해요.',opts:[
-    {l:'지원한다',s:'효도했어요',f:S=>{S.cash-=8000000;return '-800만원';}},
+    {l:'지원한다',s:'효도했어요',tag:{family:1},f:S=>{S.cash-=8000000;return '-800만원';}},
     {l:'형편이 어렵다',s:'마음이 무겁네요',f:S=>{S.cash-=1000000;return '-100만원';}}]},
   {emo:'🪙',t:'코인 열풍',d:'친구가 밈코인 정보를 줬어요.',opts:[
-    {l:'현금 20% 넣는다',s:'변동성 폭탄',f:S=>{const bet=Math.round(S.cash*0.2);S.cash-=bet;const m=Math.random()<0.45?(1.5+Math.random()*2.5):Math.random()*0.6;const ret=Math.round(bet*m);S.cash+=ret;return (ret-bet>=0?'+':'')+fmtWon(ret-bet);}},
+    {l:'현금 20% 넣는다',s:'변동성 폭탄',tag:{invest:1},f:S=>{const bet=Math.round(S.cash*0.2);S.cash-=bet;const m=Math.random()<0.45?(1.5+Math.random()*2.5):Math.random()*0.6;const ret=Math.round(bet*m);S.cash+=ret;return (ret-bet>=0?'+':'')+fmtWon(ret-bet);}},
     {l:'패스',s:'',f:S=>'변화 없음'}]},
   {emo:'📞',t:'보이스피싱 전화',d:'"검찰청입니다" 라며 계좌 이체를 요구해요.',opts:[
     {l:'시키는 대로 한다',s:'앗...',f:S=>{const a=Math.min(S.cash>0?S.cash:0,6000000);S.cash-=a;return '-'+fmtWon(a);}},
     {l:'바로 끊는다',s:'잘했어요',f:S=>'피해 없음'}]},
   {emo:'🏢',t:'승진 기회',d:'큰 프로젝트 리더를 맡으면 야근이 늘어요.',opts:[
-    {l:'수락한다',s:'커리어 성장',f:S=>{S.salary+=500000;return '월급 +50만원';}},
-    {l:'거절한다',s:'워라밸 유지',f:S=>'변화 없음'}]},
-  {emo:'🎓',t:'자기계발 제안',d:'유료 강의로 스킬을 키울 수 있어요.',opts:[
-    {l:'수강한다',s:'-300만, 나중에 월급↑',f:S=>{S.cash-=3000000;S.salary+=400000;return '-300만 · 월급 +40만';}},
-    {l:'독학한다',s:'',f:S=>'변화 없음'}]},
+    {l:'수락한다',s:'커리어 성장',tag:{career:1},f:S=>{S.salary+=500000;return '월급 +50만원';}},
+    {l:'거절한다',s:'워라밸 유지',tag:{family:1},f:S=>'변화 없음'}]},
+  {emo:'🏪',t:'창업 제안',d:'친구가 함께 가게를 차리자고 해요.',opts:[
+    {l:'투자한다',s:'-2,000만, 사업 도전',tag:{biz:1},f:S=>{S.cash-=20000000;return '-2,000만원 (지분 확보)';}},
+    {l:'거절한다',s:'',f:S=>'변화 없음'}]},
 ];
 const LIFE=[
-  {id:'travel',emo:'✈️',nm:'여행 가기', ds:'번아웃 방지! 언제든 다녀올 수 있어요.',    cost:5000000, repeat:true},
+  {id:'travel',emo:'✈️',nm:'여행 가기', ds:'경험이 쌓여요. 세계여행가의 길!',        cost:5000000, repeat:true},
   {id:'car',   emo:'🚗',nm:'자동차 구입',ds:'출퇴근이 편해져요. 매달 유지비 15만원.',   cost:30000000,repeat:false},
   {id:'wed',   emo:'💍',nm:'결혼하기',   ds:'맞벌이 시작! 배우자 소득 월 250만원 추가.',cost:50000000,repeat:false},
   {id:'home',  emo:'🏠',nm:'내 집 마련', ds:'5억 아파트. 계약금 2억, 대출 3억(연4%).',  cost:200000000,repeat:false},
@@ -378,142 +277,149 @@ const PERKS=[
   {id:'credit',emo:'🛡️',nm:'신용방어',ds:'마이너스통장 한도 +1,500만',max:4,cost:l=>3+l*3},
   {id:'hedge',emo:'⚓',nm:'손절방어', ds:'시장 폭락 피해 -15%',      max:3,cost:l=>4+l*4},
 ];
+const TAGDEF=[['invest','📊','투자'],['realty','🏠','부동산'],['career','💼','커리어'],['family','👨‍👩‍👧','가정'],['exp','🌍','여행'],['biz','🚀','사업']];
 
-/* ================= META (persistent) ================= */
+/* milestones (달성 시 분기 선택지) */
+const MILESTONES=[
+  {id:'m5k',name:'첫 목돈 5,000만원',target:50000000,cond:()=>netWorth()>=50000000,
+   fork:{emo:'🌱',t:'첫 목돈을 모았어요',d:'5,000만원! 이제 어떻게 굴려볼까요?',opts:[
+     {l:'공격적으로 굴린다',s:'고위험 고수익 성향',tag:{invest:2}},
+     {l:'안정적으로 모은다',s:'성실 보너스 +200만원',tag:{career:1},f:S=>{S.cash+=2000000;}}]}},
+  {id:'m1e',name:'순자산 1억 달성',target:100000000,cond:()=>netWorth()>=100000000,
+   fork:{emo:'💎',t:'1억을 모았어요!',d:'인생의 첫 1억. 다음 스텝은?',opts:[
+     {l:'내 집 마련을 준비한다',s:'부동산 성향',tag:{realty:2}},
+     {l:'주식 비중을 늘린다',s:'투자 성향',tag:{invest:2}},
+     {l:'몸값을 올린다 (이직)',s:'커리어 성향 · 월급 +50만',tag:{career:2},f:S=>{S.salary+=500000;}}]}},
+  {id:'wed',name:'결혼',cond:()=>S.married,
+   fork:{emo:'💍',t:'결혼했어요',d:'가정을 꾸렸어요. 어디에 집중할까요?',opts:[
+     {l:'맞벌이로 자산을 불린다',s:'투자·커리어',tag:{invest:1,career:1}},
+     {l:'가정에 집중한다',s:'가정 성향 · 생활 여유',tag:{family:3},f:S=>{S.baseExpense=Math.max(800000,S.baseExpense-100000);}}]}},
+  {id:'home',name:'내 집 마련',cond:()=>!!S.home,
+   fork:{emo:'🏠',t:'내 집이 생겼어요',d:'축하해요! 부동산 전략을 정해요.',opts:[
+     {l:'더 큰 집으로 갈아탄다',s:'부동산 올인 · 대출 +2억',tag:{realty:3},f:S=>{if(S.home){S.home.value=800000000;S.home.loan+=200000000;}}},
+     {l:'현금흐름을 지킨다',s:'투자 여력 확보',tag:{invest:1}}]}},
+  {id:'trip',name:'여행 3회',cond:()=>S.travelCount>=3,
+   fork:{emo:'🌍',t:'여행 마니아',d:'벌써 세 번째 여행! 인생을 어떻게 즐길까요?',opts:[
+     {l:'세계일주를 꿈꾼다',s:'세계여행가 · -300만원',tag:{exp:3},f:S=>{S.cash-=3000000;}},
+     {l:'이제 정착한다',s:'가정 성향',tag:{family:1}}]}},
+  {id:'m3e',name:'순자산 3억 달성',target:300000000,cond:()=>netWorth()>=300000000,
+   fork:{emo:'🔥',t:'자산 3억 돌파!',d:'상위권에 진입했어요. 인생 방향을 정해요.',opts:[
+     {l:'사업에 도전한다',s:'사업가 성향',tag:{biz:3}},
+     {l:'임원 트랙에 올인',s:'커리어 성향 · 월급 +100만',tag:{career:3},f:S=>{S.salary+=1000000;}},
+     {l:'배당주로 파이어 준비',s:'투자 성향',tag:{invest:2}}]}},
+];
+
+/* meta */
 let META;
-function loadMeta(){
-  try{const r=localStorage.getItem(META_KEY);if(r){META=JSON.parse(r);return;}}catch(e){}
-  META={legacy:0, perks:{}, best:{net:0,ending:'-',age:0}, runs:0, mute:false};
-}
+function loadMeta(){try{const r=localStorage.getItem(META_KEY);if(r){META=JSON.parse(r);return;}}catch(e){}META={legacy:0,perks:{},best:{net:0,ending:'-',age:0},runs:0,mute:false};}
 function saveMeta(){try{localStorage.setItem(META_KEY,JSON.stringify(META));}catch(e){}}
 const perkLv=id=>META.perks[id]||0;
 
-/* ================= RUN state ================= */
+/* run */
 let S=null;
 function startRun(){
-  const cash=20000000 + perkLv('seed')*10000000;
-  const salary=2700000 + perkLv('sal')*200000;
-  const expense=1700000 - perkLv('save')*80000;
-  S={month:0, cash, salary, baseExpense:expense,
-     hold:{}, avg:{}, price:{}, phist:{},
-     car:false, married:false, home:null,
-     prevNet:null, hist:[], maxNet:cash, tab:'stock'};
-  STOCKS.forEach(s=>{ S.hold[s.id]=0; S.avg[s.id]=0; S.price[s.id]=s.price;
-    // seed 8 past points for a lively chart
-    let arr=[], x=s.price;
-    for(let i=0;i<8;i++){ arr.unshift(Math.max(1000,Math.round(x))); x=x/(1+ s.vol*0.5*randn()); }
-    arr.push(s.price); S.phist[s.id]=arr;
-  });
-  S.hist=[netWorth()];
-  META.runs++; saveMeta(); saveRun();
-  showScreen('game'); render();
+  S={month:0, cash:20000000+perkLv('seed')*10000000, salary:2700000+perkLv('sal')*200000, baseExpense:1700000-perkLv('save')*80000,
+     hold:{}, avg:{}, price:{}, phist:{}, car:false, married:false, home:null,
+     prevNet:null, hist:[], maxNet:0, tab:'stock',
+     tags:{invest:0,realty:0,career:0,family:0,exp:0,biz:0}, travelCount:0, done:{}};
+  STOCKS.forEach(s=>{S.hold[s.id]=0;S.avg[s.id]=0;S.price[s.id]=s.price;let a=[],x=s.price;for(let i=0;i<8;i++){a.unshift(Math.max(1000,Math.round(x)));x=x/(1+s.vol*0.5*randn());}a.push(s.price);S.phist[s.id]=a;});
+  S.maxNet=netWorth(); S.hist=[netWorth()];
+  META.runs++; saveMeta(); saveRun(); showScreen('game'); render();
 }
 function loadRun(){try{const r=localStorage.getItem(RUN_KEY);if(r){S=JSON.parse(r);return true;}}catch(e){}return false;}
 function saveRun(){try{localStorage.setItem(RUN_KEY,JSON.stringify(S));}catch(e){}}
-function clearRun(){try{localStorage.removeItem(RUN_KEY);}catch(e){}S=null;}
+function clearRun(){try{localStorage.removeItem(RUN_KEY);}catch(e){}}
+function loadRunExists(){try{return !!localStorage.getItem(RUN_KEY);}catch(e){return false;}}
 
-/* ---------- derived ---------- */
 function portfolio(){return STOCKS.reduce((a,s)=>a+S.hold[s.id]*S.price[s.id],0);}
 function debt(){return S.home?S.home.loan:0;}
 function netWorth(){const eq=S.home?S.home.value-S.home.loan:0;return S.cash+portfolio()+eq;}
 function monthlyExpense(){let e=S.baseExpense;e+=S.home?200000:600000;if(S.car)e+=150000;if(S.married)e+=800000;return e;}
 function fireTarget(){return monthlyExpense()*12*25;}
-function overdraft(){return -(20000000 + perkLv('credit')*15000000);}
-function info(){return {age:27+Math.floor(S.month/12), y:2026+Math.floor(S.month/12), m:S.month%12+1};}
+function overdraft(){return -(20000000+perkLv('credit')*15000000);}
+function info(){return {age:27+Math.floor(S.month/12),y:2026+Math.floor(S.month/12),m:S.month%12+1};}
+function nextMilestone(){return MILESTONES.find(m=>!S.done[m.id]);}
 
-/* ================= advance ================= */
+/* advance */
 function advance(){
-  sfx.next();
-  S.prevNet=netWorth();
-  S.cash+=S.salary;
-  if(S.married)S.cash+=2500000;
+  sfx.next(); S.prevNet=netWorth();
+  S.cash+=S.salary; if(S.married)S.cash+=2500000;
   STOCKS.forEach(s=>{if(s.div)S.cash+=S.hold[s.id]*S.price[s.id]*s.div;});
   if(S.home&&S.home.loan>0){const it=S.home.loan*0.04/12;const pr=Math.min(S.home.loan,500000);S.home.loan-=pr;S.cash-=it+pr;}
-  S.cash-=monthlyExpense();
-  if(S.cash<0)S.cash-=(-S.cash)*0.006;
+  S.cash-=monthlyExpense(); if(S.cash<0)S.cash-=(-S.cash)*0.006;
   STOCKS.forEach(s=>{let r=s.drift+s.vol*randn();S.price[s.id]=Math.max(1000,Math.round(S.price[s.id]*(1+r)));});
   if(S.home)S.home.value=Math.round(S.home.value*(1+0.003+0.004*randn()));
-  // event
-  let ev=null;
-  const roll=Math.random();
-  if(roll<0.30){ ev=EVENTS[Math.floor(Math.random()*EVENTS.length)]; applyEvent(ev); }
-  STOCKS.forEach(s=>{S.phist[s.id].push(S.price[s.id]); if(S.phist[s.id].length>48)S.phist[s.id].shift();});
-  S.month++;
-  const net=netWorth();
-  if(net>S.maxNet)S.maxNet=net;
+  let ev=null;const roll=Math.random();
+  if(roll<0.30){ev=EVENTS[Math.floor(Math.random()*EVENTS.length)];applyEvent(ev);}
+  STOCKS.forEach(s=>{S.phist[s.id].push(S.price[s.id]);if(S.phist[s.id].length>48)S.phist[s.id].shift();});
+  S.month++; const net=netWorth(); if(net>S.maxNet)S.maxNet=net;
   S.hist.push(net); if(S.hist.length>60)S.hist.shift();
   saveRun(); render(true);
-  // resolve outcomes
-  if(net>=fireTarget()){endRun('fire');return;}
   if(S.cash<overdraft()){endRun('bankrupt');return;}
-  if(S.month>=396){endRun('retire');return;} // 60세
-  if(ev){ showEvent(ev); return; }
-  if(roll>=0.30 && roll<0.55){ showChoice(CHOICES[Math.floor(Math.random()*CHOICES.length)]); }
+  if(S.month>=396){endRun('retire');return;}
+  // milestone fork (우선순위 높음)
+  const ms=nextMilestone();
+  if(ms&&ms.cond()){S.done[ms.id]=1;saveRun();showFork(ms);return;}
+  // 경제적 자유 도달 → 은퇴 선언 분기 (파이어족 엔딩은 여기서만)
+  if(!S.done.fire && net>=fireTarget()){S.done.fire=1;saveRun();showFireFork();return;}
+  if(ev){showEvent(ev);return;}
+  if(roll>=0.30&&roll<0.55){showChoice(CHOICES[Math.floor(Math.random()*CHOICES.length)]);}
 }
 function applyEvent(ev){
-  if(ev.s){
-    let pct=ev.pct;
-    if(ev.crash) pct*=(1 - perkLv('hedge')*0.15);
+  if(ev.s){let pct=ev.pct;if(ev.crash)pct*=(1-perkLv('hedge')*0.15);
     if(ev.s==='all')STOCKS.forEach(s=>S.price[s.id]=Math.max(1000,Math.round(S.price[s.id]*(1+pct))));
-    else S.price[ev.s]=Math.max(1000,Math.round(S.price[ev.s]*(1+pct)));
-    ev._pct=pct;
-  }
+    else S.price[ev.s]=Math.max(1000,Math.round(S.price[ev.s]*(1+pct)));ev._pct=pct;}
   if(ev.cash!==undefined){let a=ev.cash==='bonus'?S.salary*Math.ceil(1+Math.random()*2):ev.cash;ev._amt=a;S.cash+=a;}
 }
+function addTags(t){if(t)for(const k in t)S.tags[k]=(S.tags[k]||0)+t[k];}
 
-/* ================= render ================= */
+/* render */
 let animRAF=null;
-function animNum(el,from,to){
-  cancelAnimationFrame(animRAF);
-  const t0=performance.now(), dur=600;
-  function step(t){const k=Math.min(1,(t-t0)/dur);const e=1-Math.pow(1-k,3);
-    el.textContent=fmtWon(from+(to-from)*e); if(k<1)animRAF=requestAnimationFrame(step);}
-  animRAF=requestAnimationFrame(step);
-}
+function animNum(el,from,to){cancelAnimationFrame(animRAF);const t0=performance.now(),dur=600;
+  (function step(t){const k=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-k,3);el.textContent=fmtWon(from+(to-from)*e);if(k<1)animRAF=requestAnimationFrame(step);})(t0);}
 function render(animate){
   const {age,y,m}=info();
   $('dateChip').textContent=`${age}세 · ${y}.${String(m).padStart(2,'0')}`;
   $('ctaYr').textContent=`${y}년 ${m}월`;
   const net=netWorth();
-  if(animate && S.prevNet!==null) animNum($('netWorth'),S.prevNet,net); else $('netWorth').textContent=fmtWon(net);
+  if(animate&&S.prevNet!==null)animNum($('netWorth'),S.prevNet,net);else $('netWorth').textContent=fmtWon(net);
   const de=$('netDelta');
-  if(S.prevNet!==null){const d=net-S.prevNet;de.textContent=(d>=0?'▲ ':'▼ ')+fmtWon(Math.abs(d));de.className='delta '+(d>=0?'up':'down');}
-  else de.textContent='';
-  $('bdCash').textContent=fmtWon(S.cash); $('bdCash').style.color=S.cash<0?'#ff8a94':'';
+  if(S.prevNet!==null){const d=net-S.prevNet;de.textContent=(d>=0?'▲ ':'▼ ')+fmtWon(Math.abs(d));de.className='delta '+(d>=0?'up':'down');}else de.textContent='';
+  $('bdCash').textContent=fmtWon(S.cash);$('bdCash').style.color=S.cash<0?'#ff8a94':'';
   $('bdStock').textContent=fmtWon(portfolio()+(S.home?S.home.value:0));
   $('bdDebt').textContent=fmtWon(debt());
-  const tgt=fireTarget(), pct=Math.max(0,Math.min(100,net/tgt*100));
-  $('firePct').textContent=Math.floor(pct)+'%'; $('fireBar').style.width=pct+'%';
-  $('fireSub').textContent=`목표 ${fmtWon(tgt)} · 월 생활비 ${fmtWon(monthlyExpense())}`;
-  drawSpark(); renderStocks(); renderLife();
+  renderGoal(net); renderChips(); drawSpark(); renderStocks(); renderLife();
 }
-function poly(hist,W,H,pad){
-  const min=Math.min(...hist),max=Math.max(...hist),rng=(max-min)||1;
-  return hist.map((v,i)=>[pad+i/(hist.length-1)*(W-2*pad), H-pad-(v-min)/rng*(H-2*pad)]);
+function renderGoal(net){
+  const ms=nextMilestone();
+  if(ms){
+    $('goalName').textContent=ms.name;
+    if(ms.target){const pct=Math.max(0,Math.min(100,net/ms.target*100));$('goalPct').textContent=Math.floor(pct)+'%';$('goalBar').style.width=pct+'%';$('goalBar').parentElement.style.display='';$('goalHint').textContent=`${fmtWon(net)} / ${fmtWon(ms.target)}`;}
+    else{$('goalPct').textContent='';$('goalBar').parentElement.style.display='none';
+      $('goalHint').textContent=ms.id==='wed'?'💍 인생 탭에서 결혼하면 달성':ms.id==='home'?'🏠 인생 탭에서 내 집을 마련하면 달성':ms.id==='trip'?'✈️ 여행을 3번 다녀오면 달성':'';}
+  }else{
+    const ft=fireTarget(),pct=Math.max(0,Math.min(100,net/ft*100));
+    $('goalName').textContent=S.done.fire?'🏁 60세 은퇴까지':'🔥 경제적 자유 (파이어)';
+    $('goalPct').textContent=Math.floor(pct)+'%';$('goalBar').parentElement.style.display='';$('goalBar').style.width=pct+'%';
+    $('goalHint').textContent=S.done.fire?`${info().age}세 · 나만의 엔딩을 향해`:`목표 ${fmtWon(ft)} 도달 시 은퇴 선언 가능`;
+  }
 }
-function drawSpark(){
-  const h=S.hist,svg=$('spark'); if(h.length<2){svg.innerHTML='';return;}
-  const W=420,H=52,pts=poly(h,W,H,4);
-  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
-  const up=h[h.length-1]>=h[0], col=up?'#ff6b78':'#7fb0ff';
-  svg.innerHTML=`<defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".35"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>
-    <path d="${line} L${W-4} ${H} L4 ${H} Z" fill="url(#sg)"/>
-    <path d="${line}" fill="none" stroke="${col}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`;
+function renderChips(){
+  $('chips').innerHTML=TAGDEF.map(([k,e,n])=>{const v=S.tags[k];return `<span class="chip ${v>0?'on '+k:''}">${e} ${n}${v>0?' '+v:''}</span>`;}).join('');
 }
+function poly(h,W,H,pad){const min=Math.min(...h),max=Math.max(...h),rng=(max-min)||1;return h.map((v,i)=>[pad+i/(h.length-1)*(W-2*pad),H-pad-(v-min)/rng*(H-2*pad)]);}
+function drawSpark(){const h=S.hist,svg=$('spark');if(h.length<2){svg.innerHTML='';return;}const W=420,H=52,pts=poly(h,W,H,4);
+  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');const up=h[h.length-1]>=h[0],col=up?'#ff6b78':'#7fb0ff';
+  svg.innerHTML=`<defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".35"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><path d="${line} L${W-4} ${H} L4 ${H} Z" fill="url(#sg)"/><path d="${line}" fill="none" stroke="${col}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`;}
 let lastPrice={};
 function renderStocks(){
   const el=$('panelStock');
   el.innerHTML='<div class="section-title">국내 주식</div>'+STOCKS.map((s,i)=>{
-    const p=S.price[s.id], base=s.price, chg=(p-base)/base*100, own=S.hold[s.id];
-    const cls=chg>0.05?'up':chg<-0.05?'down':'flat', arw=chg>0.05?'▲':chg<-0.05?'▼':'−';
-    let ownTxt='미보유';
-    if(own>0){const pl=(p-S.avg[s.id])*own, plp=(p-S.avg[s.id])/S.avg[s.id]*100;
-      ownTxt=`보유 <b>${own}주</b> · <span class="pl ${pl>=0?'up':'down'}">${pl>=0?'+':''}${fmtWon(pl)} (${plp>=0?'+':''}${plp.toFixed(1)}%)</span>`;}
-    const flash = lastPrice[s.id]!==undefined && p!==lastPrice[s.id] ? (p>lastPrice[s.id]?'flash-up':'flash-down') : '';
-    return `<div class="stock" data-stock="${s.id}" style="animation-delay:${i*45}ms">
-      <div class="logo" style="background:${s.bg}">${s.emo}</div>
-      <div class="mid"><div class="nm">${s.name}</div><div class="own">${ownTxt}</div></div>
-      <div class="rt"><div class="price ${flash}">${won(p)}</div><div class="chg ${cls}">${arw} ${Math.abs(chg).toFixed(1)}%</div></div></div>`;
+    const p=S.price[s.id],base=s.price,chg=(p-base)/base*100,own=S.hold[s.id];
+    const cls=chg>0.05?'up':chg<-0.05?'down':'flat',arw=chg>0.05?'▲':chg<-0.05?'▼':'−';
+    let ownTxt='미보유';if(own>0){const pl=(p-S.avg[s.id])*own,plp=(p-S.avg[s.id])/S.avg[s.id]*100;ownTxt=`보유 <b>${own}주</b> · <span class="pl ${pl>=0?'up':'down'}">${pl>=0?'+':''}${fmtWon(pl)} (${plp>=0?'+':''}${plp.toFixed(1)}%)</span>`;}
+    const flash=lastPrice[s.id]!==undefined&&p!==lastPrice[s.id]?(p>lastPrice[s.id]?'flash-up':'flash-down'):'';
+    return `<div class="stock" data-stock="${s.id}" style="animation-delay:${i*45}ms"><div class="logo" style="background:${s.bg}">${s.emo}</div><div class="mid"><div class="nm">${s.name}</div><div class="own">${ownTxt}</div></div><div class="rt"><div class="price ${flash}">${won(p)}</div><div class="chg ${cls}">${arw} ${Math.abs(chg).toFixed(1)}%</div></div></div>`;
   }).join('');
   el.querySelectorAll('.stock').forEach(n=>n.onclick=()=>{sfx.click();openSheet(n.dataset.stock);});
   STOCKS.forEach(s=>lastPrice[s.id]=S.price[s.id]);
@@ -522,205 +428,148 @@ function renderLife(){
   const el=$('panelLife');
   el.innerHTML='<div class="section-title">인생 이벤트</div>'+LIFE.map((l,i)=>{
     let done=l.id==='car'?S.car:l.id==='wed'?S.married:l.id==='home'?!!S.home:false;
-    const need=l.cost, afford=S.cash>=need;
-    let btn;
+    const afford=S.cash>=l.cost;let btn;
     if(done&&!l.repeat)btn='<button class="mini-btn done">완료</button>';
     else if(!afford)btn='<button class="mini-btn off">잔액부족</button>';
     else btn=`<button class="mini-btn" data-life="${l.id}">${l.repeat&&done?'또 가기':'구입'}</button>`;
-    return `<div class="life" style="animation-delay:${i*45}ms"><div class="emo">${l.emo}</div>
-      <div class="mid"><div class="nm">${l.nm}</div><div class="ds">${l.ds}</div><div class="cost">− ${fmtWon(need)}${l.id==='home'?' (계약금)':''}</div></div>${btn}</div>`;
+    const extra=l.id==='travel'&&S.travelCount>0?` · ${S.travelCount}회`:'';
+    return `<div class="life" style="animation-delay:${i*45}ms"><div class="emo">${l.emo}</div><div class="mid"><div class="nm">${l.nm}${extra}</div><div class="ds">${l.ds}</div><div class="cost">− ${fmtWon(l.cost)}${l.id==='home'?' (계약금)':''}</div></div>${btn}</div>`;
   }).join('');
   el.querySelectorAll('[data-life]').forEach(n=>n.onclick=()=>buyLife(n.dataset.life));
 }
 function buyLife(id){
-  const l=LIFE.find(x=>x.id===id); if(S.cash<l.cost){toast('잔액이 부족해요');return;}
-  sfx.cash();
-  if(id==='travel'){S.cash-=l.cost;toast('✈️ 즐거운 여행을 다녀왔어요!');}
+  const l=LIFE.find(x=>x.id===id);if(S.cash<l.cost){toast('잔액이 부족해요');return;}sfx.cash();
+  if(id==='travel'){S.cash-=l.cost;S.travelCount++;S.tags.exp+=1;toast('✈️ 즐거운 여행을 다녀왔어요!');}
   if(id==='car'){S.cash-=l.cost;S.car=true;toast('🚗 새 차를 구입했어요!');}
   if(id==='wed'){S.cash-=l.cost;S.married=true;toast('💍 결혼 축하해요! 맞벌이 시작');}
-  if(id==='home'){S.cash-=l.cost;S.home={value:500000000,loan:300000000};toast('🏠 내 집 마련 성공!');}
-  saveRun(); render();
+  if(id==='home'){S.cash-=l.cost;S.home={value:500000000,loan:300000000};S.tags.realty+=1;toast('🏠 내 집 마련 성공!');}
+  saveRun();render();
 }
 
-/* ================= trade sheet ================= */
-let sheetId=null, qty=0;
-function openSheet(id){
-  sheetId=id; qty=0; const s=STOCKS.find(x=>x.id===id), p=S.price[id];
-  $('shLogo').textContent=s.emo; $('shLogo').style.background=s.bg;
-  $('shName').textContent=s.name; $('shPx').textContent=won(p)+' / 주';
-  const chg=(p-s.price)/s.price*100;
-  $('shChg').textContent=(chg>=0?'+':'')+chg.toFixed(1)+'%';
-  $('shChg').style.color=chg>=0?'var(--red)':'var(--blue)';
-  drawChart(id); renderPos(id); updateSheet();
-  $('scrim').classList.add('on'); $('sheet').classList.add('on');
-}
+/* trade sheet */
+let sheetId=null,qty=0;
+function openSheet(id){sheetId=id;qty=0;const s=STOCKS.find(x=>x.id===id),p=S.price[id];
+  $('shLogo').textContent=s.emo;$('shLogo').style.background=s.bg;$('shName').textContent=s.name;$('shPx').textContent=won(p)+' / 주';
+  const chg=(p-s.price)/s.price*100;$('shChg').textContent=(chg>=0?'+':'')+chg.toFixed(1)+'%';$('shChg').style.color=chg>=0?'var(--red)':'var(--blue)';
+  drawChart(id);renderPos(id);updateSheet();$('scrim').classList.add('on');$('sheet').classList.add('on');}
 function closeSheet(){$('scrim').classList.remove('on');$('sheet').classList.remove('on');}
-function drawChart(id){
-  const h=S.phist[id], svg=$('chart'), W=400,H=120, pts=poly(h,W,H,8);
-  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
-  const up=h[h.length-1]>=h[0], col=up?'#f04452':'#3182F6';
-  let avgLine='';
-  if(S.hold[id]>0){const min=Math.min(...h),max=Math.max(...h),rng=(max-min)||1;
-    const ay=H-8-(S.avg[id]-min)/rng*(H-16);
-    if(ay>0&&ay<H)avgLine=`<line x1="8" y1="${ay.toFixed(1)}" x2="${W-8}" y2="${ay.toFixed(1)}" stroke="#8b95a1" stroke-width="1.2" stroke-dasharray="5 4"/>`;}
-  svg.innerHTML=`<defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".22"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>
-    <path d="${line} L${W-8} ${H} L8 ${H} Z" fill="url(#cg)"/>${avgLine}
-    <path d="${line}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`;
-  $('chLo').textContent='최근 '+h.length+'개월'; $('chHi').textContent='고 '+won(Math.max(...h));
-}
-function renderPos(id){
-  const p=S.price[id], own=S.hold[id];
+function drawChart(id){const h=S.phist[id],svg=$('chart'),W=400,H=120,pts=poly(h,W,H,8);
+  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');const up=h[h.length-1]>=h[0],col=up?'#f04452':'#3182F6';let avgLine='';
+  if(S.hold[id]>0){const min=Math.min(...h),max=Math.max(...h),rng=(max-min)||1,ay=H-8-(S.avg[id]-min)/rng*(H-16);if(ay>0&&ay<H)avgLine=`<line x1="8" y1="${ay.toFixed(1)}" x2="${W-8}" y2="${ay.toFixed(1)}" stroke="#8b95a1" stroke-width="1.2" stroke-dasharray="5 4"/>`;}
+  svg.innerHTML=`<defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".22"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><path d="${line} L${W-8} ${H} L8 ${H} Z" fill="url(#cg)"/>${avgLine}<path d="${line}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+  $('chLo').textContent='최근 '+h.length+'개월';$('chHi').textContent='고 '+won(Math.max(...h));}
+function renderPos(id){const p=S.price[id],own=S.hold[id];
   if(own<=0){$('posBox').innerHTML=`<div class="c"><div class="k">보유</div><div class="v">없음</div></div><div class="c"><div class="k">현금</div><div class="v">${fmtWon(S.cash)}</div></div>`;return;}
-  const pl=(p-S.avg[id])*own, plp=(p-S.avg[id])/S.avg[id]*100, cls=pl>=0?'up':'down';
-  $('posBox').innerHTML=`<div class="c"><div class="k">보유 ${own}주</div><div class="v">${fmtWon(own*p)}</div></div>
-    <div class="c"><div class="k">평단가</div><div class="v">${won(S.avg[id])}</div></div>
-    <div class="c"><div class="k">평가손익</div><div class="v ${cls}">${pl>=0?'+':''}${plp.toFixed(1)}%</div></div>`;
-}
-function updateSheet(){
-  const p=S.price[sheetId]; $('qNum').textContent=qty;
-  const total=qty*p; $('shTotal').textContent=won(total); $('shBal').textContent=fmtWon(S.cash-total);
-  $('doBuy').disabled=!(qty>0&&total<=S.cash);
-  $('doSell').disabled=!(qty>0&&qty<=S.hold[sheetId]);
-}
+  const pl=(p-S.avg[id])*own,plp=(p-S.avg[id])/S.avg[id]*100,cls=pl>=0?'up':'down';
+  $('posBox').innerHTML=`<div class="c"><div class="k">보유 ${own}주</div><div class="v">${fmtWon(own*p)}</div></div><div class="c"><div class="k">평단가</div><div class="v">${won(S.avg[id])}</div></div><div class="c"><div class="k">평가손익</div><div class="v ${cls}">${pl>=0?'+':''}${plp.toFixed(1)}%</div></div>`;}
+function updateSheet(){const p=S.price[sheetId];$('qNum').textContent=qty;const total=qty*p;$('shTotal').textContent=won(total);$('shBal').textContent=fmtWon(S.cash-total);$('doBuy').disabled=!(qty>0&&total<=S.cash);$('doSell').disabled=!(qty>0&&qty<=S.hold[sheetId]);}
 function setQty(n){qty=Math.max(0,n);updateSheet();}
-$('qPlus').onclick=()=>{sfx.click();setQty(qty+1);};
-$('qMinus').onclick=()=>{sfx.click();setQty(qty-1);};
-document.querySelectorAll('.quicks button').forEach(b=>b.onclick=()=>{sfx.click();
-  if(b.dataset.q==='max')setQty(Math.floor(S.cash/S.price[sheetId])); else setQty(qty+parseInt(b.dataset.q));});
-$('doBuy').onclick=()=>{const p=S.price[sheetId],total=qty*p;if(total>S.cash||qty<=0)return;
-  const nn=S.hold[sheetId]+qty; S.avg[sheetId]=(S.avg[sheetId]*S.hold[sheetId]+p*qty)/nn; S.hold[sheetId]=nn; S.cash-=total;
-  sfx.buy(); toast(`${STOCKS.find(s=>s.id===sheetId).name} ${qty}주 매수`); closeSheet(); saveRun(); render();};
-$('doSell').onclick=()=>{if(qty<=0||qty>S.hold[sheetId])return; const p=S.price[sheetId];
-  S.cash+=qty*p; S.hold[sheetId]-=qty; if(S.hold[sheetId]===0)S.avg[sheetId]=0;
-  sfx.buy(); toast(`${STOCKS.find(s=>s.id===sheetId).name} ${qty}주 매도`); closeSheet(); saveRun(); render();};
+$('qPlus').onclick=()=>{sfx.click();setQty(qty+1);};$('qMinus').onclick=()=>{sfx.click();setQty(qty-1);};
+document.querySelectorAll('.quicks button').forEach(b=>b.onclick=()=>{sfx.click();if(b.dataset.q==='max')setQty(Math.floor(S.cash/S.price[sheetId]));else setQty(qty+parseInt(b.dataset.q));});
+$('doBuy').onclick=()=>{const p=S.price[sheetId],total=qty*p;if(total>S.cash||qty<=0)return;const nn=S.hold[sheetId]+qty;S.avg[sheetId]=(S.avg[sheetId]*S.hold[sheetId]+p*qty)/nn;S.hold[sheetId]=nn;S.cash-=total;sfx.buy();toast(`${STOCKS.find(s=>s.id===sheetId).name} ${qty}주 매수`);closeSheet();saveRun();render();};
+$('doSell').onclick=()=>{if(qty<=0||qty>S.hold[sheetId])return;const p=S.price[sheetId];S.cash+=qty*p;S.hold[sheetId]-=qty;if(S.hold[sheetId]===0)S.avg[sheetId]=0;sfx.buy();toast(`${STOCKS.find(s=>s.id===sheetId).name} ${qty}주 매도`);closeSheet();saveRun();render();};
 $('scrim').onclick=closeSheet;
 
-/* ================= event / choice ================= */
-function showEvent(ev){
-  sfx.event();
-  let impact='';
+/* event / choice / fork */
+function showEvent(ev){sfx.event();let impact='';
   if(ev.s){const dir=ev._pct>0?'up':'down';impact=`<div class="impact ${dir}">${ev.s==='all'?'전체 시장':STOCKS.find(x=>x.id===ev.s).name} ${ev._pct>0?'+':''}${(ev._pct*100).toFixed(0)}%</div>`;}
   else if(ev._amt!==undefined){const dir=ev._amt>0?'up':'down';impact=`<div class="impact ${dir}">${ev._amt>0?'+':'-'}${fmtWon(Math.abs(ev._amt))}</div>`;}
   $('modalBox').innerHTML=`<div class="emo">${ev.emo}</div><div class="tt">${ev.t}</div><div class="dc">${ev.d}</div>${impact}<button class="ok" id="mOk">확인</button>`;
-  $('modal').classList.add('on'); $('mOk').onclick=()=>{sfx.click();$('modal').classList.remove('on');};
-}
-function showChoice(c){
-  sfx.event();
+  $('modal').classList.add('on');$('mOk').onclick=()=>{sfx.click();$('modal').classList.remove('on');};}
+function showChoice(c){sfx.event();
   const opts=c.opts.map((o,i)=>`<button data-i="${i}">${o.l}${o.s?`<small>${o.s}</small>`:''}</button>`).join('');
   $('modalBox').innerHTML=`<div class="emo">${c.emo}</div><div class="tt">${c.t}</div><div class="dc">${c.d}</div><div class="choice-opts">${opts}</div>`;
   $('modal').classList.add('on');
-  $('modalBox').querySelectorAll('button').forEach(b=>b.onclick=()=>{
-    sfx.click(); const o=c.opts[+b.dataset.i]; const res=o.f(S); saveRun(); render();
-    const up = /^\+|당첨|없음/.test(res) && !/^-/.test(res);
-    $('modalBox').innerHTML=`<div class="emo">${up?'✅':'📩'}</div><div class="tt">${o.l}</div><div class="impact ${/^-/.test(res)?'down':'up'}">${res}</div><button class="ok" id="mOk2">확인</button>`;
-    $('mOk2').onclick=()=>{sfx.click();$('modal').classList.remove('on');};
-  });
-}
+  $('modalBox').querySelectorAll('button').forEach(b=>b.onclick=()=>{sfx.click();const o=c.opts[+b.dataset.i];addTags(o.tag);const res=o.f?o.f(S):'변화 없음';saveRun();render();
+    $('modalBox').innerHTML=`<div class="emo">${/^-/.test(res)?'📩':'✅'}</div><div class="tt">${o.l}</div><div class="impact ${/^-/.test(res)?'down':'up'}">${res}</div><button class="ok" id="mOk2">확인</button>`;
+    $('mOk2').onclick=()=>{sfx.click();$('modal').classList.remove('on');};});}
+function showFork(ms){sfx.event();const f=ms.fork;
+  const opts=f.opts.map((o,i)=>`<button data-i="${i}">${o.l}${o.s?`<small>${o.s}</small>`:''}</button>`).join('');
+  $('modalBox').innerHTML=`<div class="emo big">${f.emo}</div><div class="tt">${f.t}</div><div class="dc">${f.d}</div><div class="choice-opts">${opts}</div>`;
+  $('modal').classList.add('on');
+  $('modalBox').querySelectorAll('button').forEach(b=>b.onclick=()=>{sfx.cash();const o=f.opts[+b.dataset.i];addTags(o.tag);if(o.f)o.f(S);saveRun();render();$('modal').classList.remove('on');toast('갈림길 선택 완료!');});}
+function showFireFork(){sfx.event();
+  $('modalBox').innerHTML=`<div class="emo big">🔥</div><div class="tt">경제적 자유 도달!</div><div class="dc">이제 일하지 않아도 살 수 있어요.<br>어떻게 할까요?</div>
+    <div class="choice-opts"><button id="fRetire">지금 은퇴한다<small>🌴 파이어족 엔딩으로 마무리</small></button><button id="fGo">더 큰 부를 향해 달린다<small>📊 계속 플레이 (60세까지)</small></button></div>`;
+  $('modal').classList.add('on');
+  $('fRetire').onclick=()=>{sfx.click();$('modal').classList.remove('on');endRun('fire');};
+  $('fGo').onclick=()=>{sfx.click();S.tags.invest+=1;saveRun();render();$('modal').classList.remove('on');toast('더 큰 목표를 향해!');};}
 
-/* ================= endings ================= */
-function endRun(type){
-  const {age,y}=info(), net=netWorth();
-  let rank,earn=Math.floor(S.maxNet/30000000);
-  if(type==='fire'){earn+=5; sfx.win(); confetti();
-    rank= age<35?{e:'👑',t:'전설의 파이어족',d:`${age}세, 남들보다 훨씬 빠르게 경제적 자유를 이뤘어요.`}
-        : age<45?{e:'🔥',t:'젊은 파이어족',d:`${age}세에 파이어를 달성했어요. 대단해요!`}
-        :         {e:'🌴',t:'파이어족 달성',d:`${age}세, 마침내 경제적 자유를 얻었어요.`};
-  }else if(type==='retire'){ sfx.win();
-    rank= net>=500000000?{e:'🏆',t:'풍족한 은퇴',d:'60세, 여유로운 노후를 맞이했어요.'}
-        : net>=100000000?{e:'🙂',t:'평범한 은퇴',d:'60세, 무난한 노후를 준비했어요.'}
-        :                 {e:'😅',t:'빠듯한 노후',d:'60세, 조금 아쉬운 은퇴네요.'};
-  }else{ sfx.lose(); earn=Math.max(0,earn-1);
-    rank={e:'💸',t:'파산',d:'마이너스통장 한도를 초과했어요. 다음엔 현금을 남겨두세요!'};
-  }
+/* endings (playstyle auto-judge) */
+function judgeRetire(){
+  const net=netWorth(),t=S.tags;
+  if(net>=2000000000)return {e:'👑',t:'대부호',d:'60세, 손에 꼽는 자산가가 되었어요.',bonus:8};
+  const cand=[
+    {e:'🏘️',t:'부동산 재벌',d:'부동산으로 부를 일궜어요.',need:S.home&&S.home.value>=600000000,sc:t.realty*3+(S.home?S.home.value/100000000:0)},
+    {e:'🏢',t:'대기업 임원',d:'커리어의 정점에 올랐어요.',need:S.salary>=6000000,sc:t.career*3+S.salary/1000000},
+    {e:'🚀',t:'성공한 사업가',d:'사업으로 큰 성공을 거뒀어요.',need:S.tags.biz>0&&net>=400000000,sc:t.biz*4+net/200000000},
+    {e:'👨‍👩‍👧‍👦',t:'화목한 가정',d:'돈보다 소중한 가족을 얻었어요.',need:S.married,sc:t.family*4+3},
+    {e:'🌍',t:'세계여행가',d:'세계를 누비며 값진 경험을 쌓았어요.',need:S.travelCount>=3,sc:t.exp*3+S.travelCount},
+    {e:'📊',t:'스마트 투자자',d:'현명한 투자로 자산을 크게 불렸어요.',need:net>=300000000,sc:t.invest*2+net/200000000},
+  ].filter(c=>c.need).sort((a,b)=>b.sc-a.sc);
+  if(cand.length&&cand[0].sc>=4){cand[0].bonus=4;return cand[0];}
+  if(net>=100000000)return {e:'🙂',t:'평범한 은퇴',d:'무난하게 노후를 준비했어요.',bonus:1};
+  return {e:'😅',t:'빠듯한 노후',d:'조금 아쉬운 은퇴네요. 다음 판을 노려봐요!',bonus:0};
+}
+function endRun(kind){
+  const {age}=info(),net=netWorth();let rank,earn=Math.floor(S.maxNet/30000000),win=true;
+  if(kind==='fire'){rank= age<35?{e:'👑',t:'전설의 파이어족',d:`${age}세, 남들보다 훨씬 빠르게 경제적 자유를 이뤘어요.`}:age<45?{e:'🔥',t:'젊은 파이어족',d:`${age}세에 파이어를 달성했어요!`}:{e:'🌴',t:'파이어족',d:`${age}세, 경제적 자유를 얻고 은퇴했어요.`};earn+=6;}
+  else if(kind==='retire'){rank=judgeRetire();earn+=rank.bonus||0;}
+  else{win=false;rank={e:'💸',t:'파산',d:'마이너스통장 한도를 초과했어요. 다음엔 현금을 남겨두세요!'};earn=Math.max(0,earn-1);}
+  if(win){sfx.win();confetti();}else sfx.lose();
   META.legacy+=earn;
-  if(net>META.best.net){META.best={net, ending:rank.t, age};}
-  saveMeta(); clearRun();
+  if(net>META.best.net)META.best={net,ending:rank.t,age};
+  saveMeta();clearRun();
+  const paths=TAGDEF.filter(([k])=>S.tags[k]>0).sort((a,b)=>S.tags[b[0]]-S.tags[a[0]]).slice(0,3).map(([k,e,n])=>e+n).join(' · ')||'—';
   $('modalBox').innerHTML=`<div class="emo big">${rank.e}</div><div class="tt">${rank.t}</div><div class="dc">${rank.d}</div>
-    <div class="stat-grid"><div class="s"><div class="k">최종 순자산</div><div class="v">${fmtWon(net)}</div></div><div class="s"><div class="k">달성 나이</div><div class="v">${age}세</div></div></div>
+    <div class="stat-grid"><div class="s"><div class="k">최종 순자산</div><div class="v">${fmtWon(net)}</div></div><div class="s"><div class="k">나이</div><div class="v">${age}세</div></div></div>
+    <div class="tagline">주요 성향 ${paths}</div>
     <div class="legacy-earn">🧬 유산 포인트 +${earn} 획득!</div>
     <button class="ok" id="mHome">홈으로</button>`;
   $('modal').classList.add('on');
   $('mHome').onclick=()=>{sfx.click();$('modal').classList.remove('on');$('confetti').classList.remove('on');showScreen('home');renderHome();};
 }
+function confetti(){const cv=$('confetti');cv.classList.add('on');const ctx=cv.getContext('2d');cv.width=innerWidth;cv.height=innerHeight;
+  const cols=['#3182F6','#00c471','#ffb020','#f04452','#7a5cff','#00c2ff'];let ps=[];
+  for(let i=0;i<140;i++)ps.push({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*0.5,vx:(Math.random()-.5)*3,vy:2+Math.random()*4,s:5+Math.random()*7,c:cols[i%cols.length],r:Math.random()*6,vr:(Math.random()-.5)*.3});
+  const t0=performance.now();(function loop(t){ctx.clearRect(0,0,cv.width,cv.height);ps.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.04;p.r+=p.vr;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.6);ctx.restore();});if(t-t0<4000&&cv.classList.contains('on'))requestAnimationFrame(loop);else ctx.clearRect(0,0,cv.width,cv.height);})(t0);}
 
-/* ================= confetti ================= */
-function confetti(){
-  const cv=$('confetti'); cv.classList.add('on');
-  const ctx=cv.getContext('2d'); cv.width=innerWidth; cv.height=innerHeight;
-  const cols=['#3182F6','#00c471','#ffb020','#f04452','#7a5cff','#00c2ff'];
-  let ps=[]; for(let i=0;i<140;i++)ps.push({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*0.5,
-    vx:(Math.random()-.5)*3,vy:2+Math.random()*4,s:5+Math.random()*7,c:cols[i%cols.length],r:Math.random()*6,vr:(Math.random()-.5)*.3});
-  let t0=performance.now();
-  (function loop(t){ctx.clearRect(0,0,cv.width,cv.height);
-    ps.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.04;p.r+=p.vr;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.6);ctx.restore();});
-    if(t-t0<4000 && cv.classList.contains('on'))requestAnimationFrame(loop); else ctx.clearRect(0,0,cv.width,cv.height);
-  })(t0);
-}
-
-/* ================= HOME ================= */
+/* home */
 function renderHome(){
   const b=META.best;
-  const perksHtml=PERKS.map(p=>{
-    const lv=perkLv(p.id), cost=p.cost(lv), maxed=lv>=p.max, can=META.legacy>=cost;
+  const perksHtml=PERKS.map(p=>{const lv=perkLv(p.id),cost=p.cost(lv),maxed=lv>=p.max,can=META.legacy>=cost;
     const dots=Array.from({length:p.max},(_,i)=>`<i class="${i<lv?'f':''}"></i>`).join('');
-    let btn = maxed?`<button class="perk-buy max">MAX</button>`
-      : can?`<button class="perk-buy" data-perk="${p.id}">🧬 ${cost}</button>`
-      : `<button class="perk-buy no">🧬 ${cost}</button>`;
-    return `<div class="perk"><div class="emo">${p.emo}</div>
-      <div class="mid"><div class="nm">${p.nm} <span style="color:var(--gray3);font-size:12px">Lv.${lv}</span></div>
-        <div class="ds">${p.ds}</div><div class="dots">${dots}</div></div>${btn}</div>`;
-  }).join('');
+    let btn=maxed?`<button class="perk-buy max">MAX</button>`:can?`<button class="perk-buy" data-perk="${p.id}">🧬 ${cost}</button>`:`<button class="perk-buy no">🧬 ${cost}</button>`;
+    return `<div class="perk"><div class="emo">${p.emo}</div><div class="mid"><div class="nm">${p.nm} <span style="color:var(--gray3);font-size:12px">Lv.${lv}</span></div><div class="ds">${p.ds}</div><div class="dots">${dots}</div></div>${btn}</div>`;}).join('');
   $('home').innerHTML=`
-    <div class="home-hero">
-      <div class="home-emoji">🔥💰</div>
-      <div class="home-logo">머니로드</div>
-      <div class="home-tag">투자로 인생을 키우고 파이어족에 도전하세요</div>
-    </div>
-    <div class="record"><div class="rt">🏅 최고 기록</div>
-      <div class="rec-grid">
-        <div class="c"><div class="k">최고 순자산</div><div class="v">${b.net?fmtWon(b.net):'-'}</div></div>
-        <div class="c"><div class="k">최고 엔딩</div><div class="v">${b.ending}</div></div>
-        <div class="c"><div class="k">플레이</div><div class="v">${META.runs}판</div></div>
-      </div></div>
+    <div class="home-hero"><div class="home-emoji">💰🛣️</div><div class="home-logo">머니로드</div><div class="home-tag">투자로 인생 목표를 이루고<br>나만의 엔딩에 도달하세요</div></div>
+    <div class="record"><div class="rt">🏅 최고 기록</div><div class="rec-grid">
+      <div class="c"><div class="k">최고 순자산</div><div class="v">${b.net?fmtWon(b.net):'-'}</div></div>
+      <div class="c"><div class="k">최고 엔딩</div><div class="v">${b.ending}</div></div>
+      <div class="c"><div class="k">플레이</div><div class="v">${META.runs}판</div></div></div></div>
     <div class="legacy-head"><div class="t">🧬 유산 상점</div><div class="legacy-bal">보유 ${META.legacy} P</div></div>
     <div style="font-size:12.5px;color:var(--gray2);font-weight:600;margin:0 4px 12px">판을 거듭할수록 강해집니다. 유산 포인트로 다음 판을 유리하게!</div>
     ${perksHtml}
     <button class="start-btn" id="startBtn">게임 시작<small>27세 · 현금 ${fmtWon(20000000+perkLv('seed')*10000000)}로 시작</small></button>
-    <div style="text-align:center;font-size:11px;color:var(--gray3);margin-top:18px;font-weight:600">첫 판은 하드코어! 파산해도 유산은 쌓여요 🧬</div>`;
+    <div style="text-align:center;font-size:11px;color:var(--gray3);margin-top:18px;font-weight:600">엔딩은 8가지 이상! 파산해도 유산은 쌓여요 🧬</div>`;
   $('startBtn').onclick=()=>{sfx.click();
-    if(loadRunExists()){ confirmModal('이어서 할까요?','진행 중인 게임이 있어요.','이어하기','새 게임',()=>{loadRun();showScreen('game');render();},()=>{startRun();}); }
-    else startRun();
-  };
+    if(loadRunExists())confirmModal('이어서 할까요?','진행 중인 게임이 있어요.','이어하기','새 게임',()=>{loadRun();showScreen('game');render();},()=>startRun());
+    else startRun();};
   $('home').querySelectorAll('[data-perk]').forEach(n=>n.onclick=()=>buyPerk(n.dataset.perk));
 }
-function loadRunExists(){try{return !!localStorage.getItem(RUN_KEY);}catch(e){return false;}}
-function buyPerk(id){
-  const p=PERKS.find(x=>x.id===id), lv=perkLv(id); if(lv>=p.max)return;
-  const cost=p.cost(lv); if(META.legacy<cost){toast('유산 포인트가 부족해요');return;}
-  META.legacy-=cost; META.perks[id]=lv+1; saveMeta(); sfx.cash(); toast(`${p.nm} Lv.${lv+1} 강화!`); renderHome();
-}
+function buyPerk(id){const p=PERKS.find(x=>x.id===id),lv=perkLv(id);if(lv>=p.max)return;const cost=p.cost(lv);if(META.legacy<cost){toast('유산 포인트가 부족해요');return;}META.legacy-=cost;META.perks[id]=lv+1;saveMeta();sfx.cash();toast(`${p.nm} Lv.${lv+1} 강화!`);renderHome();}
 
-/* ================= misc ui ================= */
+/* misc */
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));window.scrollTo(0,0);}
-let toastT; function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),1600);}
-function confirmModal(t,d,yes,no,onYes,onNo){
-  $('modalBox').innerHTML=`<div class="emo">🎮</div><div class="tt">${t}</div><div class="dc">${d}</div><button class="ok" id="cY">${yes}</button><button class="ok ghost" id="cN">${no}</button>`;
-  $('modal').classList.add('on');
-  $('cY').onclick=()=>{sfx.click();$('modal').classList.remove('on');onYes();};
-  $('cN').onclick=()=>{sfx.click();$('modal').classList.remove('on');onNo();};
-}
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{sfx.click();S.tab=t.dataset.tab;saveRun();
-  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.tab===S.tab));
-  $('panelStock').classList.toggle('hide',S.tab!=='stock'); $('panelLife').classList.toggle('hide',S.tab!=='life');});
+let toastT;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),1600);}
+function confirmModal(t,d,yes,no,onYes,onNo){$('modalBox').innerHTML=`<div class="emo">🎮</div><div class="tt">${t}</div><div class="dc">${d}</div><button class="ok" id="cY">${yes}</button><button class="ok ghost" id="cN">${no}</button>`;$('modal').classList.add('on');$('cY').onclick=()=>{sfx.click();$('modal').classList.remove('on');onYes();};$('cN').onclick=()=>{sfx.click();$('modal').classList.remove('on');onNo();};}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{sfx.click();S.tab=t.dataset.tab;saveRun();document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.tab===S.tab));$('panelStock').classList.toggle('hide',S.tab!=='stock');$('panelLife').classList.toggle('hide',S.tab!=='life');});
 $('nextBtn').onclick=advance;
 $('muteBtn').onclick=()=>{META.mute=!META.mute;saveMeta();$('muteBtn').textContent=META.mute?'🔇':'🔊';if(!META.mute)sfx.click();};
-$('homeBtn').onclick=()=>{confirmModal('홈으로 나갈까요?','진행 상황은 저장돼요. 언제든 이어서 할 수 있어요.','나가기','계속하기',()=>{saveRun();showScreen('home');renderHome();},()=>{});};
+$('homeBtn').onclick=()=>confirmModal('홈으로 나갈까요?','진행 상황은 저장돼요. 언제든 이어서 할 수 있어요.','나가기','계속하기',()=>{saveRun();showScreen('home');renderHome();},()=>{});
 
-/* ================= boot ================= */
-loadMeta();
-$('muteBtn').textContent=META.mute?'🔇':'🔊';
-renderHome();
-showScreen('home');
+/* boot */
+loadMeta();$('muteBtn').textContent=META.mute?'🔇':'🔊';renderHome();showScreen('home');
 </script>
 </body>
 </html>

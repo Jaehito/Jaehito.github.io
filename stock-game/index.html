@@ -378,6 +378,7 @@ function startRun(){
      revealed:revealPool.slice(0,perkLv('save')), feedChance:null, feedMs:null};
   STOCKS.forEach(s=>{S.hold[s.id]=0;S.avg[s.id]=0;S.price[s.id]=s.price;S.dayOpen[s.id]=s.price;let a=[],x=s.price;for(let i=0;i<8;i++){a.unshift(Math.max(1000,Math.round(x)));x=x/(1+s.vol*0.5*randn());}a.push(s.price);S.phist[s.id]=a;});
   S.maxNet=netWorth(); S.hist=[netWorth()];
+  seedFeed(5);
   META.runs++; saveMeta(); saveRun(); showScreen('game'); render(); startLiveTicker(); startTicker(); startFeedTimer();
 }
 function loadRun(){try{const r=localStorage.getItem(RUN_KEY);if(r){S=JSON.parse(r);
@@ -565,9 +566,8 @@ function startLiveTicker(){stopLiveTicker();liveTimer=setInterval(liveTick,2200)
 function stopLiveTicker(){if(liveTimer){clearInterval(liveTimer);liveTimer=null;}}
 
 /* 소식(뉴스+커뮤니티) 피드 */
-function spawnFeed(){
+function spawnFeedItem(tsOffset){
   if(!S||!S.stocks.length)return;
-  if(Math.random()>(S.feedChance||0.7))return;
   const avail=FEED_SOURCES.filter(x=>x.key!=='tip'||S.tipUnlocked);
   const src=avail[Math.floor(Math.random()*avail.length)];
   const sid=S.stocks[Math.floor(Math.random()*S.stocks.length)];
@@ -577,11 +577,20 @@ function spawnFeed(){
   const biasDir=actual?dir:-dir;
   const tpl=(src.kind==='news'?NEWS_TPL:COMM_TPL)[dir>0?'up':'down'];
   const text=tpl[Math.floor(Math.random()*tpl.length)].replace('{n}',sname);
-  S.feed.unshift({src:src.key,stockId:sid,dir,text,ts:Date.now()});
+  S.feed.unshift({src:src.key,stockId:sid,dir,text,ts:Date.now()-(tsOffset||0)});
   if(S.feed.length>25)S.feed.length=25;
   S.activeBias=S.activeBias.filter(b=>b.stockId!==sid);
   S.activeBias.push({stockId:sid,dir:biasDir,perTick:src.mag/6,ticksLeft:6});
+}
+function spawnFeed(){
+  if(!S||!S.stocks.length)return;
+  if(Math.random()>(S.feedChance||0.7))return;
+  spawnFeedItem();
   saveRun();renderFeed();
+}
+/* 시작하자마자 소식이 텅 비어있지 않도록 몇 건을 미리 채워둔다(오래된 순으로 보이게 타임스탬프를 과거로 분산) */
+function seedFeed(n){
+  for(let i=n-1;i>=0;i--) spawnFeedItem(i*70000+Math.floor(Math.random()*30000));
 }
 let feedTimer=null;
 function startFeedTimer(){stopFeedTimer();feedTimer=setInterval(spawnFeed,S.feedMs||12000);}

@@ -277,7 +277,7 @@
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
-const RUN_KEY='moneyroad_run_v4', META_KEY='moneyroad_meta_v4';
+const RUN_KEY='moneyroad_run_v5', META_KEY='moneyroad_meta_v4';
 
 function fmtWon(v){const neg=v<0;let x=Math.round(Math.abs(v));if(x<10000)return (neg?'-':'')+x.toLocaleString()+'원';
   const eok=Math.floor(x/100000000),man=Math.floor((x%100000000)/10000);let s='';if(eok)s+=eok+'억';if(man)s+=(s?' ':'')+man.toLocaleString()+'만';return (neg?'-':'')+s+'원';}
@@ -314,6 +314,7 @@ const FEED_SOURCES=[
   {key:'ant',     icon:'🐜',name:'개미123',    acc:.50,mag:.08,kind:'community'},
   {key:'pump',    icon:'🎣',name:'단타의신',    acc:.28,mag:.12,kind:'community'},
   {key:'bot',     icon:'🤖',name:'AI리딩봇',    acc:.15,mag:.05,kind:'community'},
+  {key:'tip',     icon:'🕵️',name:'익명 제보',   acc:1,  mag:0,  kind:'community'},
 ];
 const NEWS_TPL={
   up:['{n}, 예상 뛰어넘는 실적 발표 예고','{n} 신제품 공개 임박, 시장 기대감 고조','외국인·기관 {n} 순매수 전환 조짐','{n} 관련 훈풍 소식 잇달아'],
@@ -327,40 +328,63 @@ const COMM_TPL={
 /* 레벨 = 트레이더 인생의 챕터. 순자산이 need를 넘으면 레벨업 → 종목 해금 + 인생 갈림길 선택 */
 const START_STOCKS=['ram','bnk'];
 const ACHIEVE_DEF=[['car','🚗','자동차'],['wed','💍','결혼'],['home','🏠','내 집'],['flex','🏎️','슈퍼카'],['found','🏛️','재단']];
+const ACHIEVE_TRADER=[['lead','🎙️','리딩방'],['gang','🕵️','작전세력'],['press','📰','언론인터뷰'],['fund','💼','사모펀드'],['boss','🏦','큰손']];
+const achieveDefFor=()=>S.route==='trader'?ACHIEVE_TRADER:ACHIEVE_DEF;
+/* Lv3에서 진로(생활형/트레이더서사)를 선택 — 이후 레벨은 선택한 루트의 fork만 등장 */
 const LEVELS=[
   {lv:2, need:5000000,
    fork:{emo:'💻',t:'첫 500만원을 모았어요',d:'장비에 투자할까요, 전액 재투자할까요?',opts:[
      {l:'듀얼 모니터',s:'소식이 더 자주 들어와요',cost:500000,f:S=>{S.feedChance=0.85;}},
      {l:'전액 재투자',s:'',f:S=>{}}]}},
-  {lv:3, need:20000000, stock:'tom',
-   fork:{emo:'🚗',t:'차를 살까요?',d:'자산이 2,000만원을 넘었어요.',opts:[
-     {l:'자동차 구입',s:'소식이 더 빨리 도착해요',cost:10000000,achieve:'car',f:S=>{S.feedMs=8000;}},
-     {l:'전액 재투자',s:'',f:S=>{}}]}},
-  {lv:4, need:50000000, stock:'kim',
-   fork:{emo:'💍',t:'인생의 동반자',d:'자산 5,000만원을 넘었어요.',opts:[
+  {lv:3, need:20000000,
+   fork:{emo:'🔀',t:'어떤 트레이더가 될까요?',d:'자산이 2,000만원을 넘었어요. 앞으로의 방향을 정해요 — 한 번 정하면 계속 유지돼요.',opts:[
+     {l:'자동차 구입',s:'생활형 · 소식이 더 빨리 도착해요',cost:10000000,achieve:'car',route:'life',f:S=>{S.feedMs=8000;}},
+     {l:'리딩방 운영 시작',s:'트레이더서사 · 100% 적중하는 익명 제보가 열려요',cost:10000000,achieve:'lead',route:'trader',f:S=>{S.tipUnlocked=true;S.revealed.push('tip');}}]}},
+  {lv:4, need:50000000, stock:'tom',
+   forkLife:{emo:'💍',t:'인생의 동반자',d:'자산 5,000만원을 넘었어요.',opts:[
      {l:'결혼한다',s:'배우자 자금 +2,000만 합류 · 신용배율 1.5배',cost:30000000,achieve:'wed',f:S=>{S.cash+=20000000;S.leverageBase=Math.max(S.leverageBase,1.5);}},
-     {l:'혼자 자유롭게',s:'소식 출처 하나의 신뢰도가 영구 공개돼요',f:S=>{revealSource(S);}}]}},
-  {lv:5, need:150000000, stock:'spc',
-   fork:{emo:'🏠',t:'내 집 마련',d:'자산 1.5억원을 넘었어요.',opts:[
+     {l:'혼자 자유롭게',s:'소식 출처 하나의 신뢰도가 영구 공개돼요',f:S=>{revealSource(S);}}]},
+   forkTrader:{emo:'🕵️',t:'세력의 작전 제안',d:'큰손 세력이 손잡자고 제안해요.',opts:[
+     {l:'작전에 가담',s:'특정 종목 확정 급등 정보 1회 · 신뢰가 크게 떨어져요',cost:20000000,achieve:'gang',f:S=>{pumpStock(S);S.trust=Math.max(0,S.trust-20);}},
+     {l:'거절한다',s:'신뢰가 올라요',f:S=>{S.trust=Math.min(100,S.trust+10);}}]}},
+  {lv:5, need:150000000, stock:'kim',
+   forkLife:{emo:'🏠',t:'내 집 마련',d:'자산 1.5억원을 넘었어요.',opts:[
      {l:'아파트 구입',s:'담보 대출로 신용배율 2.5배',cost:100000000,achieve:'home',f:S=>{S.leverageBase=Math.max(S.leverageBase,2.5);}},
-     {l:'전세 유지',s:'현금을 지켜요',f:S=>{}}]}},
-  {lv:6, need:300000000,
-   fork:{emo:'🏎️',t:'플렉스의 유혹',d:'자산 3억원을 넘었어요.',opts:[
+     {l:'전세 유지',s:'현금을 지켜요',f:S=>{}}]},
+   forkTrader:{emo:'📰',t:'언론 인터뷰 요청',d:'경제 매체에서 인터뷰를 요청해요.',opts:[
+     {l:'인터뷰 응한다',s:'명성이 크게 올라요 · 신뢰 소폭 하락',cost:0,achieve:'press',f:S=>{S.rep=Math.min(100,S.rep+30);S.trust=Math.max(0,S.trust-10);}},
+     {l:'조용히 넘긴다',s:'신뢰가 올라요',f:S=>{S.trust=Math.min(100,S.trust+10);}}]}},
+  {lv:6, need:300000000, stock:'spc',
+   forkLife:{emo:'🏎️',t:'플렉스의 유혹',d:'자산 3억원을 넘었어요.',opts:[
      {l:'슈퍼카 구입',s:'명성이 크게 올라요',cost:100000000,achieve:'flex',f:S=>{S.rep=Math.min(100,S.rep+30);}},
-     {l:'조용히 지낸다',s:'신뢰가 올라요',f:S=>{S.trust=Math.min(100,S.trust+10);}}]}},
+     {l:'조용히 지낸다',s:'신뢰가 올라요',f:S=>{S.trust=Math.min(100,S.trust+10);}}]},
+   forkTrader:{emo:'💼',t:'사모펀드 설립',d:'본격적으로 큰 판을 짜볼까요?',opts:[
+     {l:'사모펀드 설립',s:'신용배율 3배로 강화 · 변동성 확대',cost:100000000,achieve:'fund',f:S=>{S.leverageBase=Math.max(S.leverageBase,3);S.aggressive=true;}},
+     {l:'개인 매매 유지',s:'신뢰가 올라요',f:S=>{S.trust=Math.min(100,S.trust+10);}}]}},
   {lv:7, need:500000000,
-   fork:{emo:'🏛️',t:'사회적 위치',d:'자산 5억원을 넘었어요.',opts:[
+   forkLife:{emo:'🏛️',t:'사회적 위치',d:'자산 5억원을 넘었어요.',opts:[
      {l:'장학재단 설립',s:'신뢰가 크게 올라요',cost:100000000,achieve:'found',f:S=>{S.trust=Math.min(100,S.trust+30);}},
-     {l:'그림자로 남는다',s:'명성이 올라요',f:S=>{S.rep=Math.min(100,S.rep+10);}}]}},
+     {l:'그림자로 남는다',s:'명성이 올라요',f:S=>{S.rep=Math.min(100,S.rep+10);}}]},
+   forkTrader:{emo:'🏦',t:'시장의 큰손 인정',d:'이제 시장이 당신을 주목해요.',opts:[
+     {l:'전면에 나선다',s:'명성이 크게 올라요 · 청산 방어선 강화',cost:100000000,achieve:'boss',f:S=>{S.rep=Math.min(100,S.rep+30);S.crashGuard=true;}},
+     {l:'그림자로 남는다',s:'신뢰가 올라요',f:S=>{S.trust=Math.min(100,S.trust+10);}}]}},
   {lv:8, need:1000000000,
    fork:{emo:'🏁',t:'마지막 선택',d:'자산 10억원. 트레이더 인생을 정리할까요?',opts:[
      {l:'은퇴 선언',s:'엔딩으로',end:true},
      {l:'더 크게 간다',s:'계속 플레이',f:S=>{}}]}},
 ];
 const nextLevel=()=>LEVELS.find(l=>l.lv===S.level+1);
+const forkFor=nl=>nl.fork||(S.route==='trader'?nl.forkTrader:nl.forkLife);
 function revealSource(S){
-  const pool=FEED_SOURCES.map(x=>x.key).filter(k=>!S.revealed.includes(k));
+  const pool=FEED_SOURCES.map(x=>x.key).filter(k=>k!=='tip'&&!S.revealed.includes(k));
   if(pool.length)S.revealed.push(pool[Math.floor(Math.random()*pool.length)]);
+}
+function pumpStock(S){
+  const sid=S.stocks[Math.floor(Math.random()*S.stocks.length)],sname=STOCKS.find(x=>x.id===sid).name;
+  S.activeBias=S.activeBias.filter(b=>b.stockId!==sid);
+  S.activeBias.push({stockId:sid,dir:1,perTick:0.05,ticksLeft:10});
+  S.feed.unshift({src:'tip',stockId:sid,dir:1,text:`${sname}, 세력 작전 정보 입수 — 확정 급등 예정`,ts:Date.now()});
+  if(S.feed.length>25)S.feed.length=25;
 }
 
 /* meta */
@@ -377,8 +401,8 @@ function startRun(){
      hold:{}, avg:{}, price:{}, dayOpen:{}, phist:{},
      prevNet:null, hist:[], maxNet:0, tab:'stock', featured:START_STOCKS[0],
      level:1, stocks:START_STOCKS.slice(), feed:[], activeBias:[],
-     debt:0, leverageBase:1, rep:50, trust:50,
-     achieve:{car:false,wed:false,home:false,flex:false,found:false},
+     debt:0, leverageBase:1, rep:50, trust:50, route:null, crashGuard:false, aggressive:false, tipUnlocked:false,
+     achieve:{car:false,wed:false,home:false,flex:false,found:false,lead:false,gang:false,press:false,fund:false,boss:false},
      revealed:revealPool.slice(0,perkLv('save')), feedChance:null, feedMs:null};
   STOCKS.forEach(s=>{S.hold[s.id]=0;S.avg[s.id]=0;S.price[s.id]=s.price;S.dayOpen[s.id]=s.price;let a=[],x=s.price;for(let i=0;i<8;i++){a.unshift(Math.max(1000,Math.round(x)));x=x/(1+s.vol*0.5*randn());}a.push(s.price);S.phist[s.id]=a;});
   S.maxNet=netWorth(); S.hist=[netWorth()];
@@ -394,7 +418,12 @@ function loadRun(){try{const r=localStorage.getItem(RUN_KEY);if(r){S=JSON.parse(
   if(!S.leverageBase)S.leverageBase=1;
   if(S.rep===undefined)S.rep=50;
   if(S.trust===undefined)S.trust=50;
-  if(!S.achieve)S.achieve={car:false,wed:false,home:false,flex:false,found:false};
+  if(!S.achieve)S.achieve={};
+  ['car','wed','home','flex','found','lead','gang','press','fund','boss'].forEach(k=>{if(S.achieve[k]===undefined)S.achieve[k]=false;});
+  if(S.route===undefined)S.route=null;
+  if(S.crashGuard===undefined)S.crashGuard=false;
+  if(S.aggressive===undefined)S.aggressive=false;
+  if(S.tipUnlocked===undefined)S.tipUnlocked=false;
   if(!S.revealed)S.revealed=[];
   if(!S.featured||!S.stocks.includes(S.featured))S.featured=S.stocks[0];
   return true;}}catch(e){}return false;}
@@ -417,7 +446,7 @@ function advance(){
   sfx.next(); S.prevNet=netWorth();
   STOCKS.forEach(s=>{if(s.div)S.cash+=S.hold[s.id]*S.price[s.id]*s.div;});
   if(S.debt>0)S.debt=Math.round(S.debt*1.01); // 레버리지 이자
-  STOCKS.forEach(s=>{let r=s.drift+s.vol*randn();const b=S.activeBias.find(x=>x.stockId===s.id);if(b)r+=b.dir*b.perTick*3;S.price[s.id]=Math.max(1000,Math.round(S.price[s.id]*(1+r)));});
+  STOCKS.forEach(s=>{let r=s.drift+s.vol*(S.aggressive?1.4:1)*randn();const b=S.activeBias.find(x=>x.stockId===s.id);if(b){let d=b.dir*b.perTick*3;if(S.crashGuard&&d<0)d*=0.5;r+=d;}S.price[s.id]=Math.max(1000,Math.round(S.price[s.id]*(1+r)));});
   STOCKS.forEach(s=>{S.dayOpen[s.id]=S.price[s.id];});
   STOCKS.forEach(s=>{S.phist[s.id].push(S.price[s.id]);if(S.phist[s.id].length>48)S.phist[s.id].shift();});
   const net=netWorth(); if(net>S.maxNet)S.maxNet=net;
@@ -463,7 +492,7 @@ function renderGoal(net){
   }
 }
 function renderAchieve(){
-  $('achieveRow').innerHTML=ACHIEVE_DEF.map(([k,e,n])=>`<span class="ach ${S.achieve[k]?'on':''}" title="${n}">${e}</span>`).join('');
+  $('achieveRow').innerHTML=achieveDefFor().map(([k,e,n])=>`<span class="ach ${S.achieve[k]?'on':''}" title="${n}">${e}</span>`).join('');
   $('repBar').style.width=S.rep+'%';
   $('trustBar').style.width=S.trust+'%';
 }
@@ -539,7 +568,7 @@ function updateStockPricesLive(){
 let liveTimer=null;
 function liveTick(){
   if(!S)return;
-  STOCKS.forEach(s=>{let r=s.vol*0.12*(1-perkLv('hedge')*0.08)*randn();const b=S.activeBias.find(x=>x.stockId===s.id);if(b)r+=b.dir*b.perTick;S.price[s.id]=Math.max(1000,Math.round(S.price[s.id]*(1+r)));});
+  STOCKS.forEach(s=>{let r=s.vol*0.12*(1-perkLv('hedge')*0.08)*(S.aggressive?1.4:1)*randn();const b=S.activeBias.find(x=>x.stockId===s.id);if(b){let d=b.dir*b.perTick;if(S.crashGuard&&d<0)d*=0.5;r+=d;}S.price[s.id]=Math.max(1000,Math.round(S.price[s.id]*(1+r)));});
   S.activeBias.forEach(b=>b.ticksLeft--);S.activeBias=S.activeBias.filter(b=>b.ticksLeft>0);
   $('netWorthMini').textContent=fmtWon(netWorth());
   $('bdStock').textContent=fmtWon(portfolio());
@@ -561,7 +590,8 @@ function stopLiveTicker(){if(liveTimer){clearInterval(liveTimer);liveTimer=null;
 function spawnFeed(){
   if(!S||!S.stocks.length)return;
   if(Math.random()>(S.feedChance||0.7))return;
-  const src=FEED_SOURCES[Math.floor(Math.random()*FEED_SOURCES.length)];
+  const avail=FEED_SOURCES.filter(x=>x.key!=='tip'||S.tipUnlocked);
+  const src=avail[Math.floor(Math.random()*avail.length)];
   const sid=S.stocks[Math.floor(Math.random()*S.stocks.length)];
   const sname=STOCKS.find(x=>x.id===sid).name;
   const dir=Math.random()<0.5?1:-1;
@@ -648,7 +678,7 @@ function showLevelUp(nl,gains){
     <div class="dc">순자산 ${fmtWon(nl.need)} 돌파</div>${list}
     <button class="ok" id="lvOk">계속</button>`;
   $('modal').classList.add('on');
-  $('lvOk').onclick=()=>{sfx.click();showFork(nl.fork);};
+  $('lvOk').onclick=()=>{sfx.click();showFork(forkFor(nl));};
 }
 function showFork(f){
   sfx.event();
@@ -667,6 +697,7 @@ function showFork(f){
     sfx.cash();
     if(o.cost)S.cash-=o.cost;
     if(o.achieve)S.achieve[o.achieve]=true;
+    if(o.route)S.route=o.route;
     if(o.f)o.f(S);
     saveRun();render();
     $('modal').classList.remove('on');
@@ -677,6 +708,15 @@ function showFork(f){
 /* 엔딩: 나이·시간과 무관, 무엇을 이뤘는가로 결정 */
 function judgeEnding(){
   const net=netWorth(),ach=S.achieve,achCount=Object.values(ach).filter(Boolean).length;
+  if(S.route==='trader'){
+    if(ach.lead&&ach.gang&&ach.fund&&S.trust<20)return{e:'🚔',t:'구속',d:'무리한 시세조종이 결국 덜미를 잡혔어요. 모든 걸 잃었습니다.',bonus:0,arrest:true};
+    if(ach.lead&&ach.gang&&ach.press&&ach.fund&&ach.boss&&net>=1000000000)return{e:'💰',t:'월가의 전설',d:'논란도 있었지만 결국 최고의 자리에 올랐어요.',bonus:8};
+    if(ach.press&&S.trust>=70)return{e:'📰',t:'존경받는 트레이더',d:'투명한 행보로 시장의 신뢰를 얻었어요.',bonus:6};
+    if((ach.gang||ach.fund)&&S.rep>=70&&S.trust<50)return{e:'🕶️',t:'그림자 큰손',d:'베일에 싸인 채 시장을 움직이는 존재가 됐어요.',bonus:5};
+    if(ach.lead&&S.rep>=60)return{e:'🎣',t:'리딩방 교주',d:'수많은 추종자를 거느린 논란의 인플루언서가 됐어요.',bonus:4};
+    if(achCount>0)return{e:'🏡',t:'적당히 챙겨서 은퇴',d:'크게 위험한 만큼 크게 벌지는 못했지만, 무사히 발을 뺐어요.',bonus:3};
+    return{e:'🙂',t:'그럭저럭 트레이더',d:'큰 사고도 대박도 없이 트레이더 생활을 마쳤어요.',bonus:2};
+  }
   if(ach.car&&ach.wed&&ach.home&&net>=1000000000)return{e:'👑',t:'인생 승리자',d:'원하는 걸 다 이루고 자산도 크게 불렸어요.',bonus:8};
   if(achCount===0&&net>=1000000000)return{e:'💎',t:'고독한 부자',d:'자산은 최정상인데 곁엔 아무것도 없었어요.',bonus:6};
   if(ach.flex&&S.rep>=80)return{e:'🏎️',t:'플렉스의 아이콘',d:'화려한 소비로 세상에 이름을 알렸어요.',bonus:5};
@@ -687,13 +727,13 @@ function judgeEnding(){
 function endRun(kind){
   stopLiveTicker();stopTicker();stopFeedTimer();
   const net=netWorth();let rank,earn=Math.floor(S.maxNet/30000000),win=true;
-  if(kind==='retire'){rank=judgeEnding();earn+=rank.bonus||0;}
+  if(kind==='retire'){rank=judgeEnding();earn+=rank.bonus||0;win=!rank.arrest;}
   else{win=false;rank={e:'💸',t:'파산',d:'레버리지 청산을 당했어요. 다음엔 무리하지 마세요!'};earn=Math.max(0,earn-1);}
   if(win){sfx.win();confetti();}else sfx.lose();
   META.legacy+=earn;
   if(net>META.best.net)META.best={net,ending:rank.t};
   saveMeta();clearRun();
-  const achTxt=ACHIEVE_DEF.filter(([k])=>S.achieve[k]).map(([k,e,n])=>e+n).join(' · ')||'—';
+  const achTxt=achieveDefFor().filter(([k])=>S.achieve[k]).map(([k,e,n])=>e+n).join(' · ')||'—';
   $('modalBox').innerHTML=`<div class="emo big">${rank.e}</div><div class="tt">${rank.t}</div><div class="dc">${rank.d}</div>
     <div class="stat-grid"><div class="s"><div class="k">최종 순자산</div><div class="v">${fmtWon(net)}</div></div><div class="s"><div class="k">도달 레벨</div><div class="v">Lv.${S.level}</div></div></div>
     <div class="tagline">이룬 것 ${achTxt}</div>

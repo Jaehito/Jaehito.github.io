@@ -29,7 +29,7 @@
     .feed-sidebar.on{display:block; width:340px; max-height:calc(100vh - 32px); overflow-y:auto; position:sticky; top:16px; background:var(--card); border-radius:20px; padding:16px; box-shadow:var(--shadow);}
   }
   .screen{display:none;} .screen.on{display:block;}
-  #game{padding-bottom:calc(120px + var(--safe-b));}
+  #game{padding-bottom:calc(280px + var(--safe-b));}
 
   /* HOME */
   #home{padding:0 20px calc(40px + var(--safe-b)); min-height:100vh; background:radial-gradient(1200px 500px at 50% -10%, #dbe9ff 0%, var(--bg) 55%);}
@@ -150,33 +150,19 @@
   @keyframes flashDown{0%{background:var(--blue-weak);color:var(--blue);}100%{background:transparent;}}
   @keyframes rise{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
 
-  .cta-wrap{position:fixed; left:0; right:0; bottom:0; z-index:30; pointer-events:none; display:flex; justify-content:center;}
-  /* 900px 이상(사이드바 노출)에서는 매매 바가 뷰포트 전체가 아니라 폰 카드 바로 아래에 오도록 보정 */
-  @media (min-width:900px){ .cta-wrap{left:50%; right:auto; transform:translateX(calc(-50% - 180px));} }
-  .cta-inner{width:100%; max-width:460px; padding:10px 20px calc(14px + var(--safe-b)); background:linear-gradient(180deg,rgba(242,244,246,0) 0%,var(--bg) 32%); pointer-events:auto;}
-  .cta{width:100%; border:none; color:#fff; cursor:pointer; padding:13px 16px; border-radius:16px; background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 8px 24px rgba(49,130,246,.34); transition:transform .08s; display:flex; align-items:center; gap:10px; text-align:left;}
-  .cta:active{transform:translateY(1px);}
-  .cta .tb-emo{font-size:24px; flex-shrink:0;}
-  .cta .tb-mid{flex:1; min-width:0;}
-  .cta .tb-nm{font-size:14.5px; font-weight:800; display:block;}
-  .cta .tb-px{font-size:12px; font-weight:700; opacity:.85; display:block; margin-top:1px;}
-  .cta .tb-cta{font-size:14.5px; font-weight:900; flex-shrink:0;}
-
-  .scrim{position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:40; opacity:0; pointer-events:none; transition:.25s;} .scrim.on{opacity:1; pointer-events:auto;}
-  .sheet{position:fixed; left:0; right:0; bottom:0; z-index:50; margin:0 auto; max-width:460px; background:var(--card); border-radius:24px 24px 0 0; padding:8px 20px calc(20px + var(--safe-b)); transform:translateY(110%); transition:transform .3s cubic-bezier(.2,.9,.2,1); box-shadow:0 -8px 30px rgba(0,0,0,.12); max-height:92vh; overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y;}
-  .sheet.on{transform:translateY(0);}
-  .grab{width:40px; height:4px; background:var(--line); border-radius:999px; margin:6px auto 14px;}
-  .sh-head{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
-  .sh-head .nm{font-size:18px; font-weight:800;} .sh-head .px{font-size:13px; color:var(--gray); font-weight:700; margin-top:2px;} .sh-head .chg{font-size:13px; font-weight:800;}
-  .chart-wrap{background:var(--field); border-radius:16px; padding:10px 8px 6px; margin-bottom:12px;}
-  .chart{width:100%; height:120px; display:block;} .chart-lbl{display:flex; justify-content:space-between; font-size:11px; color:var(--gray2); font-weight:700; padding:2px 6px 0;}
-  .pos{display:flex; gap:8px; margin-bottom:12px;}
-  .pos .c{flex:1; background:var(--field); border-radius:12px; padding:10px 6px; text-align:center;} .pos .k{font-size:11px; color:var(--gray2); font-weight:700;} .pos .v{font-size:14px; font-weight:800; margin-top:3px;} .pos .v.up{color:var(--red);} .pos .v.down{color:var(--blue);}
-  .qty{display:flex; align-items:center; justify-content:space-between; background:var(--field); border-radius:16px; padding:8px 10px; margin-bottom:12px;}
-  .qty button{width:44px; height:44px; border:none; background:var(--card); border-radius:12px; font-size:22px; font-weight:700; color:var(--ink); box-shadow:var(--shadow); cursor:pointer;} .qty .q{font-size:24px; font-weight:800;} .qty .q small{font-size:13px; color:var(--gray2); font-weight:700; margin-left:3px;}
-  .quicks{display:flex; gap:7px; margin-bottom:14px;} .quicks button{flex:1; border:none; background:var(--field); color:var(--gray); font-weight:700; font-size:13px; padding:11px 0; border-radius:12px; cursor:pointer;} .quicks button:active{background:var(--blue-weak); color:var(--blue);}
-  .sh-info{display:flex; justify-content:space-between; font-size:14px; font-weight:600; color:var(--gray); padding:6px 2px;} .sh-info b{color:var(--ink); font-weight:800;}
-  .sh-actions{display:flex; gap:10px; margin-top:14px;} .sh-actions button{flex:1; border:none; padding:16px; border-radius:15px; font-size:16px; font-weight:800; cursor:pointer;}
+  .order-bar{position:fixed; left:0; right:0; bottom:0; z-index:30; margin:0 auto; max-width:460px; background:var(--card); border-radius:22px 22px 0 0; padding:12px 20px calc(14px + var(--safe-b)); box-shadow:0 -8px 30px rgba(0,0,0,.12);}
+  /* 900px 이상(사이드바 노출)에서는 매매 바가 뷰포트 전체가 아니라 폰 카드 바로 아래에 오도록 보정.
+     left/right를 그대로 두고(margin:auto 중앙정렬 유지) transform만 적용 — left:50%로 바꾸면
+     margin:auto 중앙정렬이 깨져 바가 쪼그라드는 버그가 재발한다. */
+  @media (min-width:900px){ .order-bar{transform:translateX(-180px);} }
+  .ob-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;}
+  .ob-nm{font-size:14.5px; font-weight:800; display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .ob-bal{font-size:12px; font-weight:700; color:var(--gray2); flex-shrink:0;} .ob-bal b{color:var(--ink); font-weight:800;}
+  .qty{display:flex; align-items:center; justify-content:space-between; background:var(--field); border-radius:16px; padding:8px 10px; margin-bottom:10px;}
+  .qty button{width:40px; height:40px; border:none; background:var(--card); border-radius:12px; font-size:20px; font-weight:700; color:var(--ink); box-shadow:var(--shadow); cursor:pointer;} .qty .q{font-size:22px; font-weight:800;} .qty .q small{font-size:12.5px; color:var(--gray2); font-weight:700; margin-left:3px;}
+  .quicks{display:flex; gap:6px; margin-bottom:10px;} .quicks button{flex:1; border:none; background:var(--field); color:var(--gray); font-weight:700; font-size:12.5px; padding:9px 0; border-radius:11px; cursor:pointer;} .quicks button:active{background:var(--blue-weak); color:var(--blue);}
+  .sh-info{display:flex; justify-content:space-between; font-size:13px; font-weight:600; color:var(--gray); padding:4px 2px;} .sh-info b{color:var(--ink); font-weight:800;}
+  .sh-actions{display:flex; gap:9px; margin-top:10px;} .sh-actions button{flex:1; border:none; padding:14px; border-radius:14px; font-size:15px; font-weight:800; cursor:pointer;}
   .btn-buy{background:var(--red); color:#fff;} .btn-sell{background:var(--blue); color:#fff;} .btn-buy:disabled,.btn-sell:disabled{background:var(--line); color:var(--gray3); cursor:default;}
 
   .modal{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:28px; background:rgba(0,0,0,.5);} .modal.on{display:flex;}
@@ -244,30 +230,16 @@
         <div class="rep-line"><span>🤝 신뢰</span><div class="rep-track trust"><i id="trustBar"></i></div></div>
       </div>
     </div>
-    <div class="cta-wrap"><div class="cta-inner">
-      <button class="cta" id="tradeBtn">
-        <span class="tb-emo" id="tbEmo"></span>
-        <span class="tb-mid"><span class="tb-nm" id="tbNm"></span><span class="tb-px" id="tbPx"></span></span>
-        <span class="tb-cta">매매 ›</span>
-      </button>
-    </div></div>
+    <div class="order-bar" id="orderBar">
+      <div class="ob-head"><div class="ob-nm" id="obNm"><span id="obEmo"></span><span id="obName"></span></div><div class="ob-bal">매수여력 <b id="obBal">0원</b></div></div>
+      <div class="qty"><button id="obMinus">−</button><div class="q"><span id="obQNum">0</span><small>주</small></div><button id="obPlus">+</button></div>
+      <div class="quicks"><button data-q="1">+1</button><button data-q="10">+10</button><button data-q="maxbuy">최대매수</button><button data-q="maxsell">전량매도</button></div>
+      <div class="sh-info"><span>주문 금액</span><b id="obTotal">0원</b></div>
+      <div class="sh-actions"><button class="btn-buy" id="obBuy">매수</button><button class="btn-sell" id="obSell">매도</button></div>
+    </div>
   </div>
 </div>
 <aside class="feed-sidebar" id="feedSidebar"></aside>
-</div>
-
-<div class="scrim" id="scrim"></div>
-<div class="sheet" id="sheet">
-  <div class="grab"></div>
-  <div class="sh-head"><div class="logo" id="shLogo"></div><div style="flex:1"><div class="nm" id="shName"></div><div class="px" id="shPx"></div></div><div class="chg" id="shChg"></div></div>
-  <div class="chart-wrap"><svg class="chart" id="chart" viewBox="0 0 400 120" preserveAspectRatio="none"></svg><div class="chart-lbl"><span id="chLo"></span><span id="chHi"></span></div></div>
-  <div class="pos" id="posBox"></div>
-  <div class="qty"><button id="qMinus">−</button><div class="q"><span id="qNum">0</span><small>주</small></div><button id="qPlus">+</button></div>
-  <div class="quicks"><button data-q="1">+1</button><button data-q="10">+10</button><button data-q="100">+100</button></div>
-  <div class="quicks"><button data-q="maxbuy" id="qMaxBuy">최대매수</button><button data-q="maxsell" id="qMaxSell">전량매도</button></div>
-  <div class="sh-info"><span>주문 금액</span><b id="shTotal">0원</b></div>
-  <div class="sh-info"><span>잔여 매수여력</span><b id="shBal">0원</b></div>
-  <div class="sh-actions"><button class="btn-buy" id="doBuy">매수</button><button class="btn-sell" id="doSell">매도</button></div>
 </div>
 
 <div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
@@ -293,8 +265,8 @@ const sfx={click:()=>beep(660,.06,'triangle',.12),buy:()=>{beep(520,.07,'square'
 const STOCKS=[
   {id:'tom',name:'토마토전자',  emo:'📱',bg:'#fdece8',drift:0.006,vol:0.10,div:0,    price:68000},
   {id:'kim',name:'김치반도체',  emo:'💾',bg:'#e8f2ff',drift:0.011,vol:0.18,div:0,    price:132000},
-  {id:'bnk',name:'국민은행지주',emo:'🏦',bg:'#eafaf3',drift:0.003,vol:0.05,div:0.004,price:56000},
-  {id:'ram',name:'라면식품',    emo:'🍜',bg:'#fff6e5',drift:0.004,vol:0.07,div:0.002,price:42000},
+  {id:'bnk',name:'국민은행지주',emo:'🏦',bg:'#eafaf3',drift:0.009,vol:0.09,div:0.004,price:56000},
+  {id:'ram',name:'라면식품',    emo:'🍜',bg:'#fff6e5',drift:0.012,vol:0.12,div:0.002,price:42000},
   {id:'spc',name:'우주항공',    emo:'🚀',bg:'#efeaff',drift:0.015,vol:0.27,div:0,    price:24000},
 ];
 const PERKS=[
@@ -332,41 +304,41 @@ const ACHIEVE_TRADER=[['lead','🎙️','리딩방'],['gang','🕵️','작전�
 const achieveDefFor=()=>S.route==='trader'?ACHIEVE_TRADER:ACHIEVE_DEF;
 /* Lv3에서 진로(생활형/트레이더서사)를 선택 — 이후 레벨은 선택한 루트의 fork만 등장 */
 const LEVELS=[
-  {lv:2, need:5000000,
-   fork:{emo:'💻',t:'첫 500만원을 모았어요',d:'장비에 투자할까요, 전액 재투자할까요?',opts:[
-     {l:'듀얼 모니터',s:'소식이 더 자주 들어와요',cost:500000,f:S=>{S.feedChance=0.85;}},
+  {lv:2, need:2000000,
+   fork:{emo:'💻',t:'첫 200만원을 모았어요',d:'장비에 투자할까요, 전액 재투자할까요?',opts:[
+     {l:'듀얼 모니터',s:'소식이 더 자주 들어와요',cost:200000,f:S=>{S.feedChance=0.85;}},
      {l:'전액 재투자',s:'',f:S=>{}}]}},
-  {lv:3, need:20000000,
-   fork:{emo:'🔀',t:'어떤 트레이더가 될까요?',d:'자산이 2,000만원을 넘었어요. 앞으로의 방향을 정해요 — 한 번 정하면 계속 유지돼요.',opts:[
-     {l:'자동차 구입',s:'생활형 · 소식이 더 빨리 도착해요',cost:10000000,achieve:'car',route:'life',f:S=>{S.feedMs=8000;}},
-     {l:'리딩방 운영 시작',s:'트레이더서사 · 100% 적중하는 익명 제보가 열려요',cost:10000000,achieve:'lead',route:'trader',f:S=>{S.tipUnlocked=true;S.revealed.push('tip');}}]}},
-  {lv:4, need:50000000, stock:'tom',
-   forkLife:{emo:'💍',t:'인생의 동반자',d:'자산 5,000만원을 넘었어요.',opts:[
-     {l:'결혼한다',s:'배우자 자금 +2,000만 합류 · 신용배율 1.5배',cost:30000000,achieve:'wed',f:S=>{S.cash+=20000000;S.leverageBase=Math.max(S.leverageBase,1.5);}},
+  {lv:3, need:6000000,
+   fork:{emo:'🔀',t:'어떤 트레이더가 될까요?',d:'자산이 600만원을 넘었어요. 앞으로의 방향을 정해요 — 한 번 정하면 계속 유지돼요.',opts:[
+     {l:'자동차 구입',s:'생활형 · 소식이 더 빨리 도착해요',cost:3000000,achieve:'car',route:'life',f:S=>{S.feedMs=8000;}},
+     {l:'리딩방 운영 시작',s:'트레이더서사 · 100% 적중하는 익명 제보가 열려요',cost:3000000,achieve:'lead',route:'trader',f:S=>{S.tipUnlocked=true;S.revealed.push('tip');}}]}},
+  {lv:4, need:15000000, stock:'tom',
+   forkLife:{emo:'💍',t:'인생의 동반자',d:'자산 1,500만원을 넘었어요.',opts:[
+     {l:'결혼한다',s:'배우자 자금 +600만 합류 · 신용배율 1.5배',cost:9000000,achieve:'wed',f:S=>{S.cash+=6000000;S.leverageBase=Math.max(S.leverageBase,1.5);}},
      {l:'혼자 자유롭게',s:'소식 출처 하나의 신뢰도가 영구 공개돼요',f:S=>{revealSource(S);}}]},
    forkTrader:{emo:'🕵️',t:'세력의 작전 제안',d:'큰손 세력이 손잡자고 제안해요.',opts:[
-     {l:'작전에 가담',s:'특정 종목 확정 급등 정보 1회 · 신뢰가 크게 떨어져요',cost:20000000,achieve:'gang',f:S=>{pumpStock(S);S.trust=Math.max(0,S.trust-20);}},
+     {l:'작전에 가담',s:'특정 종목 확정 급등 정보 1회 · 신뢰가 크게 떨어져요',cost:6000000,achieve:'gang',f:S=>{pumpStock(S);S.trust=Math.max(0,S.trust-20);}},
      {l:'거절한다',s:'신뢰가 올라요',f:S=>{S.trust=Math.min(100,S.trust+10);}}]}},
-  {lv:5, need:150000000, stock:'kim',
-   forkLife:{emo:'🏠',t:'내 집 마련',d:'자산 1.5억원을 넘었어요.',opts:[
-     {l:'아파트 구입',s:'담보 대출로 신용배율 2.5배',cost:100000000,achieve:'home',f:S=>{S.leverageBase=Math.max(S.leverageBase,2.5);}},
+  {lv:5, need:40000000, stock:'kim',
+   forkLife:{emo:'🏠',t:'내 집 마련',d:'자산 4,000만원을 넘었어요.',opts:[
+     {l:'아파트 구입',s:'담보 대출로 신용배율 2.5배',cost:27000000,achieve:'home',f:S=>{S.leverageBase=Math.max(S.leverageBase,2.5);}},
      {l:'전세 유지',s:'현금을 지켜요',f:S=>{}}]},
    forkTrader:{emo:'📰',t:'언론 인터뷰 요청',d:'경제 매체에서 인터뷰를 요청해요.',opts:[
      {l:'인터뷰 응한다',s:'명성이 크게 올라요 · 신뢰 소폭 하락',cost:0,achieve:'press',f:S=>{S.rep=Math.min(100,S.rep+30);S.trust=Math.max(0,S.trust-10);}},
      {l:'조용히 넘긴다',s:'신뢰가 올라요',f:S=>{S.trust=Math.min(100,S.trust+10);}}]}},
-  {lv:6, need:300000000, stock:'spc',
-   forkLife:{emo:'🏎️',t:'플렉스의 유혹',d:'자산 3억원을 넘었어요.',opts:[
-     {l:'슈퍼카 구입',s:'명성이 크게 올라요',cost:100000000,achieve:'flex',f:S=>{S.rep=Math.min(100,S.rep+30);}},
+  {lv:6, need:100000000, stock:'spc',
+   forkLife:{emo:'🏎️',t:'플렉스의 유혹',d:'자산 1억원을 넘었어요.',opts:[
+     {l:'슈퍼카 구입',s:'명성이 크게 올라요',cost:33000000,achieve:'flex',f:S=>{S.rep=Math.min(100,S.rep+30);}},
      {l:'조용히 지낸다',s:'신뢰가 올라요',f:S=>{S.trust=Math.min(100,S.trust+10);}}]},
    forkTrader:{emo:'💼',t:'사모펀드 설립',d:'본격적으로 큰 판을 짜볼까요?',opts:[
-     {l:'사모펀드 설립',s:'신용배율 3배로 강화 · 변동성 확대',cost:100000000,achieve:'fund',f:S=>{S.leverageBase=Math.max(S.leverageBase,3);S.aggressive=true;}},
+     {l:'사모펀드 설립',s:'신용배율 3배로 강화 · 변동성 확대',cost:33000000,achieve:'fund',f:S=>{S.leverageBase=Math.max(S.leverageBase,3);S.aggressive=true;}},
      {l:'개인 매매 유지',s:'신뢰가 올라요',f:S=>{S.trust=Math.min(100,S.trust+10);}}]}},
-  {lv:7, need:500000000,
-   forkLife:{emo:'🏛️',t:'사회적 위치',d:'자산 5억원을 넘었어요.',opts:[
-     {l:'장학재단 설립',s:'신뢰가 크게 올라요',cost:100000000,achieve:'found',f:S=>{S.trust=Math.min(100,S.trust+30);}},
+  {lv:7, need:300000000,
+   forkLife:{emo:'🏛️',t:'사회적 위치',d:'자산 3억원을 넘었어요.',opts:[
+     {l:'장학재단 설립',s:'신뢰가 크게 올라요',cost:60000000,achieve:'found',f:S=>{S.trust=Math.min(100,S.trust+30);}},
      {l:'그림자로 남는다',s:'명성이 올라요',f:S=>{S.rep=Math.min(100,S.rep+10);}}]},
    forkTrader:{emo:'🏦',t:'시장의 큰손 인정',d:'이제 시장이 당신을 주목해요.',opts:[
-     {l:'전면에 나선다',s:'명성이 크게 올라요 · 청산 방어선 강화',cost:100000000,achieve:'boss',f:S=>{S.rep=Math.min(100,S.rep+30);S.crashGuard=true;}},
+     {l:'전면에 나선다',s:'명성이 크게 올라요 · 청산 방어선 강화',cost:60000000,achieve:'boss',f:S=>{S.rep=Math.min(100,S.rep+30);S.crashGuard=true;}},
      {l:'그림자로 남는다',s:'신뢰가 올라요',f:S=>{S.trust=Math.min(100,S.trust+10);}}]}},
   {lv:8, need:1000000000,
    fork:{emo:'🏁',t:'마지막 선택',d:'자산 10억원. 트레이더 인생을 정리할까요?',opts:[
@@ -451,7 +423,7 @@ function advance(){
   STOCKS.forEach(s=>{S.phist[s.id].push(S.price[s.id]);if(S.phist[s.id].length>48)S.phist[s.id].shift();});
   const net=netWorth(); if(net>S.maxNet)S.maxNet=net;
   S.hist.push(net); if(S.hist.length>60)S.hist.shift();
-  saveRun(); render();
+  saveRun(); renderTick();
   if(checkMarginCall())return;
   const nl=nextLevel();
   if(nl&&net>=nl.need){levelUp(nl);return;}
@@ -473,7 +445,19 @@ function render(){
   $('bdCash').textContent=fmtWon(S.cash);$('bdCash').style.color=S.cash<0?'var(--red)':'';
   $('bdStock').textContent=fmtWon(portfolio());
   $('bdDebt').textContent=fmtWon(S.debt);
-  renderGoal(net); renderAchieve(); renderStocks(); renderHero(); renderFeed();
+  renderGoal(net); renderAchieve(); renderStocks(); renderHero(); renderFeed(); renderOrder();
+}
+/* advance() 틱마다 부르는 가벼운 갱신 — renderStocks()/renderFeed()의 전체 재구성을 피해
+   .stock/.feed-item의 등장 애니메이션이 매 틱 재생되며 화면이 깜빡이는 문제를 방지 */
+function renderTick(){
+  $('dateChip').textContent=`Lv.${S.level}`;
+  const net=netWorth();
+  $('netWorthMini').textContent=fmtWon(net);
+  $('bdCash').textContent=fmtWon(S.cash);$('bdCash').style.color=S.cash<0?'var(--red)':'';
+  $('bdStock').textContent=fmtWon(portfolio());
+  $('bdDebt').textContent=fmtWon(S.debt);
+  renderGoal(net); renderAchieve();
+  updateStockPricesLive(); renderHero(); renderOrder();
 }
 function renderGoal(net){
   const setBar=pct=>{$('goalPct').textContent=Math.floor(pct)+'%';$('goalBar').style.width=pct+'%';};
@@ -516,12 +500,11 @@ function renderHero(){
   const {markup,h}=chartMarkup(id,420,128,10,'hero');
   $('heroChart').innerHTML=markup;
   $('heroLo').textContent='최근 '+(h.length-1)+'틱';$('heroHi').textContent='고 '+won(Math.max(...h));
-  $('tbEmo').textContent=s.emo;$('tbNm').textContent=s.name;$('tbPx').textContent=won(p)+' / 주';
 }
 function selectFeatured(id){
   if(S.featured===id)return;
   document.querySelectorAll('.stock').forEach(el=>el.classList.toggle('selected',el.dataset.stock===id));
-  S.featured=id;saveRun();renderHero();
+  S.featured=id;qty=0;saveRun();renderHero();renderOrder();
 }
 let lastPrice={};
 const CLS_COL={up:'#f04452',down:'#3182F6',flat:'#b0b8c1'};
@@ -574,12 +557,7 @@ function liveTick(){
   $('bdStock').textContent=fmtWon(portfolio());
   updateStockPricesLive();
   renderHero();
-  if(sheetId&&$('sheet').classList.contains('on')){
-    const s=STOCKS.find(x=>x.id===sheetId),p=S.price[sheetId],base=S.dayOpen[sheetId]||s.price,chg=(p-base)/base*100;
-    $('shPx').textContent=won(p)+' / 주';
-    $('shChg').textContent=(chg>=0?'+':'')+chg.toFixed(1)+'%';$('shChg').style.color=chg>=0?'var(--red)':'var(--blue)';
-    drawChart(sheetId);renderPos(sheetId);updateSheet();
-  }
+  renderOrder();
   saveRun();
   checkMarginCall();
 }
@@ -627,48 +605,45 @@ function renderFeed(){
 }
 
 /* 배경 자동 진행 — 화면에 타이머를 노출하지 않고 조용히 흐름. 매매 시트/모달이 열려 있으면 일시정지 */
-const TICK_MS=8000;
+const TICK_MS=5000;
 let bgTimer=null;
-function isBlocked(){return $('modal').classList.contains('on')||$('sheet').classList.contains('on');}
+function isBlocked(){return $('modal').classList.contains('on');}
 function startTicker(){stopTicker();bgTimer=setInterval(()=>{if(!isBlocked())advance();},TICK_MS);}
 function stopTicker(){if(bgTimer){clearInterval(bgTimer);bgTimer=null;}}
 
-/* trade sheet */
-let sheetId=null,qty=0;
-function openSheet(id){sheetId=id;qty=0;const s=STOCKS.find(x=>x.id===id),p=S.price[id];
-  $('shLogo').textContent=s.emo;$('shLogo').style.background=s.bg;$('shName').textContent=s.name;$('shPx').textContent=won(p)+' / 주';
-  const chg=(p-(S.dayOpen[id]||s.price))/(S.dayOpen[id]||s.price)*100;$('shChg').textContent=(chg>=0?'+':'')+chg.toFixed(1)+'%';$('shChg').style.color=chg>=0?'var(--red)':'var(--blue)';
-  drawChart(id);renderPos(id);updateSheet();$('scrim').classList.add('on');$('sheet').classList.add('on');}
-function closeSheet(){$('scrim').classList.remove('on');$('sheet').classList.remove('on');}
-function drawChart(id){const h=[...S.phist[id],S.price[id]],svg=$('chart'),W=400,H=120,pts=poly(h,W,H,8);
-  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');const up=h[h.length-1]>=h[0],col=up?'#f04452':'#3182F6';let avgLine='';
-  if(S.hold[id]>0){const min=Math.min(...h),max=Math.max(...h),rng=(max-min)||1,ay=H-8-(S.avg[id]-min)/rng*(H-16);if(ay>0&&ay<H)avgLine=`<line x1="8" y1="${ay.toFixed(1)}" x2="${W-8}" y2="${ay.toFixed(1)}" stroke="#8b95a1" stroke-width="1.2" stroke-dasharray="5 4"/>`;}
-  svg.innerHTML=`<defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".22"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><path d="${line} L${W-8} ${H} L8 ${H} Z" fill="url(#cg)"/>${avgLine}<path d="${line}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`;
-  $('chLo').textContent='최근 '+h.length+'틱';$('chHi').textContent='고 '+won(Math.max(...h));}
-function renderPos(id){const p=S.price[id],own=S.hold[id];
-  if(own<=0){$('posBox').innerHTML=`<div class="c"><div class="k">보유</div><div class="v">없음</div></div><div class="c"><div class="k">현금</div><div class="v">${fmtWon(S.cash)}</div></div>`;return;}
-  const pl=(p-S.avg[id])*own,plp=(p-S.avg[id])/S.avg[id]*100,cls=pl>=0?'up':'down';
-  $('posBox').innerHTML=`<div class="c"><div class="k">보유 ${own}주</div><div class="v">${fmtWon(own*p)}</div></div><div class="c"><div class="k">평단가</div><div class="v">${won(S.avg[id])}</div></div><div class="c"><div class="k">평가손익</div><div class="v ${cls}">${pl>=0?'+':''}${plp.toFixed(1)}%</div></div>`;}
-function updateSheet(){const p=S.price[sheetId];$('qNum').textContent=qty;const total=qty*p;$('shTotal').textContent=won(total);$('shBal').textContent=fmtWon(buyingPower()-total);$('doBuy').disabled=!(qty>0&&total<=buyingPower());$('doSell').disabled=!(qty>0&&qty<=S.hold[sheetId]);}
-function setQty(n){qty=Math.max(0,n);updateSheet();}
-$('qPlus').onclick=()=>{sfx.click();setQty(qty+1);};$('qMinus').onclick=()=>{sfx.click();setQty(qty-1);};
+/* 주문 바 — 하단 고정 인라인. 팝업 시트 없이 S.featured 종목을 그대로 매매 (게임은 계속 흐름) */
+let qty=0;
+function renderOrder(){
+  const id=S.featured,s=STOCKS.find(x=>x.id===id),p=S.price[id];
+  $('obEmo').textContent=s.emo;$('obName').textContent=s.name;
+  $('obBal').textContent=fmtWon(buyingPower());
+  $('obQNum').textContent=qty;
+  const total=qty*p;
+  $('obTotal').textContent=won(total);
+  $('obBuy').disabled=!(qty>0&&total<=buyingPower());
+  $('obSell').disabled=!(qty>0&&qty<=S.hold[id]);
+}
+function setQty(n){qty=Math.max(0,Math.floor(n));renderOrder();}
+$('obPlus').onclick=()=>{sfx.click();setQty(qty+1);};
+$('obMinus').onclick=()=>{sfx.click();setQty(qty-1);};
 document.querySelectorAll('.quicks button').forEach(b=>b.onclick=()=>{sfx.click();
-  if(b.dataset.q==='maxbuy')setQty(Math.floor(buyingPower()/S.price[sheetId]));
-  else if(b.dataset.q==='maxsell')setQty(S.hold[sheetId]);
+  const id=S.featured,p=S.price[id];
+  if(b.dataset.q==='maxbuy')setQty(Math.floor(buyingPower()/p));
+  else if(b.dataset.q==='maxsell')setQty(S.hold[id]);
   else setQty(qty+parseInt(b.dataset.q));});
-$('doBuy').onclick=()=>{
-  const p=S.price[sheetId],total=qty*p;if(qty<=0||total>buyingPower())return;
-  const nn=S.hold[sheetId]+qty;S.avg[sheetId]=(S.avg[sheetId]*S.hold[sheetId]+p*qty)/nn;S.hold[sheetId]=nn;
+$('obBuy').onclick=()=>{
+  const id=S.featured,p=S.price[id],total=qty*p;if(qty<=0||total>buyingPower())return;
+  const nn=S.hold[id]+qty;S.avg[id]=(S.avg[id]*S.hold[id]+p*qty)/nn;S.hold[id]=nn;
   if(total<=S.cash)S.cash-=total;else{S.debt+=(total-S.cash);S.cash=0;}
-  sfx.buy();toast(`${STOCKS.find(s=>s.id===sheetId).name} ${qty}주 매수`);closeSheet();saveRun();render();checkMarginCall();
+  sfx.buy();toast(`${STOCKS.find(s=>s.id===id).name} ${qty}주 매수`);qty=0;saveRun();render();checkMarginCall();
 };
-$('doSell').onclick=()=>{
-  if(qty<=0||qty>S.hold[sheetId])return;const p=S.price[sheetId],proceeds=qty*p;
-  S.hold[sheetId]-=qty;if(S.hold[sheetId]===0)S.avg[sheetId]=0;
+$('obSell').onclick=()=>{
+  const id=S.featured;
+  if(qty<=0||qty>S.hold[id])return;const p=S.price[id],proceeds=qty*p;
+  S.hold[id]-=qty;if(S.hold[id]===0)S.avg[id]=0;
   if(S.debt>0){const pay=Math.min(proceeds,S.debt);S.debt-=pay;S.cash+=(proceeds-pay);}else S.cash+=proceeds;
-  sfx.buy();toast(`${STOCKS.find(s=>s.id===sheetId).name} ${qty}주 매도`);closeSheet();saveRun();render();
+  sfx.buy();toast(`${STOCKS.find(s=>s.id===id).name} ${qty}주 매도`);qty=0;saveRun();render();
 };
-$('scrim').onclick=closeSheet;
 
 /* 레벨업 / 인생 갈림길 */
 function showLevelUp(nl,gains){
@@ -782,7 +757,6 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{sfx.click();S.tab=t.
   $('panelFeed').classList.toggle('hide',S.tab!=='feed');});
 $('muteBtn').onclick=()=>{META.mute=!META.mute;saveMeta();$('muteBtn').textContent=META.mute?'🔇':'🔊';if(!META.mute)sfx.click();};
 $('homeBtn').onclick=()=>confirmModal('홈으로 나갈까요?','진행 상황은 저장돼요. 언제든 이어서 할 수 있어요.','나가기','계속하기',()=>{stopLiveTicker();stopTicker();stopFeedTimer();saveRun();showScreen('home');renderHome();},()=>{});
-$('tradeBtn').onclick=()=>{sfx.click();openSheet(S.featured);};
 
 /* boot — 시작 화면 없이 바로 게임. 기록/유산상점은 엔딩 후에만 */
 loadMeta();$('muteBtn').textContent=META.mute?'🔇':'🔊';renderHome();

@@ -309,7 +309,7 @@ const EVENTS=[
 ];
 const CHOICES=[
   {emo:'💼',t:'이직 제안',d:'경쟁사에서 스카웃 제안이 왔어요.',opts:[
-    {l:'이직한다',s:'연봉을 높였어요',tag:{career:1},f:S=>{S.salary+=800000;return '월급 +80만원';}},
+    {l:'이직한다',s:'연봉을 높였어요',tag:{career:1},f:S=>{S.salary+=800000;return '커리어 점수 +80 (연봉 협상 성공)';}},
     {l:'남는다',s:'안정을 택했어요',f:S=>{S.cash+=1000000;return '잔류 보너스 +100만원';}}]},
   {emo:'📈',t:'주식 리딩방 광고',d:'"수익률 300% 보장" 문자가 왔어요.',opts:[
     {l:'가입한다 (도박)',s:'큰 손익이 걸려요',tag:{invest:1},f:S=>{const w=Math.random()<0.35;const a=w?5000000+Math.random()*8000000:-(3000000+Math.random()*5000000);S.cash+=a;return (a>0?'+':'')+fmtWon(a);}},
@@ -327,7 +327,7 @@ const CHOICES=[
     {l:'시키는 대로 한다',s:'앗...',f:S=>{const a=Math.min(S.cash>0?S.cash:0,6000000);S.cash-=a;return '-'+fmtWon(a);}},
     {l:'바로 끊는다',s:'잘했어요',f:S=>'피해 없음'}]},
   {emo:'🏢',t:'승진 기회',d:'큰 프로젝트 리더를 맡으면 야근이 늘어요.',opts:[
-    {l:'수락한다',s:'커리어 성장',tag:{career:1},f:S=>{S.salary+=500000;return '월급 +50만원';}},
+    {l:'수락한다',s:'커리어 성장',tag:{career:1},f:S=>{S.salary+=500000;return '커리어 점수 +50';}},
     {l:'거절한다',s:'워라밸 유지',tag:{family:1},f:S=>'변화 없음'}]},
   {emo:'🏪',t:'창업 제안',d:'친구가 함께 가게를 차리자고 해요.',opts:[
     {l:'투자한다',s:'-2,000만, 사업 도전',tag:{biz:1},f:S=>{S.cash-=20000000;return '-2,000만원 (지분 확보)';}},
@@ -336,7 +336,7 @@ const CHOICES=[
 const LIFE=[
   {id:'travel',emo:'✈️',nm:'여행 가기', ds:'경험이 쌓여요. 세계여행가의 길!',        cost:1000000, repeat:true},
   {id:'car',   emo:'🚗',nm:'자동차 구입',ds:'출퇴근이 편해져요. 매달 유지비 15만원.',   cost:10000000,repeat:false},
-  {id:'wed',   emo:'💍',nm:'결혼하기',   ds:'맞벌이 시작! 배우자 소득 월 180만원 추가.',cost:30000000,repeat:false},
+  {id:'wed',   emo:'💍',nm:'결혼하기',   ds:'가정을 꾸려요. 생활비는 늘지만 새로운 인생 목표가 열려요.',cost:30000000,repeat:false},
   {id:'home',  emo:'🏠',nm:'내 집 마련', ds:'3억 아파트. 계약금 1억, 대출 2억(연4%).',  cost:100000000,repeat:false},
 ];
 const PERKS=[
@@ -379,11 +379,11 @@ const LEVELS=[
    fork:{emo:'💎',t:'자산 2,000만 돌파!',d:'이제 판을 키울 때예요. 다음 스텝은?',opts:[
      {l:'내 집 마련을 준비한다',s:'부동산 성향',tag:{realty:2}},
      {l:'주식 비중을 늘린다',s:'투자 성향',tag:{invest:2}},
-     {l:'몸값을 올린다 (이직)',s:'커리어 성향 · 월급 +30만',tag:{career:2},f:S=>{S.salary+=300000;}}]}},
+     {l:'몸값을 올린다 (이직)',s:'커리어 성향 · 커리어 점수 +30',tag:{career:2},f:S=>{S.salary+=300000;}}]}},
   {lv:4, need:50000000,  stock:'spc', life:'wed',    salary:400000,
    fork:{emo:'🔥',t:'자산 5,000만 돌파!',d:'인생 방향을 정할 때가 됐어요.',opts:[
      {l:'사업에 도전한다',s:'사업가 성향',tag:{biz:3}},
-     {l:'임원 트랙에 올인',s:'커리어 성향 · 월급 +60만',tag:{career:3},f:S=>{S.salary+=600000;}},
+     {l:'임원 트랙에 올인',s:'커리어 성향 · 커리어 점수 +60',tag:{career:3},f:S=>{S.salary+=600000;}},
      {l:'배당주로 파이어 준비',s:'투자 성향',tag:{invest:2}}]}},
   {lv:5, need:150000000, stock:null,  life:'home',   salary:500000,
    fork:{emo:'🏠',t:'자산 1.5억 돌파!',d:'내 집 마련이 눈앞이에요. 전략은?',opts:[
@@ -439,15 +439,14 @@ function info(){return {age:27+Math.floor(S.month/12),y:2026+Math.floor(S.month/
 /* advance */
 function advance(){
   sfx.next(); S.prevNet=netWorth();
-  S.cash+=S.salary; if(S.married)S.cash+=1800000;
+  // 월급·이벤트 자동 지급 정지 — 자산은 오직 매매(실시간 시세)로만 불어남.
+  // 아래는 매달 유지되는 고정 지출(생활비·차 유지비·주담대 상환 등)만 남김.
   STOCKS.forEach(s=>{if(s.div)S.cash+=S.hold[s.id]*S.price[s.id]*s.div;});
   if(S.home&&S.home.loan>0){const it=S.home.loan*0.04/12;const pr=Math.min(S.home.loan,500000);S.home.loan-=pr;S.cash-=it+pr;}
   S.cash-=monthlyExpense(); if(S.cash<0)S.cash-=(-S.cash)*0.006;
   STOCKS.forEach(s=>{let r=s.drift+s.vol*randn();const b=S.activeBias.find(x=>x.stockId===s.id);if(b)r+=b.dir*b.perTick*3;S.price[s.id]=Math.max(1000,Math.round(S.price[s.id]*(1+r)));});
   if(S.home)S.home.value=Math.round(S.home.value*(1+0.003+0.004*randn()));
   STOCKS.forEach(s=>{S.dayOpen[s.id]=S.price[s.id];});
-  let ev=null;const roll=Math.random();
-  if(roll<0.30){ev=EVENTS[Math.floor(Math.random()*EVENTS.length)];applyEvent(ev);}
   STOCKS.forEach(s=>{S.phist[s.id].push(S.price[s.id]);if(S.phist[s.id].length>48)S.phist[s.id].shift();});
   S.month++; const net=netWorth(); if(net>S.maxNet)S.maxNet=net;
   S.hist.push(net); if(S.hist.length>60)S.hist.shift();
@@ -459,7 +458,6 @@ function advance(){
   if(nl&&net>=nl.need){levelUp(nl);return;}
   // 경제적 자유 도달 → 은퇴 선언 분기 (파이어족 엔딩은 여기서만)
   if(!S.done.fire && net>=fireTarget()){S.done.fire=1;saveRun();showFireFork();return;}
-  if(ev){showEvent(ev);return;}
 }
 function levelUp(nl){
   S.level=nl.lv;
@@ -468,7 +466,7 @@ function levelUp(nl){
     gains.push(`📈 새 종목 <b>${STOCKS.find(s=>s.id===nl.stock).name}</b> 해금`);}
   if(nl.life&&!S.life.includes(nl.life)){S.life.push(nl.life);
     gains.push(`🏡 인생 <b>${LIFE.find(l=>l.id===nl.life).nm}</b> 해금`);}
-  if(nl.salary){S.salary+=nl.salary;gains.push(`💼 월급 <b>+${fmtWon(nl.salary)}</b>`);}
+  if(nl.salary){S.cash+=nl.salary;gains.push(`🎁 레벨 보너스 <b>+${fmtWon(nl.salary)}</b>`);}
   saveRun();render();
   showLevelUp(nl,gains);
 }

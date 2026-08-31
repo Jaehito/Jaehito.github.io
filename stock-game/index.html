@@ -19,7 +19,9 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
   body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-    background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; line-height:1.4; letter-spacing:-.02em; overflow-x:hidden;}
+    background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; line-height:1.4; letter-spacing:-.02em; overflow-x:hidden;
+    overscroll-behavior-y:contain;}
+  html{overscroll-behavior-y:contain;}
   #app{max-width:460px; margin:0 auto; min-height:100vh; position:relative;}
   .screen{display:none;} .screen.on{display:block;}
   #game{padding-bottom:calc(120px + var(--safe-b));}
@@ -110,6 +112,9 @@
   .stock{background:var(--card); border-radius:16px; padding:10px 14px; box-shadow:var(--shadow); margin-bottom:8px; display:flex; align-items:center; gap:11px; cursor:pointer; transition:transform .1s; animation:rise .4s backwards;}
   .stock:active{transform:scale(.985);}
   .stock.selected{box-shadow:0 0 0 2px var(--blue), 0 4px 20px rgba(0,0,0,.06);}
+  .stock.locked,.life.locked{opacity:.55; cursor:default; background:var(--field); box-shadow:none;}
+  .stock.locked:active,.life.locked:active{transform:none;}
+  .stock.locked .own,.life.locked .ds{color:var(--gray3); font-weight:700;}
   .logo{width:38px; height:38px; border-radius:12px; display:grid; place-items:center; font-size:19px; flex-shrink:0;}
   .stock .mid{flex:1; min-width:0;} .stock .nm{font-size:15px; font-weight:800;}
   .stock .own{font-size:12px; color:var(--gray2); font-weight:600; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .stock .own b{color:var(--gray);} .stock .own .pl.up{color:var(--red);} .stock .own .pl.down{color:var(--blue);}
@@ -140,7 +145,7 @@
   .cta .tb-cta{font-size:14.5px; font-weight:900; flex-shrink:0;}
 
   .scrim{position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:40; opacity:0; pointer-events:none; transition:.25s;} .scrim.on{opacity:1; pointer-events:auto;}
-  .sheet{position:fixed; left:0; right:0; bottom:0; z-index:50; margin:0 auto; max-width:460px; background:var(--card); border-radius:24px 24px 0 0; padding:8px 20px calc(20px + var(--safe-b)); transform:translateY(110%); transition:transform .3s cubic-bezier(.2,.9,.2,1); box-shadow:0 -8px 30px rgba(0,0,0,.12); max-height:92vh; overflow-y:auto;}
+  .sheet{position:fixed; left:0; right:0; bottom:0; z-index:50; margin:0 auto; max-width:460px; background:var(--card); border-radius:24px 24px 0 0; padding:8px 20px calc(20px + var(--safe-b)); transform:translateY(110%); transition:transform .3s cubic-bezier(.2,.9,.2,1); box-shadow:0 -8px 30px rgba(0,0,0,.12); max-height:92vh; overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y;}
   .sheet.on{transform:translateY(0);}
   .grab{width:40px; height:4px; background:var(--line); border-radius:999px; margin:6px auto 14px;}
   .sh-head{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
@@ -168,6 +173,8 @@
   .choice-opts button{border:2px solid var(--line); background:var(--card); border-radius:16px; padding:15px; font-size:15px; font-weight:800; color:var(--ink); cursor:pointer; text-align:left; transition:.12s;} .choice-opts button:active{border-color:var(--blue); background:var(--blue-weak);}
   .choice-opts button small{display:block; font-size:12px; font-weight:600; color:var(--gray2); margin-top:3px;}
   .stat-grid{display:flex; gap:10px; margin:16px 0 4px;} .stat-grid .s{flex:1; background:var(--field); border-radius:14px; padding:12px 6px;} .stat-grid .s .k{font-size:11px; color:var(--gray2); font-weight:700;} .stat-grid .s .v{font-size:15px; font-weight:800; margin-top:3px;}
+  .lv-gain{margin-top:9px; font-size:13.5px; font-weight:700; color:var(--gray); background:var(--field); border-radius:12px; padding:10px 12px;}
+  .lv-gain b{color:var(--blue); font-weight:800;}
   .legacy-earn{margin-top:14px; font-size:14px; font-weight:800; color:var(--gold); background:#fff7e6; border-radius:14px; padding:12px;}
   #confetti{position:fixed; inset:0; z-index:61; pointer-events:none; display:none;} #confetti.on{display:block;}
   .toast{position:fixed; left:50%; bottom:160px; translate:-50% 0; background:rgba(25,31,40,.92); color:#fff; font-size:13.5px; font-weight:700; padding:11px 18px; border-radius:14px; z-index:70; opacity:0; transition:.25s; pointer-events:none; max-width:88%; text-align:center;} .toast.on{opacity:1;}
@@ -304,49 +311,47 @@ const CHOICES=[
     {l:'거절한다',s:'',f:S=>'변화 없음'}]},
 ];
 const LIFE=[
-  {id:'travel',emo:'✈️',nm:'여행 가기', ds:'경험이 쌓여요. 세계여행가의 길!',        cost:5000000, repeat:true},
-  {id:'car',   emo:'🚗',nm:'자동차 구입',ds:'출퇴근이 편해져요. 매달 유지비 15만원.',   cost:30000000,repeat:false},
-  {id:'wed',   emo:'💍',nm:'결혼하기',   ds:'맞벌이 시작! 배우자 소득 월 250만원 추가.',cost:50000000,repeat:false},
-  {id:'home',  emo:'🏠',nm:'내 집 마련', ds:'5억 아파트. 계약금 2억, 대출 3억(연4%).',  cost:200000000,repeat:false},
+  {id:'travel',emo:'✈️',nm:'여행 가기', ds:'경험이 쌓여요. 세계여행가의 길!',        cost:1000000, repeat:true},
+  {id:'car',   emo:'🚗',nm:'자동차 구입',ds:'출퇴근이 편해져요. 매달 유지비 15만원.',   cost:10000000,repeat:false},
+  {id:'wed',   emo:'💍',nm:'결혼하기',   ds:'맞벌이 시작! 배우자 소득 월 180만원 추가.',cost:30000000,repeat:false},
+  {id:'home',  emo:'🏠',nm:'내 집 마련', ds:'3억 아파트. 계약금 1억, 대출 2억(연4%).',  cost:100000000,repeat:false},
 ];
 const PERKS=[
-  {id:'seed', emo:'💵',nm:'종잣돈',   ds:'시작 현금 +1,000만원',   max:5,cost:l=>2+l*2},
-  {id:'sal',  emo:'📈',nm:'연봉협상', ds:'월급 +20만원',            max:5,cost:l=>2+l*2},
-  {id:'save', emo:'🧾',nm:'절약왕',   ds:'월 생활비 -8만원',        max:5,cost:l=>2+l*2},
-  {id:'credit',emo:'🛡️',nm:'신용방어',ds:'마이너스통장 한도 +1,500만',max:4,cost:l=>3+l*3},
+  {id:'seed', emo:'💵',nm:'종잣돈',   ds:'시작 현금 +200만원',      max:5,cost:l=>2+l*2},
+  {id:'sal',  emo:'📈',nm:'연봉협상', ds:'월급 +10만원',            max:5,cost:l=>2+l*2},
+  {id:'save', emo:'🧾',nm:'절약왕',   ds:'월 생활비 -5만원',        max:5,cost:l=>2+l*2},
+  {id:'credit',emo:'🛡️',nm:'신용방어',ds:'마이너스통장 한도 +150만',max:4,cost:l=>3+l*3},
   {id:'hedge',emo:'⚓',nm:'손절방어', ds:'시장 폭락 피해 -15%',      max:3,cost:l=>4+l*4},
 ];
 const TAGDEF=[['invest','📊','투자'],['realty','🏠','부동산'],['career','💼','커리어'],['family','👨‍👩‍👧','가정'],['exp','🌍','여행'],['biz','🚀','사업']];
 
 /* milestones (달성 시 분기 선택지) */
-const MILESTONES=[
-  {id:'m5k',name:'첫 목돈 5,000만원',target:50000000,cond:()=>netWorth()>=50000000,
-   fork:{emo:'🌱',t:'첫 목돈을 모았어요',d:'5,000만원! 이제 어떻게 굴려볼까요?',opts:[
+/* 레벨: 순자산이 need를 넘으면 레벨업 → 종목/인생 해금 + 월급 인상 + 선택지 */
+const START_STOCKS=['ram','bnk'];
+const LEVELS=[
+  {lv:2, need:5000000,   stock:'tom', life:'travel', salary:250000,
+   fork:{emo:'🌱',t:'첫 500만원을 모았어요',d:'종잣돈이 생겼어요. 어떻게 굴려볼까요?',opts:[
      {l:'공격적으로 굴린다',s:'고위험 고수익 성향',tag:{invest:2}},
-     {l:'안정적으로 모은다',s:'성실 보너스 +200만원',tag:{career:1},f:S=>{S.cash+=2000000;}}]}},
-  {id:'m1e',name:'순자산 1억 달성',target:100000000,cond:()=>netWorth()>=100000000,
-   fork:{emo:'💎',t:'1억을 모았어요!',d:'인생의 첫 1억. 다음 스텝은?',opts:[
+     {l:'안정적으로 모은다',s:'성실 보너스 +50만원',tag:{career:1},f:S=>{S.cash+=500000;}}]}},
+  {lv:3, need:20000000,  stock:'kim', life:'car',    salary:300000,
+   fork:{emo:'💎',t:'자산 2,000만 돌파!',d:'이제 판을 키울 때예요. 다음 스텝은?',opts:[
      {l:'내 집 마련을 준비한다',s:'부동산 성향',tag:{realty:2}},
      {l:'주식 비중을 늘린다',s:'투자 성향',tag:{invest:2}},
-     {l:'몸값을 올린다 (이직)',s:'커리어 성향 · 월급 +50만',tag:{career:2},f:S=>{S.salary+=500000;}}]}},
-  {id:'wed',name:'결혼',cond:()=>S.married,
-   fork:{emo:'💍',t:'결혼했어요',d:'가정을 꾸렸어요. 어디에 집중할까요?',opts:[
-     {l:'맞벌이로 자산을 불린다',s:'투자·커리어',tag:{invest:1,career:1}},
-     {l:'가정에 집중한다',s:'가정 성향 · 생활 여유',tag:{family:3},f:S=>{S.baseExpense=Math.max(800000,S.baseExpense-100000);}}]}},
-  {id:'home',name:'내 집 마련',cond:()=>!!S.home,
-   fork:{emo:'🏠',t:'내 집이 생겼어요',d:'축하해요! 부동산 전략을 정해요.',opts:[
-     {l:'더 큰 집으로 갈아탄다',s:'부동산 올인 · 대출 +2억',tag:{realty:3},f:S=>{if(S.home){S.home.value=800000000;S.home.loan+=200000000;}}},
-     {l:'현금흐름을 지킨다',s:'투자 여력 확보',tag:{invest:1}}]}},
-  {id:'trip',name:'여행 3회',cond:()=>S.travelCount>=3,
-   fork:{emo:'🌍',t:'여행 마니아',d:'벌써 세 번째 여행! 인생을 어떻게 즐길까요?',opts:[
-     {l:'세계일주를 꿈꾼다',s:'세계여행가 · -300만원',tag:{exp:3},f:S=>{S.cash-=3000000;}},
-     {l:'이제 정착한다',s:'가정 성향',tag:{family:1}}]}},
-  {id:'m3e',name:'순자산 3억 달성',target:300000000,cond:()=>netWorth()>=300000000,
-   fork:{emo:'🔥',t:'자산 3억 돌파!',d:'상위권에 진입했어요. 인생 방향을 정해요.',opts:[
+     {l:'몸값을 올린다 (이직)',s:'커리어 성향 · 월급 +30만',tag:{career:2},f:S=>{S.salary+=300000;}}]}},
+  {lv:4, need:50000000,  stock:'spc', life:'wed',    salary:400000,
+   fork:{emo:'🔥',t:'자산 5,000만 돌파!',d:'인생 방향을 정할 때가 됐어요.',opts:[
      {l:'사업에 도전한다',s:'사업가 성향',tag:{biz:3}},
-     {l:'임원 트랙에 올인',s:'커리어 성향 · 월급 +100만',tag:{career:3},f:S=>{S.salary+=1000000;}},
+     {l:'임원 트랙에 올인',s:'커리어 성향 · 월급 +60만',tag:{career:3},f:S=>{S.salary+=600000;}},
      {l:'배당주로 파이어 준비',s:'투자 성향',tag:{invest:2}}]}},
+  {lv:5, need:150000000, stock:null,  life:'home',   salary:500000,
+   fork:{emo:'🏠',t:'자산 1.5억 돌파!',d:'내 집 마련이 눈앞이에요. 전략은?',opts:[
+     {l:'부동산에 집중한다',s:'부동산 성향',tag:{realty:3}},
+     {l:'현금흐름을 지킨다',s:'투자 여력 확보',tag:{invest:1}}]}},
+  {lv:6, need:300000000, stock:null,  life:null,     salary:600000},
+  {lv:7, need:500000000, stock:null,  life:null,     salary:800000},
+  {lv:8, need:1000000000,stock:null,  life:null,     salary:1000000},
 ];
+const nextLevel=()=>LEVELS.find(l=>l.lv===S.level+1);
 
 /* meta */
 let META;
@@ -357,9 +362,10 @@ const perkLv=id=>META.perks[id]||0;
 /* run */
 let S=null;
 function startRun(){
-  S={month:0, cash:20000000+perkLv('seed')*10000000, salary:2700000+perkLv('sal')*200000, baseExpense:1700000-perkLv('save')*80000,
+  S={month:0, cash:1000000+perkLv('seed')*2000000, salary:2000000+perkLv('sal')*100000, baseExpense:1000000-perkLv('save')*50000,
      hold:{}, avg:{}, price:{}, dayOpen:{}, phist:{}, car:false, married:false, home:null,
-     prevNet:null, hist:[], maxNet:0, tab:'stock', featured:STOCKS[0].id,
+     prevNet:null, hist:[], maxNet:0, tab:'stock', featured:START_STOCKS[0],
+     level:1, stocks:START_STOCKS.slice(), life:[],
      tags:{invest:0,realty:0,career:0,family:0,exp:0,biz:0}, travelCount:0, done:{}};
   STOCKS.forEach(s=>{S.hold[s.id]=0;S.avg[s.id]=0;S.price[s.id]=s.price;S.dayOpen[s.id]=s.price;let a=[],x=s.price;for(let i=0;i<8;i++){a.unshift(Math.max(1000,Math.round(x)));x=x/(1+s.vol*0.5*randn());}a.push(s.price);S.phist[s.id]=a;});
   S.maxNet=netWorth(); S.hist=[netWorth()];
@@ -367,8 +373,13 @@ function startRun(){
 }
 function loadRun(){try{const r=localStorage.getItem(RUN_KEY);if(r){S=JSON.parse(r);
   if(!S.dayOpen){S.dayOpen={};STOCKS.forEach(s=>S.dayOpen[s.id]=S.price[s.id]);}
-  if(!S.featured)S.featured=STOCKS[0].id;
+  if(!S.level)S.level=1;
+  if(!S.stocks)S.stocks=START_STOCKS.slice();
+  if(!S.life)S.life=[];
+  if(!S.featured||!S.stocks.includes(S.featured))S.featured=S.stocks[0];
   return true;}}catch(e){}return false;}
+const stockUnlocked=id=>S.stocks.includes(id);
+const lifeUnlocked=id=>S.life.includes(id);
 function saveRun(){try{localStorage.setItem(RUN_KEY,JSON.stringify(S));}catch(e){}}
 function clearRun(){try{localStorage.removeItem(RUN_KEY);}catch(e){}}
 function loadRunExists(){try{return !!localStorage.getItem(RUN_KEY);}catch(e){return false;}}
@@ -376,16 +387,15 @@ function loadRunExists(){try{return !!localStorage.getItem(RUN_KEY);}catch(e){re
 function portfolio(){return STOCKS.reduce((a,s)=>a+S.hold[s.id]*S.price[s.id],0);}
 function debt(){return S.home?S.home.loan:0;}
 function netWorth(){const eq=S.home?S.home.value-S.home.loan:0;return S.cash+portfolio()+eq;}
-function monthlyExpense(){let e=S.baseExpense;e+=S.home?200000:600000;if(S.car)e+=150000;if(S.married)e+=800000;return e;}
+function monthlyExpense(){let e=S.baseExpense;e+=S.home?150000:500000;if(S.car)e+=150000;if(S.married)e+=600000;return e;}
 function fireTarget(){return monthlyExpense()*12*25;}
-function overdraft(){return -(20000000+perkLv('credit')*15000000);}
+function overdraft(){return -(3000000+perkLv('credit')*1500000);}
 function info(){return {age:27+Math.floor(S.month/12),y:2026+Math.floor(S.month/12),m:S.month%12+1};}
-function nextMilestone(){return MILESTONES.find(m=>!S.done[m.id]);}
 
 /* advance */
 function advance(){
   sfx.next(); S.prevNet=netWorth();
-  S.cash+=S.salary; if(S.married)S.cash+=2500000;
+  S.cash+=S.salary; if(S.married)S.cash+=1800000;
   STOCKS.forEach(s=>{if(s.div)S.cash+=S.hold[s.id]*S.price[s.id]*s.div;});
   if(S.home&&S.home.loan>0){const it=S.home.loan*0.04/12;const pr=Math.min(S.home.loan,500000);S.home.loan-=pr;S.cash-=it+pr;}
   S.cash-=monthlyExpense(); if(S.cash<0)S.cash-=(-S.cash)*0.006;
@@ -400,13 +410,23 @@ function advance(){
   saveRun(); render();
   if(S.cash<overdraft()){endRun('bankrupt');return;}
   if(S.month>=396){endRun('retire');return;}
-  // milestone fork (우선순위 높음)
-  const ms=nextMilestone();
-  if(ms&&ms.cond()){S.done[ms.id]=1;saveRun();showFork(ms);return;}
+  // 레벨업 (해금 + 선택지). 선택 이벤트는 레벨업에서만 발생
+  const nl=nextLevel();
+  if(nl&&net>=nl.need){levelUp(nl);return;}
   // 경제적 자유 도달 → 은퇴 선언 분기 (파이어족 엔딩은 여기서만)
   if(!S.done.fire && net>=fireTarget()){S.done.fire=1;saveRun();showFireFork();return;}
   if(ev){showEvent(ev);return;}
-  if(roll>=0.30&&roll<0.55){showChoice(CHOICES[Math.floor(Math.random()*CHOICES.length)]);}
+}
+function levelUp(nl){
+  S.level=nl.lv;
+  const gains=[];
+  if(nl.stock&&!S.stocks.includes(nl.stock)){S.stocks.push(nl.stock);
+    gains.push(`📈 새 종목 <b>${STOCKS.find(s=>s.id===nl.stock).name}</b> 해금`);}
+  if(nl.life&&!S.life.includes(nl.life)){S.life.push(nl.life);
+    gains.push(`🏡 인생 <b>${LIFE.find(l=>l.id===nl.life).nm}</b> 해금`);}
+  if(nl.salary){S.salary+=nl.salary;gains.push(`💼 월급 <b>+${fmtWon(nl.salary)}</b>`);}
+  saveRun();render();
+  showLevelUp(nl,gains);
 }
 function applyEvent(ev){
   if(ev.s){let pct=ev.pct;if(ev.crash)pct*=(1-perkLv('hedge')*0.15);
@@ -428,17 +448,20 @@ function render(){
   renderGoal(net); renderChips(); renderStocks(); renderHero(); renderLife();
 }
 function renderGoal(net){
-  const ms=nextMilestone();
-  const setBar=pct=>{$('goalPct').textContent=Math.floor(pct)+'%';$('goalBar').style.width=pct+'%';$('goalBar').parentElement.style.visibility='';};
-  if(ms){
-    $('goalName').textContent='🎯 '+ms.name;
-    if(ms.target){setBar(Math.max(0,Math.min(100,net/ms.target*100)));
-      $('goalHint').textContent=`${fmtWon(net)} / ${fmtWon(ms.target)}`;}
-    else{$('goalPct').textContent='';$('goalBar').style.width='0%';$('goalBar').parentElement.style.visibility='hidden';
-      $('goalHint').textContent=ms.id==='wed'?'💍 인생 탭에서 결혼하면 달성':ms.id==='home'?'🏠 인생 탭에서 내 집 마련하면 달성':ms.id==='trip'?'✈️ 여행 3번이면 달성':'';}
+  const setBar=pct=>{$('goalPct').textContent=Math.floor(pct)+'%';$('goalBar').style.width=pct+'%';};
+  const nl=nextLevel();
+  if(nl){
+    const prev=LEVELS.find(l=>l.lv===S.level), from=prev?prev.need:0;
+    const pct=Math.max(0,Math.min(100,(net-from)/(nl.need-from)*100));
+    let reward='';
+    if(nl.stock)reward=` · ${STOCKS.find(s=>s.id===nl.stock).emo} 새 종목`;
+    else if(nl.life)reward=` · ${LIFE.find(l=>l.id===nl.life).emo} 인생 해금`;
+    $('goalName').textContent=`Lv.${S.level} → Lv.${nl.lv}${reward}`;
+    setBar(pct);
+    $('goalHint').textContent=`${fmtWon(net)} / ${fmtWon(nl.need)}`;
   }else{
     const ft=fireTarget();
-    $('goalName').textContent=S.done.fire?'🏁 60세 은퇴까지':'🔥 경제적 자유 (파이어)';
+    $('goalName').textContent=S.done.fire?`🏁 Lv.${S.level} · 60세 은퇴까지`:`🔥 경제적 자유 (파이어)`;
     setBar(Math.max(0,Math.min(100,net/ft*100)));
     $('goalHint').textContent=S.done.fire?`${info().age}세 · 나만의 엔딩을 향해`:`목표 ${fmtWon(ft)}`;
   }
@@ -484,13 +507,17 @@ function miniChartSvg(id,col){
 function renderStocks(){
   const el=$('panelStock');
   el.innerHTML=STOCKS.map((s,i)=>{
+    if(!stockUnlocked(s.id)){
+      const at=LEVELS.find(l=>l.stock===s.id);
+      return `<div class="stock locked" style="animation-delay:${i*45}ms"><div class="logo" style="background:var(--field)">🔒</div><div class="mid"><div class="nm">${s.name}</div><div class="own">Lv.${at?at.lv:'?'}에서 해금</div></div></div>`;
+    }
     const p=S.price[s.id],base=S.dayOpen[s.id]||s.price,chg=(p-base)/base*100,own=S.hold[s.id];
     const cls=chg>0.05?'up':chg<-0.05?'down':'flat',arw=chg>0.05?'▲':chg<-0.05?'▼':'−';
     let ownTxt='미보유';if(own>0){const pl=(p-S.avg[s.id])*own,plp=(p-S.avg[s.id])/S.avg[s.id]*100;ownTxt=`<b>${own}주</b> · <span class="pl ${pl>=0?'up':'down'}">${plp>=0?'+':''}${plp.toFixed(1)}%</span>`;}
     const flash=lastPrice[s.id]!==undefined&&p!==lastPrice[s.id]?(p>lastPrice[s.id]?'flash-up':'flash-down'):'';
     return `<div class="stock${s.id===S.featured?' selected':''}" data-stock="${s.id}" style="animation-delay:${i*45}ms"><div class="logo" style="background:${s.bg}">${s.emo}</div><div class="mid"><div class="nm">${s.name}</div><div class="own">${ownTxt}</div></div><svg class="mini-chart" viewBox="0 0 48 26">${miniChartSvg(s.id,CLS_COL[cls])}</svg><div class="rt"><div class="price ${flash}">${won(p)}</div><div class="chg ${cls}">${arw} ${Math.abs(chg).toFixed(1)}%</div></div></div>`;
   }).join('');
-  el.querySelectorAll('.stock').forEach(n=>n.onclick=()=>{sfx.click();selectFeatured(n.dataset.stock);});
+  el.querySelectorAll('.stock[data-stock]').forEach(n=>n.onclick=()=>{sfx.click();selectFeatured(n.dataset.stock);});
   STOCKS.forEach(s=>lastPrice[s.id]=S.price[s.id]);
 }
 function updateStockPricesLive(){
@@ -539,6 +566,10 @@ function stopMonthTimer(){if(monthTimer){clearInterval(monthTimer);monthTimer=nu
 function renderLife(){
   const el=$('panelLife');
   el.innerHTML=LIFE.map((l,i)=>{
+    if(!lifeUnlocked(l.id)){
+      const at=LEVELS.find(x=>x.life===l.id);
+      return `<div class="life locked" style="animation-delay:${i*45}ms"><div class="emo">🔒</div><div class="mid"><div class="nm">${l.nm}</div><div class="ds">Lv.${at?at.lv:'?'}에서 해금돼요</div></div></div>`;
+    }
     let done=l.id==='car'?S.car:l.id==='wed'?S.married:l.id==='home'?!!S.home:false;
     const afford=S.cash>=l.cost;let btn;
     if(done&&!l.repeat)btn='<button class="mini-btn done">완료</button>';
@@ -554,7 +585,7 @@ function buyLife(id){
   if(id==='travel'){S.cash-=l.cost;S.travelCount++;S.tags.exp+=1;toast('✈️ 즐거운 여행을 다녀왔어요!');}
   if(id==='car'){S.cash-=l.cost;S.car=true;toast('🚗 새 차를 구입했어요!');}
   if(id==='wed'){S.cash-=l.cost;S.married=true;toast('💍 결혼 축하해요! 맞벌이 시작');}
-  if(id==='home'){S.cash-=l.cost;S.home={value:500000000,loan:300000000};S.tags.realty+=1;toast('🏠 내 집 마련 성공!');}
+  if(id==='home'){S.cash-=l.cost;S.home={value:300000000,loan:200000000};S.tags.realty+=1;toast('🏠 내 집 마련 성공!');}
   saveRun();render();
 }
 
@@ -591,18 +622,31 @@ function showEvent(ev){sfx.event();let impact='';
   else if(ev._amt!==undefined){const dir=ev._amt>0?'up':'down';impact=`<div class="impact ${dir}">${ev._amt>0?'+':'-'}${fmtWon(Math.abs(ev._amt))}</div>`;}
   $('modalBox').innerHTML=`<div class="emo">${ev.emo}</div><div class="tt">${ev.t}</div><div class="dc">${ev.d}</div>${impact}<button class="ok" id="mOk">확인</button>`;
   $('modal').classList.add('on');$('mOk').onclick=()=>{sfx.click();$('modal').classList.remove('on');};}
-function showChoice(c){sfx.event();
-  const opts=c.opts.map((o,i)=>`<button data-i="${i}">${o.l}${o.s?`<small>${o.s}</small>`:''}</button>`).join('');
-  $('modalBox').innerHTML=`<div class="emo">${c.emo}</div><div class="tt">${c.t}</div><div class="dc">${c.d}</div><div class="choice-opts">${opts}</div>`;
+function showLevelUp(nl,gains){
+  sfx.win();
+  const list=gains.map(g=>`<div class="lv-gain">${g}</div>`).join('');
+  $('modalBox').innerHTML=`<div class="emo big">🎉</div><div class="tt">Lv.${nl.lv} 달성!</div>
+    <div class="dc">순자산 ${fmtWon(nl.need)} 돌파</div>${list}
+    <button class="ok" id="lvOk">계속</button>`;
   $('modal').classList.add('on');
-  $('modalBox').querySelectorAll('button').forEach(b=>b.onclick=()=>{sfx.click();const o=c.opts[+b.dataset.i];addTags(o.tag);const res=o.f?o.f(S):'변화 없음';saveRun();render();
-    $('modalBox').innerHTML=`<div class="emo">${/^-/.test(res)?'📩':'✅'}</div><div class="tt">${o.l}</div><div class="impact ${/^-/.test(res)?'down':'up'}">${res}</div><button class="ok" id="mOk2">확인</button>`;
-    $('mOk2').onclick=()=>{sfx.click();$('modal').classList.remove('on');};});}
-function showFork(ms){sfx.event();const f=ms.fork;
+  $('lvOk').onclick=()=>{sfx.click();
+    // 레벨 전용 분기가 있으면 그것, 없으면 랜덤 선택 이벤트
+    const f=nl.fork||CHOICES[Math.floor(Math.random()*CHOICES.length)];
+    showFork(f);
+  };
+}
+function showFork(f){sfx.event();
   const opts=f.opts.map((o,i)=>`<button data-i="${i}">${o.l}${o.s?`<small>${o.s}</small>`:''}</button>`).join('');
   $('modalBox').innerHTML=`<div class="emo big">${f.emo}</div><div class="tt">${f.t}</div><div class="dc">${f.d}</div><div class="choice-opts">${opts}</div>`;
   $('modal').classList.add('on');
-  $('modalBox').querySelectorAll('button').forEach(b=>b.onclick=()=>{sfx.cash();const o=f.opts[+b.dataset.i];addTags(o.tag);if(o.f)o.f(S);saveRun();render();$('modal').classList.remove('on');toast('갈림길 선택 완료!');});}
+  $('modalBox').querySelectorAll('button').forEach(b=>b.onclick=()=>{sfx.cash();const o=f.opts[+b.dataset.i];
+    addTags(o.tag);const res=o.f?o.f(S):null;saveRun();render();
+    if(typeof res==='string'){ // 결과가 있는 선택지는 결과 화면을 한 번 더 보여줌
+      const down=/^-/.test(res);
+      $('modalBox').innerHTML=`<div class="emo">${down?'📩':'✅'}</div><div class="tt">${o.l}</div><div class="impact ${down?'down':'up'}">${res}</div><button class="ok" id="mOk2">확인</button>`;
+      $('mOk2').onclick=()=>{sfx.click();$('modal').classList.remove('on');};
+    }else{$('modal').classList.remove('on');toast('선택 완료!');}
+  });}
 function showFireFork(){sfx.event();
   $('modalBox').innerHTML=`<div class="emo big">🔥</div><div class="tt">경제적 자유 도달!</div><div class="dc">이제 일하지 않아도 살 수 있어요.<br>어떻게 할까요?</div>
     <div class="choice-opts"><button id="fRetire">지금 은퇴한다<small>🌴 파이어족 엔딩으로 마무리</small></button><button id="fGo">더 큰 부를 향해 달린다<small>📊 계속 플레이 (60세까지)</small></button></div>`;
@@ -684,8 +728,10 @@ $('muteBtn').onclick=()=>{META.mute=!META.mute;saveMeta();$('muteBtn').textConte
 $('homeBtn').onclick=()=>confirmModal('홈으로 나갈까요?','진행 상황은 저장돼요. 언제든 이어서 할 수 있어요.','나가기','계속하기',()=>{stopLiveTicker();stopMonthTimer();saveRun();showScreen('home');renderHome();},()=>{});
 $('tradeBtn').onclick=()=>{sfx.click();openSheet(S.featured);};
 
-/* boot */
-loadMeta();$('muteBtn').textContent=META.mute?'🔇':'🔊';renderHome();showScreen('home');
+/* boot — 시작 화면 없이 바로 게임. 기록/유산상점은 엔딩 후에만 */
+loadMeta();$('muteBtn').textContent=META.mute?'🔇':'🔊';renderHome();
+if(loadRunExists()&&loadRun()){showScreen('game');render();startLiveTicker();startMonthTimer();}
+else startRun();
 </script>
 </body>
 </html>

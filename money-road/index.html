@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#3182F6">
-<title>머니로드 · 자동화 방치 게임</title>
-<meta name="description" content="탭으로 시작해 수입을 자동화하고, 3분마다 돌아오는 상환일을 넘기며 빚 없는 인생을 만드는 방치형 게임">
+<title>머니로드 · 자동화 + 단타 게임</title>
+<meta name="description" content="탭과 자동화로 종잣돈을 모으고, 15초 단타로 승부를 보는 방치+수동 하이브리드 게임">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
   :root{
@@ -31,7 +31,7 @@
   .icon-btn{border:none; background:var(--card); color:var(--gray); width:36px; height:36px; border-radius:12px; font-size:15px; box-shadow:var(--shadow); display:grid; place-items:center; cursor:pointer;}
 
   /* 레벨 진행바 */
-  .level-strip{margin:12px 20px 0; padding:0 2px;}
+  .level-strip{margin:2px 20px 0; padding:0 2px;}
   .lv-row{display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:5px;}
   .lv-name{font-size:12.5px; font-weight:800; color:var(--gray); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .lv-pct{font-size:12.5px; font-weight:800; color:var(--green); flex-shrink:0;}
@@ -39,44 +39,81 @@
   .lv-bar>i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,var(--green),#00e5a0); transition:width .3s;}
   .lv-hint{font-size:11px; font-weight:700; color:var(--gray3); margin-top:4px; text-align:right;}
 
-  /* 상환 스트립 */
-  .debt-strip{margin:2px 20px 0; background:var(--card); border-radius:18px; padding:14px 16px; box-shadow:var(--shadow); border:2px solid transparent; transition:border-color .3s, background .3s;}
-  .debt-strip.warn{border-color:var(--gold); background:#fffaf0;}
-  .debt-strip.danger{border-color:var(--red); background:var(--red-weak);}
-  .ds-top{display:flex; justify-content:space-between; align-items:baseline;}
-  .ds-label{font-size:12.5px; font-weight:800; color:var(--gray2);}
-  .ds-timer{font-size:13px; font-weight:900; color:var(--ink); font-variant-numeric:tabular-nums;}
-  .ds-timer.hot{color:var(--red);}
-  .ds-amt{font-size:22px; font-weight:900; margin-top:4px; letter-spacing:-.03em;}
-  .ds-bar{height:6px; background:var(--line); border-radius:999px; overflow:hidden; margin-top:9px;}
-  .ds-bar>i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,var(--blue),#00c2ff); transition:width .2s linear, background .3s;}
-  .debt-strip.warn .ds-bar>i{background:linear-gradient(90deg,var(--gold),#ff9f43);}
-  .debt-strip.danger .ds-bar>i{background:linear-gradient(90deg,var(--red),#ff6b78);}
-  .ds-sub{font-size:11.5px; font-weight:700; color:var(--gray2); margin-top:6px;}
-  .ds-sub b{color:var(--red);}
-
   /* 히어로: 현금/수입 */
-  .hero{margin:14px 20px 0; padding:20px 20px 18px; border-radius:24px; position:relative; overflow:hidden;
+  .hero{margin:12px 20px 0; padding:16px 20px 14px; border-radius:22px; position:relative; overflow:hidden;
     background:linear-gradient(135deg,#0b1b3a 0%,#12336e 55%,#1d4fb0 100%); color:#fff;}
   .hero::after{content:""; position:absolute; top:-40%; right:-20%; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle,#4c8dff55,transparent 70%);}
-  .hero .k{font-size:12.5px; font-weight:700; color:#9fc0ff; position:relative;}
-  .hero .cash{font-size:34px; font-weight:900; letter-spacing:-.04em; margin-top:4px; position:relative; font-variant-numeric:tabular-nums;}
-  .hero .income{font-size:14px; font-weight:800; color:#7ee0a8; margin-top:6px; position:relative;}
+  .hero .k{font-size:12px; font-weight:700; color:#9fc0ff; position:relative;}
+  .hero .cash{font-size:29px; font-weight:900; letter-spacing:-.04em; margin-top:3px; position:relative; font-variant-numeric:tabular-nums;}
+  .hero .income{font-size:12.5px; font-weight:800; color:#7ee0a8; margin-top:5px; position:relative;}
+
+  /* 단타 패널 */
+  .trade-panel{margin:12px 20px 0; background:var(--card); border-radius:20px; padding:14px 16px 16px; box-shadow:var(--shadow);}
+  .tp-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .tp-title{font-size:14.5px; font-weight:800;}
+  .tp-limit{font-size:11.5px; font-weight:700; color:var(--gray2); background:var(--field); padding:4px 9px; border-radius:999px;}
+  .stock-tabs{display:flex; gap:7px; margin-bottom:11px;}
+  .stock-tab{flex:1; border:2px solid var(--line); background:var(--card); border-radius:14px; padding:9px 8px; cursor:pointer; text-align:center;}
+  .stock-tab.sel{border-color:var(--blue); background:var(--blue-weak);}
+  .stock-tab.locked{opacity:.5; cursor:default;}
+  .stock-tab .e{font-size:19px;}
+  .stock-tab .n{font-size:12px; font-weight:800; margin-top:2px;}
+  .stock-tab .v{font-size:10px; font-weight:700; color:var(--gray2); margin-top:1px;}
+
+  .tip-box{display:flex; align-items:center; gap:10px; background:var(--field); border-radius:14px; padding:11px 13px; margin-bottom:11px;}
+  .tip-box.none{color:var(--gray3); font-size:12.5px; font-weight:700; justify-content:center; padding:16px 13px;}
+  .tip-emo{font-size:20px; flex-shrink:0;}
+  .tip-mid{flex:1; min-width:0;}
+  .tip-src{font-size:11.5px; font-weight:800; color:var(--gray2);}
+  .tip-acc{font-weight:800; color:var(--blue);}
+  .tip-txt{font-size:13px; font-weight:800; margin-top:1px;}
+  .tip-txt.up{color:var(--red);} .tip-txt.down{color:var(--blue);}
+
+  .bet-row{display:flex; align-items:center; gap:8px; background:var(--field); border-radius:14px; padding:8px 10px; margin-bottom:9px;}
+  .bet-row button{width:38px; height:38px; border:none; background:var(--card); border-radius:11px; font-size:18px; font-weight:800; color:var(--ink); box-shadow:var(--shadow); cursor:pointer;}
+  .bet-row .amt{flex:1; text-align:center; font-size:17px; font-weight:900; font-variant-numeric:tabular-nums;}
+  .bet-quicks{display:flex; gap:6px; margin-bottom:11px;}
+  .bet-quicks button{flex:1; border:none; background:var(--field); color:var(--gray); font-weight:800; font-size:12px; padding:8px 0; border-radius:10px; cursor:pointer;}
+  .bet-quicks button:active{background:var(--blue-weak); color:var(--blue);}
+  .trade-go{width:100%; border:none; border-radius:14px; padding:14px; font-size:15.5px; font-weight:900; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 8px 20px rgba(49,130,246,.3);}
+  .trade-go:disabled{background:var(--line); color:var(--gray3); box-shadow:none; cursor:default;}
+
+  /* 진행중인 라운드 */
+  .round-view{text-align:center;}
+  .round-timer{font-size:11.5px; font-weight:800; color:var(--gray2); font-variant-numeric:tabular-nums;}
+  .round-mult{font-size:40px; font-weight:900; letter-spacing:-.03em; margin:4px 0; font-variant-numeric:tabular-nums;}
+  .round-mult.up{color:var(--red);} .round-mult.down{color:var(--blue);} .round-mult.flat{color:var(--gray2);}
+  .round-chart{width:100%; height:70px; display:block; margin:4px 0 12px;}
+  .round-pnl{font-size:13px; font-weight:800; margin-bottom:12px;}
+  .round-pnl.up{color:var(--red);} .round-pnl.down{color:var(--blue);}
+  .sell-btn{width:100%; border:none; border-radius:14px; padding:15px; font-size:16px; font-weight:900; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
+
+  .section-title{font-size:13.5px; font-weight:800; color:var(--gray2); margin:18px 20px 8px;}
+  .section-title small{font-weight:600; color:var(--gray3);}
+
+  .tip-item{display:flex; align-items:center; gap:10px; background:var(--card); border-radius:14px; padding:10px 13px; margin:0 20px 7px; box-shadow:var(--shadow); opacity:1;}
+  .tip-item.used{opacity:.45;}
+  .tip-item .e{font-size:17px; flex-shrink:0;}
+  .tip-item .mid{flex:1; min-width:0;}
+  .tip-item .src{font-size:11px; font-weight:800; color:var(--gray2);}
+  .tip-item .stock{font-size:12.5px; font-weight:800;}
+  .tip-item .time{font-size:10.5px; font-weight:700; color:var(--gray3); flex-shrink:0;}
+  .tips-empty{font-size:12.5px; color:var(--gray3); font-weight:600; text-align:center; padding:18px 0;}
 
   /* 탭 버튼 */
   .tap-wrap{margin:16px 20px 0; position:relative;}
-  .tap-btn{width:100%; border:none; border-radius:22px; padding:26px 20px; cursor:pointer;
+  .tap-btn{width:100%; border:none; border-radius:22px; padding:20px 20px; cursor:pointer;
     background:linear-gradient(135deg,#3182F6,#4c8dff); color:#fff; box-shadow:0 10px 26px rgba(49,130,246,.34);
     display:flex; flex-direction:column; align-items:center; gap:4px; transition:transform .06s;}
   .tap-btn:active{transform:scale(.97);}
-  .tap-btn .e{font-size:34px;}
-  .tap-btn .t{font-size:15.5px; font-weight:900;}
-  .tap-btn .s{font-size:12.5px; font-weight:700; opacity:.85;}
-  .float-pop{position:absolute; left:50%; top:44px; transform:translateX(-50%); font-size:16px; font-weight:900; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.25);
+  .tap-btn .e{font-size:28px;}
+  .tap-btn .t{font-size:14.5px; font-weight:900;}
+  .tap-btn .s{font-size:12px; font-weight:700; opacity:.85;}
+  .float-pop{position:absolute; left:50%; top:38px; transform:translateX(-50%); font-size:15px; font-weight:900; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.25);
     pointer-events:none; animation:floatUp .7s ease-out forwards; z-index:5;}
-  @keyframes floatUp{0%{opacity:0; transform:translate(-50%,0) scale(.8);}15%{opacity:1; transform:translate(-50%,-6px) scale(1.05);}100%{opacity:0; transform:translate(-50%,-34px) scale(1);}}
-
-  .section-title{font-size:13.5px; font-weight:800; color:var(--gray2); margin:20px 20px 8px;}
+  @keyframes floatUp{0%{opacity:0; transform:translate(-50%,0) scale(.8);}15%{opacity:1; transform:translate(-50%,-6px) scale(1.05);}100%{opacity:0; transform:translate(-50%,-30px) scale(1);}}
 
   .biz{display:flex; align-items:center; gap:12px; background:var(--card); border-radius:16px; padding:12px 14px; margin:0 20px 8px; box-shadow:var(--shadow);}
   .biz .logo{width:42px; height:42px; border-radius:13px; background:var(--field); display:grid; place-items:center; font-size:21px; flex-shrink:0;}
@@ -113,13 +150,6 @@
     </div>
   </div>
 
-  <div class="debt-strip" id="debtStrip">
-    <div class="ds-top"><span class="ds-label" id="dsLabel">다음 상환까지</span><span class="ds-timer" id="dsTimer">3:00</span></div>
-    <div class="ds-amt" id="dsAmt">100,000원</div>
-    <div class="ds-bar"><i id="dsBar"></i></div>
-    <div class="ds-sub" id="dsSub"></div>
-  </div>
-
   <div class="level-strip">
     <div class="lv-row"><span class="lv-name" id="lvName">—</span><span class="lv-pct" id="lvPct"></span></div>
     <div class="lv-bar"><i id="lvBar"></i></div>
@@ -129,13 +159,22 @@
   <div class="hero">
     <div class="k">보유 현금</div>
     <div class="cash" id="cashView">0원</div>
-    <div class="income" id="incomeView">+0원 / 초</div>
+    <div class="income" id="incomeView">+0원 / 초 (자동)</div>
   </div>
+
+  <div class="trade-panel">
+    <div class="tp-head"><span class="tp-title">📊 단타 (15초)</span><span class="tp-limit" id="tpLimit">한도 0원</span></div>
+    <div class="stock-tabs" id="stockTabs"></div>
+    <div id="tradeBody"></div>
+  </div>
+
+  <div class="section-title">📰 소식 <small>· 정확도 높은 출처를 따라가면 유리해요</small></div>
+  <div id="tipsList"></div>
 
   <div class="tap-wrap">
     <button class="tap-btn" id="tapBtn">
       <span class="e">💰</span>
-      <span class="t" id="tapLabel">탭해서 벌기</span>
+      <span class="t" id="tapLabel">탭해서 종잣돈 벌기</span>
       <span class="s" id="tapSub">+1,000원</span>
     </button>
   </div>
@@ -150,18 +189,19 @@
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
-const RUN_KEY='moneyroad2_run_v2', META_KEY='moneyroad2_meta_v1';
+const RUN_KEY='moneyroad2_run_v3', META_KEY='moneyroad2_meta_v1';
 
 function fmtWon(v){const neg=v<0;let x=Math.round(Math.abs(v));if(x<10000)return (neg?'-':'')+x.toLocaleString()+'원';
   const eok=Math.floor(x/100000000),man=Math.floor((x%100000000)/10000);let s='';if(eok)s+=eok+'억';if(man)s+=(s?' ':'')+man.toLocaleString()+'만';return (neg?'-':'')+s+'원';}
 const won=n=>Math.round(n).toLocaleString()+'원';
+function randn(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
 
 /* audio */
 let AC=null;
 function beep(f,d,t='sine',vol=.15){if(META.mute)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;o.connect(g);g.connect(AC.destination);g.gain.setValueAtTime(vol,AC.currentTime);g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.start();o.stop(AC.currentTime+d);}catch(e){}}
-const sfx={tap:()=>beep(720,.05,'triangle',.09),buy:()=>{beep(520,.07,'square',.1);setTimeout(()=>beep(780,.09,'square',.1),60);},pay:()=>{beep(880,.08,'sine',.13);setTimeout(()=>beep(1180,.12,'sine',.12),70);},warn:()=>beep(300,.15,'sawtooth',.12),bankrupt:()=>{[400,300,200].forEach((f,i)=>setTimeout(()=>beep(f,.2,'sawtooth',.12),i*140));}};
+const sfx={tap:()=>beep(720,.05,'triangle',.09),buy:()=>{beep(520,.07,'square',.1);setTimeout(()=>beep(780,.09,'square',.1),60);},pay:()=>{beep(880,.08,'sine',.13);setTimeout(()=>beep(1180,.12,'sine',.12),70);},warn:()=>beep(300,.15,'sawtooth',.12),win:()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.16,'triangle',.14),i*100));}};
 
-/* config */
+/* config: 자동화(종잣돈 공급원) — 예전만큼 중요하진 않지만 여전히 시작 종잣돈과 방치 수입을 담당 */
 const BUSINESSES=[
   {id:'alba',   emo:'🏪', name:'편의점 알바',   cost:20000,       income:200},
   {id:'rider',  emo:'🛵', name:'배달 라이더',   cost:150000,      income:1200},
@@ -172,28 +212,54 @@ const BUSINESSES=[
   {id:'holding',emo:'🏦', name:'지주회사',      cost:1200000000,  income:8000000},
 ];
 const COST_MULT=1.15;
-const BASE_CYCLE_SEC=180, BASE_DUE=100000; // Lv1(레벨업 전) 기본값 — 사채처럼 짧고 빡빡하게 시작
-
-/* 레벨 = 초당수입 기준. 레벨이 오를수록 상환 주기가 늘어나(사채→할부→대출→모기지 느낌)
-   빚에 쫓기는 긴박감은 초반에 몰리고, 후반은 여유 있는 큰 상환으로 바뀐다.
-   일부 레벨은 보상(차/결혼/집)이 딸려있고, 그 보상이 영구 보너스를 준다. */
-const LEVELS=[
-  {lv:2, need:1000,      cycleSec:240,  due:300000,
-   reward:{emo:'🚗',t:'첫 차',d:'중고차를 뽑았어요. 배달 일이 한결 편해졌어요.',bonusTxt:'배달 라이더 수입 영구 +30%',f:S=>{S.riderBonus=(S.riderBonus||0)+0.3;}}},
-  {lv:3, need:5000,      cycleSec:300,  due:1900000},
-  {lv:4, need:30000,     cycleSec:420,  due:15800000,
-   reward:{emo:'💍',t:'결혼',d:'평생을 함께할 사람을 만났어요. 둘이 버니 탭 한 번의 무게가 달라져요.',bonusTxt:'탭 수입 영구 +30%',f:S=>{S.tapBonus=(S.tapBonus||0)+0.3;}}},
-  {lv:5, need:200000,    cycleSec:600,  due:150000000},
-  {lv:6, need:1200000,   cycleSec:900,  due:1350000000,
-   reward:{emo:'🏠',t:'내 집 마련',d:'드디어 내 집이 생겼어요. 마음의 여유가 상환 기간도 늘려줘요.',bonusTxt:'이후 상환 주기 영구 +50%',f:S=>{S.cycleBonus=(S.cycleBonus||0)+0.5;}}},
-  {lv:7, need:8000000,   cycleSec:1200, due:12000000000},
-  {lv:8, need:50000000,  cycleSec:1800, due:112500000000,
-   reward:{emo:'🏦',t:'마지막 관문',d:'여기까지 왔어요. 이제 마지막 상환 하나만 넘기면 완전히 자유예요.',bonusTxt:'',final:true,f:S=>{}}},
-];
 const costOf=(biz,count)=>Math.round(biz.cost*Math.pow(COST_MULT,count));
-function cycleSecOf(level){const l=LEVELS.find(x=>x.lv===level);const base=l?l.cycleSec:BASE_CYCLE_SEC;return Math.round(base*(1+(S.cycleBonus||0)));}
-function dueOf(level){const l=LEVELS.find(x=>x.lv===level);return l?l.due:BASE_DUE;}
-function cycleLabel(sec){return sec<60?`${sec}초`:`${Math.round(sec/60)}분`;}
+
+/* 단타 종목 — vol만 다르고 방향 적중 시 기대되는 편향폭(MAG)은 동일. 변동성은 스릴/난독성만 바꾼다 */
+const TRADE_STOCKS=[
+  {id:'stable', emo:'🏦', name:'안정주', vol:0.03},
+  {id:'theme',  emo:'🚀', name:'테마주', vol:0.06},
+];
+const ROUND_TICKS=30, ROUND_TICK_MS=500, ROUND_MAG=0.18;
+
+/* 소식 출처 — 정확도(acc)가 실제 방향 적중 확률. 그대로 베팅하면 기대값이 이 값에 좌우된다
+   (50%=순수 도박과 동일, 그 위는 +기대값, 그 아래는 -기대값이 되도록 라운드 판정을 설계했다) */
+const NEWS_SOURCES=[
+  {key:'official',icon:'📰',name:'공식 발표',   acc:.85},
+  {key:'guru',    icon:'🧠',name:'투자고수_김', acc:.72},
+  {key:'outlook', icon:'📄',name:'증권가 전망', acc:.62},
+  {key:'ant',     icon:'🐜',name:'개미123',    acc:.50},
+  {key:'rumor',   icon:'💬',name:'찌라시',     acc:.40},
+  {key:'pump',    icon:'🎣',name:'단타의신',    acc:.28},
+  {key:'bot',     icon:'🤖',name:'AI리딩봇',    acc:.15},
+];
+const TIP_LIFETIME_MS=45000, TIP_SPAWN_MS=14000;
+
+/* 레벨 = 지금까지 도달한 최고 현금(peakCash) 기준. 오르면 베팅 한도가 커지고,
+   일부 레벨엔 차/결혼/집 같은 영구 보상이 함께 온다. 보상은 전부 공짜로 지급 —
+   돈을 추가로 써서 얻는 방식은 쓰지 않는다(상환처럼 "돈이 사라지는" 느낌을 다시 주지 않기 위해). */
+const LEVELS=[
+  {lv:2, need:500000,      betLimit:100000,
+   reward:{emo:'🚗',t:'첫 차',d:'중고차를 뽑았어요. 그러다 괜찮은 정보통도 하나 트였어요.',bonusTxt:'소식 출처 하나의 정확도가 영구 공개돼요',f:S=>revealSource(S)}},
+  {lv:3, need:3000000,     betLimit:500000,
+   reward:{emo:'🚀',t:'테마주 해금',d:'변동성 큰 테마주에도 손댈 수 있게 됐어요.',bonusTxt:'',f:S=>{S.themeUnlocked=true;}}},
+  {lv:4, need:20000000,    betLimit:3000000,
+   reward:{emo:'💍',t:'결혼',d:'평생을 함께할 사람을 만났어요. 둘이 버니 탭 한 번의 무게가 달라져요.',bonusTxt:'탭 수입 영구 +30%',f:S=>{S.tapBonus=(S.tapBonus||0)+0.3;}}},
+  {lv:5, need:150000000,   betLimit:20000000},
+  {lv:6, need:1000000000,  betLimit:150000000,
+   reward:{emo:'🏠',t:'내 집 마련',d:'드디어 내 집이 생겼어요. 배짱 있게 더 크게 굴려볼 수 있겠어요.',bonusTxt:'베팅 한도 영구 +50%',f:S=>{S.limitBonus=(S.limitBonus||0)+0.5;}}},
+  {lv:7, need:8000000000,  betLimit:1000000000},
+  {lv:8, need:50000000000, betLimit:8000000000,
+   reward:{emo:'🏆',t:'완전한 자유',d:'여기까지 왔어요. 더 이상 넘어야 할 관문은 없어요 — 이제부턴 마음껏 굴려보세요.',bonusTxt:'',final:true,f:S=>{}}},
+];
+function betLimitOf(){
+  let base=20000;
+  for(const l of LEVELS){if(S.level>=l.lv)base=l.betLimit;}
+  return Math.round(base*(1+(S.limitBonus||0)));
+}
+function revealSource(S){
+  const pool=NEWS_SOURCES.map(x=>x.key).filter(k=>!S.revealedSources.includes(k));
+  if(pool.length)S.revealedSources.push(pool[Math.floor(Math.random()*pool.length)]);
+}
 
 /* meta (설정만) */
 let META;
@@ -204,10 +270,11 @@ function saveMeta(){try{localStorage.setItem(META_KEY,JSON.stringify(META));}cat
 let S=null;
 function newState(){
   const now=Date.now();
-  const s={cash:0, incomePerSec:0, counts:BUSINESSES.map(()=>0), level:1,
-    riderBonus:0, tapBonus:0, cycleBonus:0,
-    paymentCount:0, overdue:0, lastTick:now, totalTaps:0};
-  S=s; scheduleNextCycle();
+  const s={cash:0, incomePerSec:0, counts:BUSINESSES.map(()=>0), level:1, peakCash:0,
+    riderBonus:0, tapBonus:0, limitBonus:0, themeUnlocked:false, revealedSources:[],
+    selectedStock:'stable', betAmount:10000, activeRound:null, tips:[],
+    lastTick:now, totalTaps:0, finalCelebrated:false};
+  S=s;
   return s;
 }
 function saveRun(){try{localStorage.setItem(RUN_KEY,JSON.stringify(S));}catch(e){}}
@@ -219,53 +286,36 @@ function recomputeIncome(){
     return a+inc;
   },0);
 }
-/* 다음 상환 주기를 현재 레벨 기준으로 확정해서 예약한다.
-   금액/기간을 그때그때 계산하지 않고 고정해두는 이유: 주기 도중 레벨업을 해도
-   이미 진행 중인 상환은 안 바뀌어야 예측 가능하다(다음 주기부터 새 조건 적용). */
-function scheduleNextCycle(from){
-  const at=from||Date.now();
-  S.currentCycleSec=cycleSecOf(S.level);
-  S.currentDue=dueOf(S.level);
-  S.cycleStartAt=at;
-  S.nextDebtAt=at+S.currentCycleSec*1000;
-}
+function bumpPeak(){if(S.cash>S.peakCash)S.peakCash=S.cash;}
 
-/* 저장된 시점 이후 흐른 시간을 catch-up: 수동 탭 없이 패시브 수입만 반영하고,
-   그 사이 지나간 상환일이 있으면 그 시점 기준으로 순차 정산한다(오프라인 정산의 최소 버전).
-   자동화 구매가 없는 한 수입은 변하지 않으므로 레벨업은 떠나있는 동안 일어나지 않는다 —
-   현재 레벨의 상환 조건을 그대로 반복 적용하면 된다. */
+/* 저장된 시점 이후 흐른 시간을 catch-up: 자동수입을 반영하고,
+   떠나있는 동안 라운드가 15초를 넘겼으면 그 시점에 자동 청산한다
+   ("15초 지나면 마지막 가격에 판다"는 규칙을 오프라인에도 그대로 적용) */
 function catchUp(){
   const now=Date.now();
-  let t=S.lastTick;
-  let missedCycles=0, paidCycles=0, seizedCount=0, wentBankrupt=false;
-  while(true){
-    if(S.nextDebtAt<=now && S.nextDebtAt>=t){
-      const dt=(S.nextDebtAt-t)/1000;
-      S.cash+=dt*S.incomePerSec;
-      S.paymentCount++;
-      if(S.cash>=S.currentDue){S.cash-=S.currentDue;S.overdue=0;paidCycles++;}
-      else{S.overdue++;missedCycles++;
-        if(S.overdue===2){const idx=seizeOne();if(idx>=0)seizedCount++;}
-        if(S.overdue>=3){wentBankrupt=true;t=S.nextDebtAt;break;}
-      }
-      t=S.nextDebtAt; scheduleNextCycle(t);
-    }else break;
+  const awaySec=(now-S.lastTick)/1000;
+  S.cash+=awaySec*S.incomePerSec;
+  bumpPeak();
+  let roundResolved=null;
+  if(S.activeRound){
+    const idx=currentTickIdx();
+    if(idx>=S.activeRound.path.length-1){
+      const mult=S.activeRound.path[idx];
+      const payout=Math.round(S.activeRound.bet*mult);
+      S.cash+=payout; bumpPeak();
+      roundResolved={mult,payout,bet:S.activeRound.bet};
+      S.activeRound=null;
+    }
   }
-  const dt=(now-t)/1000;
-  if(dt>0 && !wentBankrupt) S.cash+=dt*S.incomePerSec;
   S.lastTick=now;
-  return {missedCycles,paidCycles,seizedCount,wentBankrupt,awaySec:(now-t)/1000};
-}
-function seizeOne(){
-  let bestIdx=-1,bestVal=-1;
-  for(let i=0;i<BUSINESSES.length;i++){if(S.counts[i]>0 && BUSINESSES[i].income>bestVal){bestVal=BUSINESSES[i].income;bestIdx=i;}}
-  if(bestIdx>=0){S.counts[bestIdx]--;recomputeIncome();}
-  return bestIdx;
+  return {awaySec,roundResolved};
 }
 
 function loadRun(){
   try{const r=localStorage.getItem(RUN_KEY);if(r){S=JSON.parse(r);
     if(!Array.isArray(S.counts)||S.counts.length!==BUSINESSES.length)S.counts=BUSINESSES.map(()=>0);
+    if(!Array.isArray(S.tips))S.tips=[];
+    if(!Array.isArray(S.revealedSources))S.revealedSources=[];
     recomputeIncome();
     return true;}
   }catch(e){}
@@ -280,7 +330,7 @@ let awayReport=null;
 if(loadRun()){ awayReport=catchUp(); } else { startRun(); }
 saveRun();
 
-/* render */
+/* ===== 자동화 ===== */
 function renderBiz(){
   $('bizList').innerHTML=BUSINESSES.map((b,i)=>{
     const cnt=S.counts[i], cost=costOf(b,cnt), can=S.cash>=cost;
@@ -297,22 +347,21 @@ function buyBiz(i){
   if(S.cash<cost)return;
   S.cash-=cost; S.counts[i]++; recomputeIncome();
   sfx.buy(); toast(`${b.name} 구매!`);
-  saveRun();
-  if(!checkLevelUp())render();
+  saveRun(); render();
 }
-/* 레벨업은 초당수입 기준. 한 번에 여러 레벨을 건너뛸 수도 있어 while로 처리하되,
-   보상(차/결혼/집)이나 최종 레벨은 그 자리에서 바로 모달로 보여주고 멈춘다 */
+
+/* ===== 레벨 ===== */
 function checkLevelUp(){
   const nl=LEVELS.find(l=>l.lv===S.level+1);
-  if(!nl||S.incomePerSec<nl.need)return false;
+  if(!nl||S.peakCash<nl.need)return false;
   S.level=nl.lv;
   if(nl.reward){
-    if(nl.reward.f)nl.reward.f(S); recomputeIncome();
+    if(nl.reward.f)nl.reward.f(S);
     saveRun(); render();
     showLevelReward(nl);
   }else{
     saveRun();
-    toast(`🎉 Lv.${S.level} 달성! 이제 ${cycleLabel(cycleSecOf(S.level))}마다 상환해요`);
+    toast(`🎉 Lv.${S.level} 달성! 베팅 한도가 ${fmtWon(betLimitOf())}로 늘어나요`);
     render();
     checkLevelUp();
   }
@@ -322,126 +371,197 @@ function showLevelReward(nl){
   const r=nl.reward;
   $('modalBox').innerHTML=`<div class="emo">${r.emo}</div><div class="tt">${r.t}</div><div class="dc">${r.d}</div>
     ${r.bonusTxt?`<div class="dc" style="margin-top:8px;color:var(--blue);font-weight:800">${r.bonusTxt}</div>`:''}
+    <div class="dc" style="margin-top:8px;color:var(--green);font-weight:800">베팅 한도 ${fmtWon(betLimitOf())}로 상승</div>
     <button class="ok" id="mOk">${r.final?'계속 플레이':'좋아요'}</button>`;
   $('modal').classList.add('on');
-  sfx.pay();
+  sfx.win();
   $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');render();checkLevelUp();};
-}
-function renderHero(){
-  $('cashView').textContent=fmtWon(S.cash);
-  $('incomeView').textContent=`+${fmtWon(S.incomePerSec)} / 초`;
 }
 function renderLevel(){
   const nl=LEVELS.find(l=>l.lv===S.level+1);
   $('lvChip').textContent=`Lv.${S.level}`;
   if(nl){
-    const pct=Math.max(0,Math.min(100,S.incomePerSec/nl.need*100));
-    $('lvName').textContent=`Lv.${S.level} → Lv.${nl.lv} · ${cycleLabel(cycleSecOf(nl.lv))} 주기`;
+    const pct=Math.max(0,Math.min(100,S.peakCash/nl.need*100));
+    $('lvName').textContent=`Lv.${S.level} → Lv.${nl.lv} · 한도 ${fmtWon(nl.betLimit)}`;
     $('lvPct').textContent=Math.floor(pct)+'%';
     $('lvBar').style.width=pct+'%';
-    $('lvHint').textContent=`${fmtWon(S.incomePerSec)}/초 · 목표 ${fmtWon(nl.need)}/초`;
+    $('lvHint').textContent=`최고 ${fmtWon(S.peakCash)} · 목표 ${fmtWon(nl.need)}`;
   }else{
     $('lvName').textContent='🏆 최종 레벨 달성';
     $('lvPct').textContent='100%';
     $('lvBar').style.width='100%';
-    $('lvHint').textContent=`${fmtWon(S.incomePerSec)}/초`;
+    $('lvHint').textContent=`최고 ${fmtWon(S.peakCash)}`;
   }
 }
-function renderDebt(){
-  const now=Date.now();
-  const remain=Math.max(0,S.nextDebtAt-now);
-  const sec=Math.ceil(remain/1000);
-  const mm=Math.floor(sec/60), ss=sec%60;
-  $('dsTimer').textContent=`${mm}:${String(ss).padStart(2,'0')}`;
-  $('dsTimer').classList.toggle('hot',sec<=20);
-  $('dsAmt').textContent=fmtWon(S.currentDue);
-  const pct=100-Math.max(0,Math.min(100,remain/(S.currentCycleSec*1000)*100));
-  $('dsBar').style.width=pct+'%';
-  const strip=$('debtStrip');
-  strip.classList.toggle('warn',S.overdue===1);
-  strip.classList.toggle('danger',S.overdue>=2);
-  if(S.overdue===1)$('dsSub').innerHTML=`⚠️ 지난 상환 연체 <b>1회</b> — 한 번 더 놓치면 자산이 압류돼요`;
-  else if(S.overdue>=2)$('dsSub').innerHTML=`🚨 연체 <b>${S.overdue}회</b> — 다음에도 놓치면 파산이에요`;
-  else $('dsSub').textContent=`${S.paymentCount+1}번째 상환 · ${cycleLabel(S.currentCycleSec)}마다 자동으로 빠져나가요`;
-}
-function renderTap(){
-  $('tapSub').textContent=`+${fmtWon(tapIncome())}`;
-}
-function render(){renderHero();renderLevel();renderDebt();renderBiz();renderTap();}
-const tapIncome=()=>Math.round((1000+Math.floor(S.incomePerSec*0.5))*(1+(S.tapBonus||0)));
 
-/* tap */
-let tapPopId=0;
+/* ===== 소식(단타 힌트) ===== */
+function spawnTip(){
+  if(!S||S.activeRound)return; // 라운드 중엔 새 소식이 쌓여도 헷갈리니 잠깐 멈춘다
+  const avail=TRADE_STOCKS.filter(s=>s.id!=='theme'||S.themeUnlocked);
+  const stock=avail[Math.floor(Math.random()*avail.length)];
+  const src=NEWS_SOURCES[Math.floor(Math.random()*NEWS_SOURCES.length)];
+  const dir=Math.random()<0.5?1:-1;
+  S.tips.unshift({stockId:stock.id, sourceKey:src.key, dir, ts:Date.now(), expiresAt:Date.now()+TIP_LIFETIME_MS, used:false});
+  if(S.tips.length>8)S.tips.length=8;
+  saveRun(); renderTips();
+}
+function activeTipFor(stockId){
+  const now=Date.now();
+  return S.tips.find(t=>t.stockId===stockId && !t.used && t.expiresAt>now);
+}
+function relTime(ts){const s=Math.floor((Date.now()-ts)/1000);if(s<20)return'방금';if(s<60)return s+'초 전';return Math.floor(s/60)+'분 전';}
+function renderTips(){
+  if(!S.tips.length){$('tipsList').innerHTML=`<div class="tips-empty">아직 소식이 없어요. 곧 도착해요.</div>`;return;}
+  $('tipsList').innerHTML=S.tips.map(t=>{
+    const src=NEWS_SOURCES.find(x=>x.key===t.sourceKey);
+    const stock=TRADE_STOCKS.find(x=>x.id===t.stockId);
+    const accTxt=S.revealedSources.includes(src.key)?` · <span style="color:var(--blue);font-weight:800">적중률 ~${Math.round(src.acc*100)}%</span>`:'';
+    const expired=t.expiresAt<=Date.now();
+    return `<div class="tip-item ${t.used||expired?'used':''}"><span class="e">${src.icon}</span>
+      <div class="mid"><div class="src">${src.name}${accTxt}</div><div class="stock">${stock.emo} ${stock.name} ${t.dir>0?'▲ 상승':'▼ 하락'} 전망</div></div>
+      <span class="time">${t.used?'사용됨':expired?'만료':relTime(t.ts)}</span></div>`;
+  }).join('');
+}
+
+/* ===== 단타 라운드 ===== */
+function genPath(trueDir,vol){
+  let m=1,path=[1];
+  for(let i=0;i<ROUND_TICKS;i++){
+    const drift=trueDir>0? ROUND_MAG/ROUND_TICKS : -ROUND_MAG*0.85/ROUND_TICKS;
+    m=Math.max(0.05,m*(1+drift+vol*randn()));
+    path.push(m);
+  }
+  return path;
+}
+function currentTickIdx(){
+  if(!S.activeRound)return 0;
+  const elapsed=Date.now()-S.activeRound.startedAt;
+  return Math.min(S.activeRound.path.length-1,Math.floor(elapsed/ROUND_TICK_MS));
+}
+function setBet(n){
+  S.betAmount=Math.max(0,Math.min(betLimitOf(),Math.min(Math.floor(S.cash),Math.round(n))));
+  renderTrade();
+}
+function startRound(){
+  if(S.activeRound)return;
+  const stock=TRADE_STOCKS.find(s=>s.id===S.selectedStock);
+  const bet=S.betAmount;
+  if(bet<=0||bet>betLimitOf()||bet>S.cash)return;
+  const tip=activeTipFor(stock.id);
+  const src=tip?NEWS_SOURCES.find(x=>x.key===tip.sourceKey):null;
+  const trueDir=tip? (Math.random()<src.acc?tip.dir:-tip.dir) : (Math.random()<0.5?1:-1);
+  const path=genPath(trueDir,stock.vol);
+  S.cash-=bet;
+  S.activeRound={stockId:stock.id,bet,path,startedAt:Date.now()};
+  if(tip)tip.used=true;
+  sfx.buy();
+  saveRun(); render();
+}
+function sellRound(){
+  if(!S.activeRound)return;
+  const idx=currentTickIdx();
+  const mult=S.activeRound.path[idx];
+  const payout=Math.round(S.activeRound.bet*mult);
+  const profit=payout-S.activeRound.bet;
+  S.cash+=payout; bumpPeak();
+  sfx[profit>=0?'pay':'warn']();
+  toast(`${mult>=1?'📈':'📉'} ${mult.toFixed(2)}x 청산 · ${profit>=0?'+':''}${fmtWon(profit)}`);
+  S.activeRound=null;
+  saveRun();
+  if(!checkLevelUp())render();
+}
+function poly(h,W,H,pad){const min=Math.min(...h),max=Math.max(...h),rng=(max-min)||0.001;return h.map((v,i)=>[pad+i/(h.length-1||1)*(W-2*pad),H-pad-(v-min)/rng*(H-2*pad)]);}
+function renderTradeStock(id){
+  S.selectedStock=id; saveRun(); renderTrade();
+  $('stockTabs').querySelectorAll('.stock-tab').forEach(el=>el.classList.toggle('sel',el.dataset.stock===id));
+}
+function renderTradeTabs(){
+  $('stockTabs').innerHTML=TRADE_STOCKS.map(s=>{
+    const locked=s.id==='theme'&&!S.themeUnlocked;
+    return `<div class="stock-tab ${s.id===S.selectedStock?'sel':''} ${locked?'locked':''}" data-stock="${s.id}">
+      <div class="e">${locked?'🔒':s.emo}</div><div class="n">${s.name}</div>
+      <div class="v">${locked?'Lv.3 해금':(s.vol<=0.03?'낮은 변동성':'높은 변동성')}</div></div>`;
+  }).join('');
+  $('stockTabs').querySelectorAll('.stock-tab').forEach(el=>{
+    if(el.classList.contains('locked'))return;
+    el.onclick=()=>{sfx.tap();renderTradeStock(el.dataset.stock);};
+  });
+}
+function renderTrade(){
+  $('tpLimit').textContent=`한도 ${fmtWon(betLimitOf())}`;
+  if(S.activeRound){renderRoundView();return;}
+  const stock=TRADE_STOCKS.find(s=>s.id===S.selectedStock);
+  const tip=activeTipFor(stock.id);
+  const limit=betLimitOf();
+  let tipHtml;
+  if(tip){
+    const src=NEWS_SOURCES.find(x=>x.key===tip.sourceKey);
+    const accTxt=S.revealedSources.includes(src.key)?` · 적중률 ~${Math.round(src.acc*100)}%`:' · 적중률 ?';
+    tipHtml=`<div class="tip-box"><span class="tip-emo">${src.icon}</span><div class="tip-mid">
+      <div class="tip-src">${src.name}${accTxt}</div>
+      <div class="tip-txt ${tip.dir>0?'up':'down'}">${stock.name} ${tip.dir>0?'▲ 상승':'▼ 하락'} 전망</div></div></div>`;
+  }else{
+    tipHtml=`<div class="tip-box none">이 종목엔 아직 소식이 없어요 — 감으로 베팅하면 반반이에요</div>`;
+  }
+  const canGo=S.betAmount>0 && S.betAmount<=limit && S.betAmount<=S.cash;
+  $('tradeBody').innerHTML=`
+    ${tipHtml}
+    <div class="bet-row"><button id="betMinus">−</button><div class="amt">${fmtWon(S.betAmount)}</div><button id="betPlus">+</button></div>
+    <div class="bet-quicks"><button data-q="0.1">10%</button><button data-q="0.5">50%</button><button data-q="1">최대</button></div>
+    <button class="trade-go" id="tradeGo" ${canGo?'':'disabled'}>15초 베팅 시작</button>`;
+  const step=Math.max(1000,Math.round(limit*0.05));
+  $('betMinus').onclick=()=>{sfx.tap();setBet(S.betAmount-step);};
+  $('betPlus').onclick=()=>{sfx.tap();setBet(S.betAmount+step);};
+  $('tradeBody').querySelectorAll('.bet-quicks button').forEach(b=>b.onclick=()=>{sfx.tap();setBet(Math.min(limit,S.cash)*parseFloat(b.dataset.q));});
+  $('tradeGo').onclick=()=>startRound();
+}
+function renderRoundView(){
+  const r=S.activeRound, stock=TRADE_STOCKS.find(s=>s.id===r.stockId);
+  const idx=currentTickIdx(), mult=r.path[idx];
+  const remainSec=Math.max(0,Math.ceil((ROUND_TICKS-idx)*ROUND_TICK_MS/1000));
+  const dir=mult>1.01?'up':mult<0.99?'down':'flat';
+  const path=r.path.slice(0,idx+1);
+  const pts=poly(path,300,70,6);
+  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const col=dir==='up'?'#f04452':dir==='down'?'#3182F6':'#8b95a1';
+  const profit=Math.round(r.bet*mult)-r.bet;
+  $('tradeBody').innerHTML=`<div class="round-view">
+    <div class="round-timer">${stock.emo} ${stock.name} · 남은 시간 ${remainSec}초</div>
+    <div class="round-mult ${dir}">${mult.toFixed(2)}x</div>
+    <svg class="round-chart" viewBox="0 0 300 70" preserveAspectRatio="none"><path d="${line}" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="round-pnl ${profit>=0?'up':'down'}">${profit>=0?'+':''}${fmtWon(profit)}</div>
+    <button class="sell-btn" id="sellBtn">지금 매도</button>
+  </div>`;
+  $('sellBtn').onclick=()=>sellRound();
+}
+
+/* ===== 히어로/탭 ===== */
+function renderHero(){
+  $('cashView').textContent=fmtWon(S.cash);
+  $('incomeView').textContent=`+${fmtWon(S.incomePerSec)} / 초 (자동)`;
+}
+function renderTap(){$('tapSub').textContent=`+${fmtWon(tapIncome())}`;}
+const tapIncome=()=>Math.round((1000+Math.floor(S.incomePerSec*0.5))*(1+(S.tapBonus||0)));
 $('tapBtn').onclick=()=>{
-  S.cash+=tapIncome(); S.totalTaps++;
+  S.cash+=tapIncome(); S.totalTaps++; bumpPeak();
   sfx.tap();
   const pop=document.createElement('div');
   pop.className='float-pop'; pop.textContent='+'+fmtWon(tapIncome());
   pop.style.left=(46+Math.random()*8)+'%';
   $('tapBtn').parentElement.appendChild(pop);
   setTimeout(()=>pop.remove(),700);
-  renderHero(); renderBiz(); renderTap();
+  saveRun();
+  if(!checkLevelUp()){renderHero();renderBiz();renderTap();renderLevel();}
 };
 
-/* debt cycle */
-const isMaxLevel=()=>!LEVELS.some(l=>l.lv===S.level+1);
-function processDebt(){
-  const due=S.currentDue;
-  if(S.cash>=due){
-    S.cash-=due; S.paymentCount++; S.overdue=0;
-    sfx.pay();
-    if(isMaxLevel() && !S.finalPaid){
-      S.finalPaid=true;
-      scheduleNextCycle();
-      saveRun(); render();
-      showFinalEnding();
-      return;
-    }
-    toast(`✅ ${S.paymentCount}번째 상환 완료! -${fmtWon(due)}`);
-  }else{
-    S.paymentCount++; S.overdue++;
-    sfx.warn();
-    if(S.overdue===1){
-      showModal('⚠️','상환 연체','이번 상환액을 갚지 못했어요. 한 번 더 놓치면 자산이 압류돼요.',()=>{});
-    }else if(S.overdue===2){
-      const idx=seizeOne();
-      const nm=idx>=0?BUSINESSES[idx].name:'자산';
-      showModal('📉','자산 압류','두 번 연속 연체돼서 채권자가 자산을 압류했어요.',()=>{},`${nm} 1개가 압류됐어요`);
-    }else{
-      sfx.bankrupt();
-      showBankrupt();
-      return;
-    }
-  }
-  scheduleNextCycle();
-  saveRun(); render();
-}
-function showFinalEnding(){
-  $('modalBox').innerHTML=`<div class="emo">🎉</div><div class="tt">대출 완제!</div>
-    <div class="dc">마지막 상환까지 끝냈어요. 이제부터 버는 돈은 전부 당신 거예요.</div>
-    <div class="stat-grid"><div class="s"><div class="k">도달 수입</div><div class="v">${fmtWon(S.incomePerSec)}/초</div></div><div class="s"><div class="k">상환 횟수</div><div class="v">${S.paymentCount}회</div></div></div>
-    <button class="ok" id="mOk">계속 플레이</button>`;
-  $('modal').classList.add('on');
-  $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
-}
-function showBankrupt(){
-  $('modalBox').innerHTML=`<div class="emo">💸</div><div class="tt">파산</div>
-    <div class="dc">3회 연속 상환에 실패해서 모든 걸 잃었어요.<br>처음부터 다시 시작해봐요.</div>
-    <div class="stat-grid"><div class="s"><div class="k">도달 레벨</div><div class="v">Lv.${S.level}</div></div><div class="s"><div class="k">상환 횟수</div><div class="v">${S.paymentCount-1}회</div></div></div>
-    <button class="ok danger" id="mRestart">다시 시작</button>`;
-  $('modal').classList.add('on');
-  $('mRestart').onclick=()=>{sfx.tap();$('modal').classList.remove('on');clearRun();startRun();render();};
-}
-function showModal(emo,tt,dc,onClose,extra){
-  $('modalBox').innerHTML=`<div class="emo">${emo}</div><div class="tt">${tt}</div><div class="dc">${dc}</div>${extra?`<div class="dc" style="margin-top:8px;color:var(--red);font-weight:800">${extra}</div>`:''}<button class="ok" id="mOk">확인</button>`;
-  $('modal').classList.add('on');
-  $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');onClose&&onClose();};
-}
+function render(){renderHero();renderLevel();renderTradeTabs();renderTrade();renderTips();renderBiz();renderTap();}
+
 function showAwayModal(report){
-  const bits=[];
-  if(report.paidCycles>0)bits.push(`<div class="lv-gain">✅ 자동 상환 <b>${report.paidCycles}회</b> 성공</div>`);
-  if(report.missedCycles>0)bits.push(`<div class="lv-gain" style="color:var(--red)">⚠️ 연체 <b>${report.missedCycles}회</b></div>`);
-  if(report.seizedCount>0)bits.push(`<div class="lv-gain" style="color:var(--red)">📉 자산 압류 <b>${report.seizedCount}회</b></div>`);
+  const bits=[`<div class="lv-gain">💰 자동수입 <b>+${fmtWon(report.awaySec*S.incomePerSec)}</b>이(가) 이미 쌓였어요</div>`];
+  if(report.roundResolved){
+    const rr=report.roundResolved, profit=rr.payout-rr.bet;
+    bits.push(`<div class="lv-gain">${rr.mult>=1?'📈':'📉'} 진행 중이던 단타가 <b>${rr.mult.toFixed(2)}x</b>로 마감 · ${profit>=0?'+':''}${fmtWon(profit)}</div>`);
+  }
   const awayTxt=report.awaySec>=3600?`${Math.floor(report.awaySec/3600)}시간 ${Math.floor(report.awaySec%3600/60)}분`:`${Math.floor(report.awaySec/60)}분`;
   $('modalBox').innerHTML=`<div class="emo">⏱️</div><div class="tt">${awayTxt} 만이네요</div>
     <div class="dc">그동안 자동수입이 계속 쌓였어요.</div>
@@ -455,28 +575,29 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clear
 
 $('muteBtn').onclick=()=>{META.mute=!META.mute;saveMeta();$('muteBtn').textContent=META.mute?'🔇':'🔊';if(!META.mute)sfx.tap();};
 
-/* main tick — 100ms 간격으로 부드럽게 현금 증가, 상환 데드라인 체크 */
+/* main tick — 100ms 간격으로 부드럽게 현금 증가, 라운드 진행/자동청산 체크 */
 setInterval(()=>{
   const now=Date.now();
   const dt=(now-S.lastTick)/1000;
   S.cash+=dt*S.incomePerSec;
+  bumpPeak();
   S.lastTick=now;
-  if(now>=S.nextDebtAt){processDebt();}
-  else{renderHero();renderDebt();renderBiz();}
+  if(S.activeRound){
+    const idx=currentTickIdx();
+    if(idx>=S.activeRound.path.length-1){ sellRound(); return; }
+    renderHero(); renderRoundView();
+  }else if(!checkLevelUp()){
+    renderHero(); renderBiz();
+  }
 }, 100);
+setInterval(spawnTip, TIP_SPAWN_MS);
 setInterval(saveRun, 3000);
 window.addEventListener('pagehide', saveRun);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveRun();});
 
 render();
-if(awayReport && (awayReport.missedCycles>0 || awayReport.paidCycles>0)){
-  if(awayReport.awaySec>=60) showAwayModal(awayReport);
-  else{
-    const bits=[];
-    if(awayReport.paidCycles>0)bits.push(`자동 상환 ${awayReport.paidCycles}회 성공`);
-    if(awayReport.missedCycles>0)bits.push(`연체 ${awayReport.missedCycles}회`);
-    toast(`돌아오신 동안: ${bits.join(' · ')}`);
-  }
+if(awayReport && awayReport.awaySec>=5){
+  if(awayReport.awaySec>=60 || awayReport.roundResolved) showAwayModal(awayReport);
 }
 </script>
 </body>

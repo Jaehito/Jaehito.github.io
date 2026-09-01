@@ -54,5 +54,8 @@ const denyUrls = [
   {% endif %}
   '{{ "/stock-game" | absolute_url }}',
   '{{ "/stock-game/" | absolute_url }}',
-  '{{ "/stock-game/index.html" | absolute_url }}'
+  '{{ "/stock-game/index.html" | absolute_url }}',
+  '{{ "/money-road" | absolute_url }}',
+  '{{ "/money-road/" | absolute_url }}',
+  '{{ "/money-road/index.html" | absolute_url }}'
 ];

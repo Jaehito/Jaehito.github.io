@@ -26,7 +26,18 @@
 
   .topbar{position:sticky; top:0; z-index:20; background:var(--bg); display:flex; align-items:center; justify-content:space-between; padding:14px 20px 8px;}
   .topbar .brand{font-size:18px; font-weight:800;} .topbar .brand span{color:var(--blue);}
+  .top-right{display:flex; align-items:center; gap:8px;}
+  .lv-chip{font-size:13px; font-weight:800; color:var(--gray); background:var(--card); padding:7px 12px; border-radius:999px; box-shadow:var(--shadow);}
   .icon-btn{border:none; background:var(--card); color:var(--gray); width:36px; height:36px; border-radius:12px; font-size:15px; box-shadow:var(--shadow); display:grid; place-items:center; cursor:pointer;}
+
+  /* 레벨 진행바 */
+  .level-strip{margin:12px 20px 0; padding:0 2px;}
+  .lv-row{display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:5px;}
+  .lv-name{font-size:12.5px; font-weight:800; color:var(--gray); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .lv-pct{font-size:12.5px; font-weight:800; color:var(--green); flex-shrink:0;}
+  .lv-bar{height:5px; background:var(--line); border-radius:999px; overflow:hidden;}
+  .lv-bar>i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,var(--green),#00e5a0); transition:width .3s;}
+  .lv-hint{font-size:11px; font-weight:700; color:var(--gray3); margin-top:4px; text-align:right;}
 
   /* 상환 스트립 */
   .debt-strip{margin:2px 20px 0; background:var(--card); border-radius:18px; padding:14px 16px; box-shadow:var(--shadow); border:2px solid transparent; transition:border-color .3s, background .3s;}
@@ -87,6 +98,7 @@
   .modal .ok{margin-top:18px; width:100%; border:none; color:#fff; font-size:16px; font-weight:800; padding:15px; border-radius:15px; cursor:pointer; background:linear-gradient(135deg,#3182F6,#4c8dff);}
   .modal .ok.danger{background:linear-gradient(135deg,#f04452,#ff6b78);}
   .stat-grid{display:flex; gap:10px; margin:16px 0 4px;} .stat-grid .s{flex:1; background:var(--field); border-radius:14px; padding:12px 6px;} .stat-grid .s .k{font-size:11px; color:var(--gray2); font-weight:700;} .stat-grid .s .v{font-size:15px; font-weight:800; margin-top:3px;}
+  .lv-gain{margin-top:9px; font-size:13.5px; font-weight:700; color:var(--gray); background:var(--field); border-radius:12px; padding:10px 12px; text-align:left;} .lv-gain b{color:var(--blue); font-weight:800;}
 
   .toast{position:fixed; left:50%; bottom:28px; translate:-50% 0; background:rgba(25,31,40,.92); color:#fff; font-size:13.5px; font-weight:700; padding:11px 18px; border-radius:14px; z-index:70; opacity:0; transition:.25s; pointer-events:none; max-width:88%; text-align:center;} .toast.on{opacity:1;}
 </style>
@@ -95,7 +107,10 @@
 <div id="app">
   <div class="topbar">
     <div class="brand">머니<span>로드</span></div>
-    <button class="icon-btn" id="muteBtn">🔊</button>
+    <div class="top-right">
+      <div class="lv-chip" id="lvChip">Lv.1</div>
+      <button class="icon-btn" id="muteBtn">🔊</button>
+    </div>
   </div>
 
   <div class="debt-strip" id="debtStrip">
@@ -103,6 +118,12 @@
     <div class="ds-amt" id="dsAmt">100,000원</div>
     <div class="ds-bar"><i id="dsBar"></i></div>
     <div class="ds-sub" id="dsSub"></div>
+  </div>
+
+  <div class="level-strip">
+    <div class="lv-row"><span class="lv-name" id="lvName">—</span><span class="lv-pct" id="lvPct"></span></div>
+    <div class="lv-bar"><i id="lvBar"></i></div>
+    <div class="lv-hint" id="lvHint"></div>
   </div>
 
   <div class="hero">
@@ -129,7 +150,7 @@
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
-const RUN_KEY='moneyroad2_run_v1', META_KEY='moneyroad2_meta_v1';
+const RUN_KEY='moneyroad2_run_v2', META_KEY='moneyroad2_meta_v1';
 
 function fmtWon(v){const neg=v<0;let x=Math.round(Math.abs(v));if(x<10000)return (neg?'-':'')+x.toLocaleString()+'원';
   const eok=Math.floor(x/100000000),man=Math.floor((x%100000000)/10000);let s='';if(eok)s+=eok+'억';if(man)s+=(s?' ':'')+man.toLocaleString()+'만';return (neg?'-':'')+s+'원';}
@@ -151,11 +172,28 @@ const BUSINESSES=[
   {id:'holding',emo:'🏦', name:'지주회사',      cost:1200000000,  income:8000000},
 ];
 const COST_MULT=1.15;
-const DEBT_CYCLE_MS=180000; // 3분
-const DEBT_BASE=100000;
-const DEBT_MULT=1.45;
+const BASE_CYCLE_SEC=180, BASE_DUE=100000; // Lv1(레벨업 전) 기본값 — 사채처럼 짧고 빡빡하게 시작
+
+/* 레벨 = 초당수입 기준. 레벨이 오를수록 상환 주기가 늘어나(사채→할부→대출→모기지 느낌)
+   빚에 쫓기는 긴박감은 초반에 몰리고, 후반은 여유 있는 큰 상환으로 바뀐다.
+   일부 레벨은 보상(차/결혼/집)이 딸려있고, 그 보상이 영구 보너스를 준다. */
+const LEVELS=[
+  {lv:2, need:1000,      cycleSec:240,  due:300000,
+   reward:{emo:'🚗',t:'첫 차',d:'중고차를 뽑았어요. 배달 일이 한결 편해졌어요.',bonusTxt:'배달 라이더 수입 영구 +30%',f:S=>{S.riderBonus=(S.riderBonus||0)+0.3;}}},
+  {lv:3, need:5000,      cycleSec:300,  due:1900000},
+  {lv:4, need:30000,     cycleSec:420,  due:15800000,
+   reward:{emo:'💍',t:'결혼',d:'평생을 함께할 사람을 만났어요. 둘이 버니 탭 한 번의 무게가 달라져요.',bonusTxt:'탭 수입 영구 +30%',f:S=>{S.tapBonus=(S.tapBonus||0)+0.3;}}},
+  {lv:5, need:200000,    cycleSec:600,  due:150000000},
+  {lv:6, need:1200000,   cycleSec:900,  due:1350000000,
+   reward:{emo:'🏠',t:'내 집 마련',d:'드디어 내 집이 생겼어요. 마음의 여유가 상환 기간도 늘려줘요.',bonusTxt:'이후 상환 주기 영구 +50%',f:S=>{S.cycleBonus=(S.cycleBonus||0)+0.5;}}},
+  {lv:7, need:8000000,   cycleSec:1200, due:12000000000},
+  {lv:8, need:50000000,  cycleSec:1800, due:112500000000,
+   reward:{emo:'🏦',t:'마지막 관문',d:'여기까지 왔어요. 이제 마지막 상환 하나만 넘기면 완전히 자유예요.',bonusTxt:'',final:true,f:S=>{}}},
+];
 const costOf=(biz,count)=>Math.round(biz.cost*Math.pow(COST_MULT,count));
-const dueOf=n=>Math.round(DEBT_BASE*Math.pow(DEBT_MULT,n-1)); // n번째 상환액(1-indexed)
+function cycleSecOf(level){const l=LEVELS.find(x=>x.lv===level);const base=l?l.cycleSec:BASE_CYCLE_SEC;return Math.round(base*(1+(S.cycleBonus||0)));}
+function dueOf(level){const l=LEVELS.find(x=>x.lv===level);return l?l.due:BASE_DUE;}
+function cycleLabel(sec){return sec<60?`${sec}초`:`${Math.round(sec/60)}분`;}
 
 /* meta (설정만) */
 let META;
@@ -166,15 +204,36 @@ function saveMeta(){try{localStorage.setItem(META_KEY,JSON.stringify(META));}cat
 let S=null;
 function newState(){
   const now=Date.now();
-  return {cash:0, incomePerSec:0, counts:BUSINESSES.map(()=>0),
-    paymentCount:0, overdue:0, nextDebtAt:now+DEBT_CYCLE_MS, lastTick:now, totalTaps:0};
+  const s={cash:0, incomePerSec:0, counts:BUSINESSES.map(()=>0), level:1,
+    riderBonus:0, tapBonus:0, cycleBonus:0,
+    paymentCount:0, overdue:0, lastTick:now, totalTaps:0};
+  S=s; scheduleNextCycle();
+  return s;
 }
 function saveRun(){try{localStorage.setItem(RUN_KEY,JSON.stringify(S));}catch(e){}}
 function clearRun(){try{localStorage.removeItem(RUN_KEY);}catch(e){}}
-function recomputeIncome(){S.incomePerSec=BUSINESSES.reduce((a,b,i)=>a+b.income*S.counts[i],0);}
+function recomputeIncome(){
+  S.incomePerSec=BUSINESSES.reduce((a,b,i)=>{
+    let inc=b.income*S.counts[i];
+    if(b.id==='rider')inc*=(1+(S.riderBonus||0));
+    return a+inc;
+  },0);
+}
+/* 다음 상환 주기를 현재 레벨 기준으로 확정해서 예약한다.
+   금액/기간을 그때그때 계산하지 않고 고정해두는 이유: 주기 도중 레벨업을 해도
+   이미 진행 중인 상환은 안 바뀌어야 예측 가능하다(다음 주기부터 새 조건 적용). */
+function scheduleNextCycle(from){
+  const at=from||Date.now();
+  S.currentCycleSec=cycleSecOf(S.level);
+  S.currentDue=dueOf(S.level);
+  S.cycleStartAt=at;
+  S.nextDebtAt=at+S.currentCycleSec*1000;
+}
 
 /* 저장된 시점 이후 흐른 시간을 catch-up: 수동 탭 없이 패시브 수입만 반영하고,
-   그 사이 지나간 상환일이 있으면 그 시점 기준으로 순차 정산한다(오프라인 정산의 최소 버전) */
+   그 사이 지나간 상환일이 있으면 그 시점 기준으로 순차 정산한다(오프라인 정산의 최소 버전).
+   자동화 구매가 없는 한 수입은 변하지 않으므로 레벨업은 떠나있는 동안 일어나지 않는다 —
+   현재 레벨의 상환 조건을 그대로 반복 적용하면 된다. */
 function catchUp(){
   const now=Date.now();
   let t=S.lastTick;
@@ -183,13 +242,13 @@ function catchUp(){
     if(S.nextDebtAt<=now && S.nextDebtAt>=t){
       const dt=(S.nextDebtAt-t)/1000;
       S.cash+=dt*S.incomePerSec;
-      const due=dueOf(S.paymentCount+1);
-      if(S.cash>=due){S.cash-=due;S.paymentCount++;S.overdue=0;paidCycles++;}
-      else{S.paymentCount++;S.overdue++;missedCycles++;
+      S.paymentCount++;
+      if(S.cash>=S.currentDue){S.cash-=S.currentDue;S.overdue=0;paidCycles++;}
+      else{S.overdue++;missedCycles++;
         if(S.overdue===2){const idx=seizeOne();if(idx>=0)seizedCount++;}
         if(S.overdue>=3){wentBankrupt=true;t=S.nextDebtAt;break;}
       }
-      t=S.nextDebtAt; S.nextDebtAt+=DEBT_CYCLE_MS;
+      t=S.nextDebtAt; scheduleNextCycle(t);
     }else break;
   }
   const dt=(now-t)/1000;
@@ -238,11 +297,55 @@ function buyBiz(i){
   if(S.cash<cost)return;
   S.cash-=cost; S.counts[i]++; recomputeIncome();
   sfx.buy(); toast(`${b.name} 구매!`);
-  saveRun(); render();
+  saveRun();
+  if(!checkLevelUp())render();
+}
+/* 레벨업은 초당수입 기준. 한 번에 여러 레벨을 건너뛸 수도 있어 while로 처리하되,
+   보상(차/결혼/집)이나 최종 레벨은 그 자리에서 바로 모달로 보여주고 멈춘다 */
+function checkLevelUp(){
+  const nl=LEVELS.find(l=>l.lv===S.level+1);
+  if(!nl||S.incomePerSec<nl.need)return false;
+  S.level=nl.lv;
+  if(nl.reward){
+    if(nl.reward.f)nl.reward.f(S); recomputeIncome();
+    saveRun(); render();
+    showLevelReward(nl);
+  }else{
+    saveRun();
+    toast(`🎉 Lv.${S.level} 달성! 이제 ${cycleLabel(cycleSecOf(S.level))}마다 상환해요`);
+    render();
+    checkLevelUp();
+  }
+  return true;
+}
+function showLevelReward(nl){
+  const r=nl.reward;
+  $('modalBox').innerHTML=`<div class="emo">${r.emo}</div><div class="tt">${r.t}</div><div class="dc">${r.d}</div>
+    ${r.bonusTxt?`<div class="dc" style="margin-top:8px;color:var(--blue);font-weight:800">${r.bonusTxt}</div>`:''}
+    <button class="ok" id="mOk">${r.final?'계속 플레이':'좋아요'}</button>`;
+  $('modal').classList.add('on');
+  sfx.pay();
+  $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');render();checkLevelUp();};
 }
 function renderHero(){
   $('cashView').textContent=fmtWon(S.cash);
   $('incomeView').textContent=`+${fmtWon(S.incomePerSec)} / 초`;
+}
+function renderLevel(){
+  const nl=LEVELS.find(l=>l.lv===S.level+1);
+  $('lvChip').textContent=`Lv.${S.level}`;
+  if(nl){
+    const pct=Math.max(0,Math.min(100,S.incomePerSec/nl.need*100));
+    $('lvName').textContent=`Lv.${S.level} → Lv.${nl.lv} · ${cycleLabel(cycleSecOf(nl.lv))} 주기`;
+    $('lvPct').textContent=Math.floor(pct)+'%';
+    $('lvBar').style.width=pct+'%';
+    $('lvHint').textContent=`${fmtWon(S.incomePerSec)}/초 · 목표 ${fmtWon(nl.need)}/초`;
+  }else{
+    $('lvName').textContent='🏆 최종 레벨 달성';
+    $('lvPct').textContent='100%';
+    $('lvBar').style.width='100%';
+    $('lvHint').textContent=`${fmtWon(S.incomePerSec)}/초`;
+  }
 }
 function renderDebt(){
   const now=Date.now();
@@ -251,22 +354,21 @@ function renderDebt(){
   const mm=Math.floor(sec/60), ss=sec%60;
   $('dsTimer').textContent=`${mm}:${String(ss).padStart(2,'0')}`;
   $('dsTimer').classList.toggle('hot',sec<=20);
-  const due=dueOf(S.paymentCount+1);
-  $('dsAmt').textContent=fmtWon(due);
-  const pct=100-Math.max(0,Math.min(100,remain/DEBT_CYCLE_MS*100));
+  $('dsAmt').textContent=fmtWon(S.currentDue);
+  const pct=100-Math.max(0,Math.min(100,remain/(S.currentCycleSec*1000)*100));
   $('dsBar').style.width=pct+'%';
   const strip=$('debtStrip');
   strip.classList.toggle('warn',S.overdue===1);
   strip.classList.toggle('danger',S.overdue>=2);
   if(S.overdue===1)$('dsSub').innerHTML=`⚠️ 지난 상환 연체 <b>1회</b> — 한 번 더 놓치면 자산이 압류돼요`;
   else if(S.overdue>=2)$('dsSub').innerHTML=`🚨 연체 <b>${S.overdue}회</b> — 다음에도 놓치면 파산이에요`;
-  else $('dsSub').textContent=`${S.paymentCount+1}번째 상환 · 3분마다 자동으로 빠져나가요`;
+  else $('dsSub').textContent=`${S.paymentCount+1}번째 상환 · ${cycleLabel(S.currentCycleSec)}마다 자동으로 빠져나가요`;
 }
 function renderTap(){
   $('tapSub').textContent=`+${fmtWon(tapIncome())}`;
 }
-function render(){renderHero();renderDebt();renderBiz();renderTap();}
-const tapIncome=()=>1000+Math.floor(S.incomePerSec*0.5);
+function render(){renderHero();renderLevel();renderDebt();renderBiz();renderTap();}
+const tapIncome=()=>Math.round((1000+Math.floor(S.incomePerSec*0.5))*(1+(S.tapBonus||0)));
 
 /* tap */
 let tapPopId=0;
@@ -282,11 +384,20 @@ $('tapBtn').onclick=()=>{
 };
 
 /* debt cycle */
+const isMaxLevel=()=>!LEVELS.some(l=>l.lv===S.level+1);
 function processDebt(){
-  const due=dueOf(S.paymentCount+1);
+  const due=S.currentDue;
   if(S.cash>=due){
     S.cash-=due; S.paymentCount++; S.overdue=0;
-    sfx.pay(); toast(`✅ ${S.paymentCount}번째 상환 완료! -${fmtWon(due)}`);
+    sfx.pay();
+    if(isMaxLevel() && !S.finalPaid){
+      S.finalPaid=true;
+      scheduleNextCycle();
+      saveRun(); render();
+      showFinalEnding();
+      return;
+    }
+    toast(`✅ ${S.paymentCount}번째 상환 완료! -${fmtWon(due)}`);
   }else{
     S.paymentCount++; S.overdue++;
     sfx.warn();
@@ -302,13 +413,21 @@ function processDebt(){
       return;
     }
   }
-  S.nextDebtAt+=DEBT_CYCLE_MS;
+  scheduleNextCycle();
   saveRun(); render();
+}
+function showFinalEnding(){
+  $('modalBox').innerHTML=`<div class="emo">🎉</div><div class="tt">대출 완제!</div>
+    <div class="dc">마지막 상환까지 끝냈어요. 이제부터 버는 돈은 전부 당신 거예요.</div>
+    <div class="stat-grid"><div class="s"><div class="k">도달 수입</div><div class="v">${fmtWon(S.incomePerSec)}/초</div></div><div class="s"><div class="k">상환 횟수</div><div class="v">${S.paymentCount}회</div></div></div>
+    <button class="ok" id="mOk">계속 플레이</button>`;
+  $('modal').classList.add('on');
+  $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
 }
 function showBankrupt(){
   $('modalBox').innerHTML=`<div class="emo">💸</div><div class="tt">파산</div>
     <div class="dc">3회 연속 상환에 실패해서 모든 걸 잃었어요.<br>처음부터 다시 시작해봐요.</div>
-    <div class="stat-grid"><div class="s"><div class="k">도달 수입</div><div class="v">${fmtWon(S.incomePerSec)}/초</div></div><div class="s"><div class="k">상환 횟수</div><div class="v">${S.paymentCount-1}회</div></div></div>
+    <div class="stat-grid"><div class="s"><div class="k">도달 레벨</div><div class="v">Lv.${S.level}</div></div><div class="s"><div class="k">상환 횟수</div><div class="v">${S.paymentCount-1}회</div></div></div>
     <button class="ok danger" id="mRestart">다시 시작</button>`;
   $('modal').classList.add('on');
   $('mRestart').onclick=()=>{sfx.tap();$('modal').classList.remove('on');clearRun();startRun();render();};
@@ -317,6 +436,20 @@ function showModal(emo,tt,dc,onClose,extra){
   $('modalBox').innerHTML=`<div class="emo">${emo}</div><div class="tt">${tt}</div><div class="dc">${dc}</div>${extra?`<div class="dc" style="margin-top:8px;color:var(--red);font-weight:800">${extra}</div>`:''}<button class="ok" id="mOk">확인</button>`;
   $('modal').classList.add('on');
   $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');onClose&&onClose();};
+}
+function showAwayModal(report){
+  const bits=[];
+  if(report.paidCycles>0)bits.push(`<div class="lv-gain">✅ 자동 상환 <b>${report.paidCycles}회</b> 성공</div>`);
+  if(report.missedCycles>0)bits.push(`<div class="lv-gain" style="color:var(--red)">⚠️ 연체 <b>${report.missedCycles}회</b></div>`);
+  if(report.seizedCount>0)bits.push(`<div class="lv-gain" style="color:var(--red)">📉 자산 압류 <b>${report.seizedCount}회</b></div>`);
+  const awayTxt=report.awaySec>=3600?`${Math.floor(report.awaySec/3600)}시간 ${Math.floor(report.awaySec%3600/60)}분`:`${Math.floor(report.awaySec/60)}분`;
+  $('modalBox').innerHTML=`<div class="emo">⏱️</div><div class="tt">${awayTxt} 만이네요</div>
+    <div class="dc">그동안 자동수입이 계속 쌓였어요.</div>
+    ${bits.join('')}
+    <div class="stat-grid" style="margin-top:14px"><div class="s"><div class="k">현재 잔액</div><div class="v">${fmtWon(S.cash)}</div></div><div class="s"><div class="k">초당 수입</div><div class="v">${fmtWon(S.incomePerSec)}</div></div></div>
+    <button class="ok" id="mOk">확인</button>`;
+  $('modal').classList.add('on');
+  $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
 }
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),1600);}
 
@@ -337,10 +470,13 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)saveRun();}
 
 render();
 if(awayReport && (awayReport.missedCycles>0 || awayReport.paidCycles>0)){
-  const bits=[];
-  if(awayReport.paidCycles>0)bits.push(`자동 상환 ${awayReport.paidCycles}회 성공`);
-  if(awayReport.missedCycles>0)bits.push(`연체 ${awayReport.missedCycles}회`);
-  toast(`돌아오신 동안: ${bits.join(' · ')}`);
+  if(awayReport.awaySec>=60) showAwayModal(awayReport);
+  else{
+    const bits=[];
+    if(awayReport.paidCycles>0)bits.push(`자동 상환 ${awayReport.paidCycles}회 성공`);
+    if(awayReport.missedCycles>0)bits.push(`연체 ${awayReport.missedCycles}회`);
+    toast(`돌아오신 동안: ${bits.join(' · ')}`);
+  }
 }
 </script>
 </body>

@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#3182F6">
-<title>머니로드 · 자동화 + 단타 게임</title>
-<meta name="description" content="탭과 자동화로 종잣돈을 모으고, 15초 단타로 승부를 보는 방치+수동 하이브리드 게임">
+<title>머니로드 · 단타 게임</title>
+<meta name="description" content="자동화로 베팅 한도와 종잣돈을 키우고, 15초 단타로 실제 수익을 만드는 게임">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
   :root{
@@ -39,13 +39,30 @@
   .lv-bar>i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,var(--green),#00e5a0); transition:width .3s;}
   .lv-hint{font-size:11px; font-weight:700; color:var(--gray3); margin-top:4px; text-align:right;}
 
-  /* 히어로: 현금/수입 */
+  /* 히어로: 현금 */
   .hero{margin:12px 20px 0; padding:16px 20px 14px; border-radius:22px; position:relative; overflow:hidden;
     background:linear-gradient(135deg,#0b1b3a 0%,#12336e 55%,#1d4fb0 100%); color:#fff;}
   .hero::after{content:""; position:absolute; top:-40%; right:-20%; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle,#4c8dff55,transparent 70%);}
   .hero .k{font-size:12px; font-weight:700; color:#9fc0ff; position:relative;}
-  .hero .cash{font-size:29px; font-weight:900; letter-spacing:-.04em; margin-top:3px; position:relative; font-variant-numeric:tabular-nums;}
-  .hero .income{font-size:12.5px; font-weight:800; color:#7ee0a8; margin-top:5px; position:relative;}
+  .hero .cash{font-size:31px; font-weight:900; letter-spacing:-.04em; margin-top:3px; position:relative; font-variant-numeric:tabular-nums;}
+
+  /* 탭 버튼(부트스트랩) */
+  .tap-wrap{margin:12px 20px 0; position:relative;}
+  .tap-btn{width:100%; border:none; border-radius:16px; padding:12px 18px; cursor:pointer;
+    background:var(--card); color:var(--ink); box-shadow:var(--shadow);
+    display:flex; align-items:center; gap:10px; transition:transform .06s;}
+  .tap-btn:active{transform:scale(.98);}
+  .tap-btn .e{font-size:20px;}
+  .tap-btn .t{font-size:13.5px; font-weight:800; flex:1; text-align:left;}
+  .tap-btn .s{font-size:12.5px; font-weight:800; color:var(--blue);}
+  .float-pop{position:absolute; left:50%; top:6px; transform:translateX(-50%); font-size:14px; font-weight:900; color:var(--blue);
+    pointer-events:none; animation:floatUp .7s ease-out forwards; z-index:5;}
+  @keyframes floatUp{0%{opacity:0; transform:translate(-50%,0) scale(.8);}15%{opacity:1; transform:translate(-50%,-6px) scale(1.05);}100%{opacity:0; transform:translate(-50%,-26px) scale(1);}}
+
+  /* 메인 탭 스위처 */
+  .main-tabs{display:flex; gap:6px; margin:14px 20px 0; background:var(--card); border-radius:15px; padding:5px; box-shadow:var(--shadow);}
+  .main-tab{flex:1; text-align:center; padding:11px; border-radius:11px; font-size:14px; font-weight:800; color:var(--gray2); background:transparent; border:none; cursor:pointer;}
+  .main-tab.on{background:var(--ink); color:#fff;}
 
   /* 단타 패널 */
   .trade-panel{margin:12px 20px 0; background:var(--card); border-radius:20px; padding:14px 16px 16px; box-shadow:var(--shadow);}
@@ -60,15 +77,6 @@
   .stock-tab .n{font-size:12px; font-weight:800; margin-top:2px;}
   .stock-tab .v{font-size:10px; font-weight:700; color:var(--gray2); margin-top:1px;}
 
-  .tip-box{display:flex; align-items:center; gap:10px; background:var(--field); border-radius:14px; padding:11px 13px; margin-bottom:11px;}
-  .tip-box.none{color:var(--gray3); font-size:12.5px; font-weight:700; justify-content:center; padding:16px 13px;}
-  .tip-emo{font-size:20px; flex-shrink:0;}
-  .tip-mid{flex:1; min-width:0;}
-  .tip-src{font-size:11.5px; font-weight:800; color:var(--gray2);}
-  .tip-acc{font-weight:800; color:var(--blue);}
-  .tip-txt{font-size:13px; font-weight:800; margin-top:1px;}
-  .tip-txt.up{color:var(--red);} .tip-txt.down{color:var(--blue);}
-
   .bet-row{display:flex; align-items:center; gap:8px; background:var(--field); border-radius:14px; padding:8px 10px; margin-bottom:9px;}
   .bet-row button{width:38px; height:38px; border:none; background:var(--card); border-radius:11px; font-size:18px; font-weight:800; color:var(--ink); box-shadow:var(--shadow); cursor:pointer;}
   .bet-row .amt{flex:1; text-align:center; font-size:17px; font-weight:900; font-variant-numeric:tabular-nums;}
@@ -78,42 +86,32 @@
   .trade-go{width:100%; border:none; border-radius:14px; padding:14px; font-size:15.5px; font-weight:900; color:#fff; cursor:pointer;
     background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 8px 20px rgba(49,130,246,.3);}
   .trade-go:disabled{background:var(--line); color:var(--gray3); box-shadow:none; cursor:default;}
+  .trade-note{font-size:11.5px; color:var(--gray3); font-weight:600; text-align:center; margin-top:9px; line-height:1.5;}
 
   /* 진행중인 라운드 */
   .round-view{text-align:center;}
   .round-timer{font-size:11.5px; font-weight:800; color:var(--gray2); font-variant-numeric:tabular-nums;}
   .round-mult{font-size:40px; font-weight:900; letter-spacing:-.03em; margin:4px 0; font-variant-numeric:tabular-nums;}
   .round-mult.up{color:var(--red);} .round-mult.down{color:var(--blue);} .round-mult.flat{color:var(--gray2);}
-  .round-chart{width:100%; height:70px; display:block; margin:4px 0 12px;}
+  .round-chart{width:100%; height:80px; display:block; margin:4px 0 12px; background:var(--field); border-radius:12px;}
   .round-pnl{font-size:13px; font-weight:800; margin-bottom:12px;}
   .round-pnl.up{color:var(--red);} .round-pnl.down{color:var(--blue);}
   .sell-btn{width:100%; border:none; border-radius:14px; padding:15px; font-size:16px; font-weight:900; color:#fff; cursor:pointer;
     background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
 
+  /* 자동화 패널 */
+  .power-card{margin:12px 20px 0; background:var(--card); border-radius:20px; padding:16px; box-shadow:var(--shadow);}
+  .power-row{display:flex; justify-content:space-between; align-items:baseline;}
+  .power-k{font-size:12.5px; font-weight:800; color:var(--gray2);}
+  .power-v{font-size:15px; font-weight:900;}
+  .seed-bar{height:10px; background:var(--line); border-radius:999px; overflow:hidden; margin:10px 0 8px;}
+  .seed-bar>i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,var(--gold),#ffcf6b); transition:width .3s;}
+  .seed-hint{font-size:11px; font-weight:700; color:var(--gray3); margin-bottom:12px;}
+  .collect-btn{width:100%; border:none; border-radius:14px; padding:14px; font-size:15px; font-weight:900; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,#ffb020,#ff9f43); box-shadow:0 8px 20px rgba(255,176,32,.3);}
+  .collect-btn:disabled{background:var(--line); color:var(--gray3); box-shadow:none; cursor:default;}
+
   .section-title{font-size:13.5px; font-weight:800; color:var(--gray2); margin:18px 20px 8px;}
-  .section-title small{font-weight:600; color:var(--gray3);}
-
-  .tip-item{display:flex; align-items:center; gap:10px; background:var(--card); border-radius:14px; padding:10px 13px; margin:0 20px 7px; box-shadow:var(--shadow); opacity:1;}
-  .tip-item.used{opacity:.45;}
-  .tip-item .e{font-size:17px; flex-shrink:0;}
-  .tip-item .mid{flex:1; min-width:0;}
-  .tip-item .src{font-size:11px; font-weight:800; color:var(--gray2);}
-  .tip-item .stock{font-size:12.5px; font-weight:800;}
-  .tip-item .time{font-size:10.5px; font-weight:700; color:var(--gray3); flex-shrink:0;}
-  .tips-empty{font-size:12.5px; color:var(--gray3); font-weight:600; text-align:center; padding:18px 0;}
-
-  /* 탭 버튼 */
-  .tap-wrap{margin:16px 20px 0; position:relative;}
-  .tap-btn{width:100%; border:none; border-radius:22px; padding:20px 20px; cursor:pointer;
-    background:linear-gradient(135deg,#3182F6,#4c8dff); color:#fff; box-shadow:0 10px 26px rgba(49,130,246,.34);
-    display:flex; flex-direction:column; align-items:center; gap:4px; transition:transform .06s;}
-  .tap-btn:active{transform:scale(.97);}
-  .tap-btn .e{font-size:28px;}
-  .tap-btn .t{font-size:14.5px; font-weight:900;}
-  .tap-btn .s{font-size:12px; font-weight:700; opacity:.85;}
-  .float-pop{position:absolute; left:50%; top:38px; transform:translateX(-50%); font-size:15px; font-weight:900; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.25);
-    pointer-events:none; animation:floatUp .7s ease-out forwards; z-index:5;}
-  @keyframes floatUp{0%{opacity:0; transform:translate(-50%,0) scale(.8);}15%{opacity:1; transform:translate(-50%,-6px) scale(1.05);}100%{opacity:0; transform:translate(-50%,-30px) scale(1);}}
 
   .biz{display:flex; align-items:center; gap:12px; background:var(--card); border-radius:16px; padding:12px 14px; margin:0 20px 8px; box-shadow:var(--shadow);}
   .biz .logo{width:42px; height:42px; border-radius:13px; background:var(--field); display:grid; place-items:center; font-size:21px; flex-shrink:0;}
@@ -127,13 +125,14 @@
   .biz-buy .p{display:block; font-size:13.5px; font-weight:900;}
   .biz-buy .l{display:block; font-size:10.5px; font-weight:700; opacity:.75; margin-top:1px;}
 
+  .hide{display:none !important;}
+
   .modal{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:28px; background:rgba(0,0,0,.5);} .modal.on{display:flex;}
   .modal .box{width:100%; max-width:360px; background:var(--card); border-radius:26px; padding:30px 24px 22px; text-align:center; animation:pop .3s cubic-bezier(.2,1.2,.4,1);}
   @keyframes pop{from{transform:scale(.85);opacity:0;}to{transform:scale(1);opacity:1;}}
   .modal .emo{font-size:56px;}
   .modal .tt{font-size:21px; font-weight:900; margin:12px 0 6px;} .modal .dc{font-size:14.5px; color:var(--gray); font-weight:600; line-height:1.5;}
   .modal .ok{margin-top:18px; width:100%; border:none; color:#fff; font-size:16px; font-weight:800; padding:15px; border-radius:15px; cursor:pointer; background:linear-gradient(135deg,#3182F6,#4c8dff);}
-  .modal .ok.danger{background:linear-gradient(135deg,#f04452,#ff6b78);}
   .stat-grid{display:flex; gap:10px; margin:16px 0 4px;} .stat-grid .s{flex:1; background:var(--field); border-radius:14px; padding:12px 6px;} .stat-grid .s .k{font-size:11px; color:var(--gray2); font-weight:700;} .stat-grid .s .v{font-size:15px; font-weight:800; margin-top:3px;}
   .lv-gain{margin-top:9px; font-size:13.5px; font-weight:700; color:var(--gray); background:var(--field); border-radius:12px; padding:10px 12px; text-align:left;} .lv-gain b{color:var(--blue); font-weight:800;}
 
@@ -159,28 +158,39 @@
   <div class="hero">
     <div class="k">보유 현금</div>
     <div class="cash" id="cashView">0원</div>
-    <div class="income" id="incomeView">+0원 / 초 (자동)</div>
   </div>
-
-  <div class="trade-panel">
-    <div class="tp-head"><span class="tp-title">📊 단타 (15초)</span><span class="tp-limit" id="tpLimit">한도 0원</span></div>
-    <div class="stock-tabs" id="stockTabs"></div>
-    <div id="tradeBody"></div>
-  </div>
-
-  <div class="section-title">📰 소식 <small>· 정확도 높은 출처를 따라가면 유리해요</small></div>
-  <div id="tipsList"></div>
 
   <div class="tap-wrap">
     <button class="tap-btn" id="tapBtn">
-      <span class="e">💰</span>
-      <span class="t" id="tapLabel">탭해서 종잣돈 벌기</span>
+      <span class="e">👊</span>
+      <span class="t">빈털터리일 때 탭</span>
       <span class="s" id="tapSub">+1,000원</span>
     </button>
   </div>
 
-  <div class="section-title">🏢 자동 수입원</div>
-  <div id="bizList"></div>
+  <div class="main-tabs">
+    <button class="main-tab on" data-tab="trade">🎯 단타</button>
+    <button class="main-tab" data-tab="biz">🏢 자동화</button>
+  </div>
+
+  <div id="panelTrade">
+    <div class="trade-panel">
+      <div class="tp-head"><span class="tp-title">📊 단타 (15초)</span><span class="tp-limit" id="tpLimit">한도 0원</span></div>
+      <div class="stock-tabs" id="stockTabs"></div>
+      <div id="tradeBody"></div>
+    </div>
+  </div>
+
+  <div id="panelBiz" class="hide">
+    <div class="power-card">
+      <div class="power-row"><span class="power-k">생산력</span><span class="power-v" id="powerView">0원/초</span></div>
+      <div class="seed-bar"><i id="seedBar"></i></div>
+      <div class="seed-hint" id="seedHint">종잣돈 0 / 0</div>
+      <button class="collect-btn" id="collectBtn">종잣돈 수령하기</button>
+    </div>
+    <div class="section-title">🏢 자동 수입원 <small style="font-weight:600;color:var(--gray3)">· 베팅 한도와 종잣돈을 키워요</small></div>
+    <div id="bizList"></div>
+  </div>
 </div>
 
 <div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
@@ -189,7 +199,7 @@
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
-const RUN_KEY='moneyroad2_run_v3', META_KEY='moneyroad2_meta_v1';
+const RUN_KEY='moneyroad2_run_v4', META_KEY='moneyroad2_meta_v1';
 
 function fmtWon(v){const neg=v<0;let x=Math.round(Math.abs(v));if(x<10000)return (neg?'-':'')+x.toLocaleString()+'원';
   const eok=Math.floor(x/100000000),man=Math.floor((x%100000000)/10000);let s='';if(eok)s+=eok+'억';if(man)s+=(s?' ':'')+man.toLocaleString()+'만';return (neg?'-':'')+s+'원';}
@@ -201,65 +211,50 @@ let AC=null;
 function beep(f,d,t='sine',vol=.15){if(META.mute)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;o.connect(g);g.connect(AC.destination);g.gain.setValueAtTime(vol,AC.currentTime);g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.start();o.stop(AC.currentTime+d);}catch(e){}}
 const sfx={tap:()=>beep(720,.05,'triangle',.09),buy:()=>{beep(520,.07,'square',.1);setTimeout(()=>beep(780,.09,'square',.1),60);},pay:()=>{beep(880,.08,'sine',.13);setTimeout(()=>beep(1180,.12,'sine',.12),70);},warn:()=>beep(300,.15,'sawtooth',.12),win:()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.16,'triangle',.14),i*100));}};
 
-/* config: 자동화(종잣돈 공급원) — 예전만큼 중요하진 않지만 여전히 시작 종잣돈과 방치 수입을 담당 */
+/* config: 자동화 — 더 이상 직접 현금을 벌지 않는다. "생산력"을 만들고,
+   그 생산력이 (1) 베팅 한도, (2) 상한 있는 종잣돈 통을 결정한다.
+   현금 성장의 유일한 엔진은 단타뿐이라서, 자동화와 단타가 서로 경쟁하지 않는다. */
 const BUSINESSES=[
-  {id:'alba',   emo:'🏪', name:'편의점 알바',   cost:20000,       income:200},
-  {id:'rider',  emo:'🛵', name:'배달 라이더',   cost:150000,      income:1200},
-  {id:'box',    emo:'📦', name:'무인 택배함',   cost:1000000,     income:7000},
-  {id:'cafe',   emo:'☕', name:'무인 카페',     cost:6000000,     income:40000},
-  {id:'rent',   emo:'🏢', name:'상가 임대',     cost:35000000,    income:220000},
-  {id:'factory',emo:'🏭', name:'자동화 공장',   cost:200000000,   income:1300000},
-  {id:'holding',emo:'🏦', name:'지주회사',      cost:1200000000,  income:8000000},
+  {id:'alba',   emo:'🏪', name:'편의점 알바',   cost:20000,       power:200},
+  {id:'rider',  emo:'🛵', name:'배달 라이더',   cost:150000,      power:1200},
+  {id:'box',    emo:'📦', name:'무인 택배함',   cost:1000000,     power:7000},
+  {id:'cafe',   emo:'☕', name:'무인 카페',     cost:6000000,     power:40000},
+  {id:'rent',   emo:'🏢', name:'상가 임대',     cost:35000000,    power:220000},
+  {id:'factory',emo:'🏭', name:'자동화 공장',   cost:200000000,   power:1300000},
+  {id:'holding',emo:'🏦', name:'지주회사',      cost:1200000000,  power:8000000},
 ];
 const COST_MULT=1.15;
 const costOf=(biz,count)=>Math.round(biz.cost*Math.pow(COST_MULT,count));
+const BASE_LIMIT=20000, BET_LIMIT_MULT=100; // 베팅 한도 = 기본 + 생산력×100
+const SEED_CAP_SEC=1800; // 종잣돈 통 상한 = 생산력×30분
 
-/* 단타 종목 — vol만 다르고 방향 적중 시 기대되는 편향폭(MAG)은 동일. 변동성은 스릴/난독성만 바꾼다 */
+/* 단타 종목 — 15초 동안 봉우리형으로 오르내린다. 봉우리 시점/높이는 라운드마다 랜덤이라
+   "관망(끝까지 홀드)"은 반드시 손해, "보고 파는" 플레이만 이득이 되도록 설계했다.
+   (시뮬레이션 검증: 안정주 관망 0.86x / 보고팔기 1.4x, 테마주 관망 0.44x / 보고팔기 2.0x) */
 const TRADE_STOCKS=[
-  {id:'stable', emo:'🏦', name:'안정주', vol:0.03},
-  {id:'theme',  emo:'🚀', name:'테마주', vol:0.06},
+  {id:'stable', emo:'🏦', name:'안정주', peakMin:10,peakMax:24, pMin:1.15,pMax:1.8, endMin:-0.55,endMax:-0.05, noise:0.012},
+  {id:'theme',  emo:'🚀', name:'테마주', peakMin:8, peakMax:24, pMin:1.3, pMax:3.2, endMin:-0.85,endMax:-0.15, noise:0.03},
 ];
-const ROUND_TICKS=30, ROUND_TICK_MS=500, ROUND_MAG=0.18;
+const ROUND_TICKS=30, ROUND_TICK_MS=500;
 
-/* 소식 출처 — 정확도(acc)가 실제 방향 적중 확률. 그대로 베팅하면 기대값이 이 값에 좌우된다
-   (50%=순수 도박과 동일, 그 위는 +기대값, 그 아래는 -기대값이 되도록 라운드 판정을 설계했다) */
-const NEWS_SOURCES=[
-  {key:'official',icon:'📰',name:'공식 발표',   acc:.85},
-  {key:'guru',    icon:'🧠',name:'투자고수_김', acc:.72},
-  {key:'outlook', icon:'📄',name:'증권가 전망', acc:.62},
-  {key:'ant',     icon:'🐜',name:'개미123',    acc:.50},
-  {key:'rumor',   icon:'💬',name:'찌라시',     acc:.40},
-  {key:'pump',    icon:'🎣',name:'단타의신',    acc:.28},
-  {key:'bot',     icon:'🤖',name:'AI리딩봇',    acc:.15},
-];
-const TIP_LIFETIME_MS=45000, TIP_SPAWN_MS=14000;
-
-/* 레벨 = 지금까지 도달한 최고 현금(peakCash) 기준. 오르면 베팅 한도가 커지고,
-   일부 레벨엔 차/결혼/집 같은 영구 보상이 함께 온다. 보상은 전부 공짜로 지급 —
-   돈을 추가로 써서 얻는 방식은 쓰지 않는다(상환처럼 "돈이 사라지는" 느낌을 다시 주지 않기 위해). */
+/* 레벨 = 지금까지 도달한 최고 현금(peakCash) 기준. 보상은 전부 무료 지급. */
 const LEVELS=[
-  {lv:2, need:500000,      betLimit:100000,
-   reward:{emo:'🚗',t:'첫 차',d:'중고차를 뽑았어요. 그러다 괜찮은 정보통도 하나 트였어요.',bonusTxt:'소식 출처 하나의 정확도가 영구 공개돼요',f:S=>revealSource(S)}},
-  {lv:3, need:3000000,     betLimit:500000,
+  {lv:2, need:500000,
+   reward:{emo:'🚗',t:'첫 차',d:'중고차를 뽑았어요. 종잣돈 통도 더 오래 버텨요.',bonusTxt:'종잣돈 상한 영구 +50%',f:S=>{S.seedCapBonus=(S.seedCapBonus||0)+0.5;}}},
+  {lv:3, need:3000000,
    reward:{emo:'🚀',t:'테마주 해금',d:'변동성 큰 테마주에도 손댈 수 있게 됐어요.',bonusTxt:'',f:S=>{S.themeUnlocked=true;}}},
-  {lv:4, need:20000000,    betLimit:3000000,
-   reward:{emo:'💍',t:'결혼',d:'평생을 함께할 사람을 만났어요. 둘이 버니 탭 한 번의 무게가 달라져요.',bonusTxt:'탭 수입 영구 +30%',f:S=>{S.tapBonus=(S.tapBonus||0)+0.3;}}},
-  {lv:5, need:150000000,   betLimit:20000000},
-  {lv:6, need:1000000000,  betLimit:150000000,
+  {lv:4, need:20000000,
+   reward:{emo:'💍',t:'결혼',d:'평생을 함께할 사람을 만났어요.',bonusTxt:'탭 수입 영구 +30%',f:S=>{S.tapBonus=(S.tapBonus||0)+0.3;}}},
+  {lv:5, need:150000000},
+  {lv:6, need:1000000000,
    reward:{emo:'🏠',t:'내 집 마련',d:'드디어 내 집이 생겼어요. 배짱 있게 더 크게 굴려볼 수 있겠어요.',bonusTxt:'베팅 한도 영구 +50%',f:S=>{S.limitBonus=(S.limitBonus||0)+0.5;}}},
-  {lv:7, need:8000000000,  betLimit:1000000000},
-  {lv:8, need:50000000000, betLimit:8000000000,
-   reward:{emo:'🏆',t:'완전한 자유',d:'여기까지 왔어요. 더 이상 넘어야 할 관문은 없어요 — 이제부턴 마음껏 굴려보세요.',bonusTxt:'',final:true,f:S=>{}}},
+  {lv:7, need:8000000000},
+  {lv:8, need:50000000000,
+   reward:{emo:'🏆',t:'완전한 자유',d:'여기까지 왔어요. 더 이상 넘어야 할 관문은 없어요.',bonusTxt:'',final:true,f:S=>{}}},
 ];
-function betLimitOf(){
-  let base=20000;
-  for(const l of LEVELS){if(S.level>=l.lv)base=l.betLimit;}
-  return Math.round(base*(1+(S.limitBonus||0)));
-}
-function revealSource(S){
-  const pool=NEWS_SOURCES.map(x=>x.key).filter(k=>!S.revealedSources.includes(k));
-  if(pool.length)S.revealedSources.push(pool[Math.floor(Math.random()*pool.length)]);
-}
+function totalPower(){return BUSINESSES.reduce((a,b,i)=>a+b.power*S.counts[i],0);}
+function betLimitOf(){return Math.round((BASE_LIMIT+S.power*BET_LIMIT_MULT)*(1+(S.limitBonus||0)));}
+function seedCapOf(){return Math.round(S.power*SEED_CAP_SEC*(1+(S.seedCapBonus||0)));}
 
 /* meta (설정만) */
 let META;
@@ -270,32 +265,25 @@ function saveMeta(){try{localStorage.setItem(META_KEY,JSON.stringify(META));}cat
 let S=null;
 function newState(){
   const now=Date.now();
-  const s={cash:0, incomePerSec:0, counts:BUSINESSES.map(()=>0), level:1, peakCash:0,
-    riderBonus:0, tapBonus:0, limitBonus:0, themeUnlocked:false, revealedSources:[],
-    selectedStock:'stable', betAmount:10000, activeRound:null, tips:[],
-    lastTick:now, totalTaps:0, finalCelebrated:false};
+  const s={cash:0, power:0, counts:BUSINESSES.map(()=>0), level:1, peakCash:0,
+    seedPool:0, tapBonus:0, limitBonus:0, seedCapBonus:0, themeUnlocked:false,
+    selectedStock:'stable', betAmount:10000, activeRound:null, mainTab:'trade',
+    lastTick:now, totalTaps:0};
   S=s;
   return s;
 }
 function saveRun(){try{localStorage.setItem(RUN_KEY,JSON.stringify(S));}catch(e){}}
 function clearRun(){try{localStorage.removeItem(RUN_KEY);}catch(e){}}
-function recomputeIncome(){
-  S.incomePerSec=BUSINESSES.reduce((a,b,i)=>{
-    let inc=b.income*S.counts[i];
-    if(b.id==='rider')inc*=(1+(S.riderBonus||0));
-    return a+inc;
-  },0);
-}
+function recomputePower(){S.power=totalPower();}
 function bumpPeak(){if(S.cash>S.peakCash)S.peakCash=S.cash;}
 
-/* 저장된 시점 이후 흐른 시간을 catch-up: 자동수입을 반영하고,
-   떠나있는 동안 라운드가 15초를 넘겼으면 그 시점에 자동 청산한다
-   ("15초 지나면 마지막 가격에 판다"는 규칙을 오프라인에도 그대로 적용) */
+/* 저장된 시점 이후 흐른 시간을 catch-up: 종잣돈 통이 상한까지 차오르고,
+   떠나있는 동안 라운드가 15초를 넘겼으면 그 시점에 자동 청산한다. */
 function catchUp(){
   const now=Date.now();
   const awaySec=(now-S.lastTick)/1000;
-  S.cash+=awaySec*S.incomePerSec;
-  bumpPeak();
+  const cap=seedCapOf();
+  S.seedPool=Math.min(cap, S.seedPool+awaySec*S.power);
   let roundResolved=null;
   if(S.activeRound){
     const idx=currentTickIdx();
@@ -314,9 +302,7 @@ function catchUp(){
 function loadRun(){
   try{const r=localStorage.getItem(RUN_KEY);if(r){S=JSON.parse(r);
     if(!Array.isArray(S.counts)||S.counts.length!==BUSINESSES.length)S.counts=BUSINESSES.map(()=>0);
-    if(!Array.isArray(S.tips))S.tips=[];
-    if(!Array.isArray(S.revealedSources))S.revealedSources=[];
-    recomputeIncome();
+    recomputePower();
     return true;}
   }catch(e){}
   return false;
@@ -331,12 +317,29 @@ if(loadRun()){ awayReport=catchUp(); } else { startRun(); }
 saveRun();
 
 /* ===== 자동화 ===== */
+function renderPower(){
+  const cap=seedCapOf();
+  $('powerView').textContent=`${fmtWon(S.power)}/초`;
+  const pct=cap>0?Math.min(100,S.seedPool/cap*100):0;
+  $('seedBar').style.width=pct+'%';
+  $('seedHint').textContent=`종잣돈 ${fmtWon(S.seedPool)} / ${fmtWon(cap)}`;
+  $('collectBtn').disabled=S.seedPool<1;
+}
+function collectSeed(){
+  if(S.seedPool<1)return;
+  const amt=Math.round(S.seedPool);
+  S.cash+=amt; bumpPeak(); S.seedPool=0;
+  sfx.pay(); toast(`💰 종잣돈 ${fmtWon(amt)} 수령!`);
+  saveRun();
+  if(!checkLevelUp())render();
+}
+$('collectBtn').onclick=collectSeed;
 function renderBiz(){
   $('bizList').innerHTML=BUSINESSES.map((b,i)=>{
     const cnt=S.counts[i], cost=costOf(b,cnt), can=S.cash>=cost;
     return `<div class="biz"><div class="logo">${b.emo}</div>
       <div class="mid"><div class="nm">${b.name}${cnt>0?`<span class="cnt">${cnt}개</span>`:''}</div>
-      <div class="ds">${cnt>0?`+${fmtWon(b.income*cnt)}/초 생산중`:`+${fmtWon(b.income)}/초`}</div></div>
+      <div class="ds">${cnt>0?`+${fmtWon(b.power*cnt)}/초 생산중`:`+${fmtWon(b.power)}/초`}</div></div>
       <button class="biz-buy ${can?'can':'cant'}" data-i="${i}"><span class="p">${fmtWon(cost)}</span><span class="l">구매</span></button>
       </div>`;
   }).join('');
@@ -345,8 +348,8 @@ function renderBiz(){
 function buyBiz(i){
   const b=BUSINESSES[i], cost=costOf(b,S.counts[i]);
   if(S.cash<cost)return;
-  S.cash-=cost; S.counts[i]++; recomputeIncome();
-  sfx.buy(); toast(`${b.name} 구매!`);
+  S.cash-=cost; S.counts[i]++; recomputePower();
+  sfx.buy(); toast(`${b.name} 구매! 베팅 한도 ${fmtWon(betLimitOf())}`);
   saveRun(); render();
 }
 
@@ -361,7 +364,7 @@ function checkLevelUp(){
     showLevelReward(nl);
   }else{
     saveRun();
-    toast(`🎉 Lv.${S.level} 달성! 베팅 한도가 ${fmtWon(betLimitOf())}로 늘어나요`);
+    toast(`🎉 Lv.${S.level} 달성!`);
     render();
     checkLevelUp();
   }
@@ -371,7 +374,6 @@ function showLevelReward(nl){
   const r=nl.reward;
   $('modalBox').innerHTML=`<div class="emo">${r.emo}</div><div class="tt">${r.t}</div><div class="dc">${r.d}</div>
     ${r.bonusTxt?`<div class="dc" style="margin-top:8px;color:var(--blue);font-weight:800">${r.bonusTxt}</div>`:''}
-    <div class="dc" style="margin-top:8px;color:var(--green);font-weight:800">베팅 한도 ${fmtWon(betLimitOf())}로 상승</div>
     <button class="ok" id="mOk">${r.final?'계속 플레이':'좋아요'}</button>`;
   $('modal').classList.add('on');
   sfx.win();
@@ -382,7 +384,7 @@ function renderLevel(){
   $('lvChip').textContent=`Lv.${S.level}`;
   if(nl){
     const pct=Math.max(0,Math.min(100,S.peakCash/nl.need*100));
-    $('lvName').textContent=`Lv.${S.level} → Lv.${nl.lv} · 한도 ${fmtWon(nl.betLimit)}`;
+    $('lvName').textContent=`Lv.${S.level} → Lv.${nl.lv}`;
     $('lvPct').textContent=Math.floor(pct)+'%';
     $('lvBar').style.width=pct+'%';
     $('lvHint').textContent=`최고 ${fmtWon(S.peakCash)} · 목표 ${fmtWon(nl.need)}`;
@@ -394,42 +396,27 @@ function renderLevel(){
   }
 }
 
-/* ===== 소식(단타 힌트) ===== */
-function spawnTip(){
-  if(!S||S.activeRound)return; // 라운드 중엔 새 소식이 쌓여도 헷갈리니 잠깐 멈춘다
-  const avail=TRADE_STOCKS.filter(s=>s.id!=='theme'||S.themeUnlocked);
-  const stock=avail[Math.floor(Math.random()*avail.length)];
-  const src=NEWS_SOURCES[Math.floor(Math.random()*NEWS_SOURCES.length)];
-  const dir=Math.random()<0.5?1:-1;
-  S.tips.unshift({stockId:stock.id, sourceKey:src.key, dir, ts:Date.now(), expiresAt:Date.now()+TIP_LIFETIME_MS, used:false});
-  if(S.tips.length>8)S.tips.length=8;
-  saveRun(); renderTips();
+/* ===== 메인 탭 ===== */
+function switchMainTab(tab){
+  S.mainTab=tab; saveRun();
+  document.querySelectorAll('.main-tab').forEach(el=>el.classList.toggle('on',el.dataset.tab===tab));
+  $('panelTrade').classList.toggle('hide',tab!=='trade');
+  $('panelBiz').classList.toggle('hide',tab!=='biz');
 }
-function activeTipFor(stockId){
-  const now=Date.now();
-  return S.tips.find(t=>t.stockId===stockId && !t.used && t.expiresAt>now);
-}
-function relTime(ts){const s=Math.floor((Date.now()-ts)/1000);if(s<20)return'방금';if(s<60)return s+'초 전';return Math.floor(s/60)+'분 전';}
-function renderTips(){
-  if(!S.tips.length){$('tipsList').innerHTML=`<div class="tips-empty">아직 소식이 없어요. 곧 도착해요.</div>`;return;}
-  $('tipsList').innerHTML=S.tips.map(t=>{
-    const src=NEWS_SOURCES.find(x=>x.key===t.sourceKey);
-    const stock=TRADE_STOCKS.find(x=>x.id===t.stockId);
-    const accTxt=S.revealedSources.includes(src.key)?` · <span style="color:var(--blue);font-weight:800">적중률 ~${Math.round(src.acc*100)}%</span>`:'';
-    const expired=t.expiresAt<=Date.now();
-    return `<div class="tip-item ${t.used||expired?'used':''}"><span class="e">${src.icon}</span>
-      <div class="mid"><div class="src">${src.name}${accTxt}</div><div class="stock">${stock.emo} ${stock.name} ${t.dir>0?'▲ 상승':'▼ 하락'} 전망</div></div>
-      <span class="time">${t.used?'사용됨':expired?'만료':relTime(t.ts)}</span></div>`;
-  }).join('');
-}
+document.querySelectorAll('.main-tab').forEach(el=>el.onclick=()=>{sfx.tap();switchMainTab(el.dataset.tab);});
 
-/* ===== 단타 라운드 ===== */
-function genPath(trueDir,vol){
-  let m=1,path=[1];
-  for(let i=0;i<ROUND_TICKS;i++){
-    const drift=trueDir>0? ROUND_MAG/ROUND_TICKS : -ROUND_MAG*0.85/ROUND_TICKS;
-    m=Math.max(0.05,m*(1+drift+vol*randn()));
-    path.push(m);
+/* ===== 단타 라운드 — 봉우리형 곡선 ===== */
+function genPath(cfg){
+  const tPeak=cfg.peakMin+Math.random()*(cfg.peakMax-cfg.peakMin);
+  const P=cfg.pMin+Math.random()*(cfg.pMax-cfg.pMin);
+  const endF=cfg.endMin+Math.random()*(cfg.endMax-cfg.endMin);
+  const path=[1]; let noise=0;
+  for(let i=1;i<=ROUND_TICKS;i++){
+    let shape;
+    if(i<=tPeak) shape=Math.sin((i/tPeak)*Math.PI/2);
+    else shape=1-(1-endF)*Math.sin(((i-tPeak)/(ROUND_TICKS-tPeak))*Math.PI/2);
+    noise+=cfg.noise*randn(); noise*=0.75;
+    path.push(Math.max(0.05,1+(P-1)*shape+noise));
   }
   return path;
 }
@@ -447,13 +434,9 @@ function startRound(){
   const stock=TRADE_STOCKS.find(s=>s.id===S.selectedStock);
   const bet=S.betAmount;
   if(bet<=0||bet>betLimitOf()||bet>S.cash)return;
-  const tip=activeTipFor(stock.id);
-  const src=tip?NEWS_SOURCES.find(x=>x.key===tip.sourceKey):null;
-  const trueDir=tip? (Math.random()<src.acc?tip.dir:-tip.dir) : (Math.random()<0.5?1:-1);
-  const path=genPath(trueDir,stock.vol);
+  const path=genPath(stock);
   S.cash-=bet;
-  S.activeRound={stockId:stock.id,bet,path,startedAt:Date.now()};
-  if(tip)tip.used=true;
+  S.activeRound={stockId:stock.id,bet,path,startedAt:Date.now(),yMin:Math.min(...path),yMax:Math.max(...path)};
   sfx.buy();
   saveRun(); render();
 }
@@ -470,45 +453,44 @@ function sellRound(){
   saveRun();
   if(!checkLevelUp())render();
 }
-function poly(h,W,H,pad){const min=Math.min(...h),max=Math.max(...h),rng=(max-min)||0.001;return h.map((v,i)=>[pad+i/(h.length-1||1)*(W-2*pad),H-pad-(v-min)/rng*(H-2*pad)]);}
-function renderTradeStock(id){
-  S.selectedStock=id; saveRun(); renderTrade();
-  $('stockTabs').querySelectorAll('.stock-tab').forEach(el=>el.classList.toggle('sel',el.dataset.stock===id));
+/* 부드러운 곡선(2차 베지어 보간) + x/y축을 라운드 시작 시점에 고정해서
+   그래프가 항상 왼쪽 끝(0초)에서 자라나 보이게 한다 */
+function smoothPathD(pts){
+  if(!pts.length)return '';
+  if(pts.length===1)return `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+  let d=`M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+  for(let i=1;i<pts.length;i++){
+    const prev=pts[i-1],cur=pts[i];
+    const midX=(prev[0]+cur[0])/2, midY=(prev[1]+cur[1])/2;
+    d+=` Q${prev[0].toFixed(1)} ${prev[1].toFixed(1)} ${midX.toFixed(1)} ${midY.toFixed(1)}`;
+  }
+  const last=pts[pts.length-1];
+  d+=` L${last[0].toFixed(1)} ${last[1].toFixed(1)}`;
+  return d;
 }
 function renderTradeTabs(){
   $('stockTabs').innerHTML=TRADE_STOCKS.map(s=>{
     const locked=s.id==='theme'&&!S.themeUnlocked;
     return `<div class="stock-tab ${s.id===S.selectedStock?'sel':''} ${locked?'locked':''}" data-stock="${s.id}">
       <div class="e">${locked?'🔒':s.emo}</div><div class="n">${s.name}</div>
-      <div class="v">${locked?'Lv.3 해금':(s.vol<=0.03?'낮은 변동성':'높은 변동성')}</div></div>`;
+      <div class="v">${locked?'Lv.3 해금':(s.id==='stable'?'낮은 변동성':'높은 변동성')}</div></div>`;
   }).join('');
   $('stockTabs').querySelectorAll('.stock-tab').forEach(el=>{
     if(el.classList.contains('locked'))return;
-    el.onclick=()=>{sfx.tap();renderTradeStock(el.dataset.stock);};
+    el.onclick=()=>{sfx.tap();S.selectedStock=el.dataset.stock;saveRun();renderTrade();
+      $('stockTabs').querySelectorAll('.stock-tab').forEach(x=>x.classList.toggle('sel',x.dataset.stock===S.selectedStock));};
   });
 }
 function renderTrade(){
   $('tpLimit').textContent=`한도 ${fmtWon(betLimitOf())}`;
   if(S.activeRound){renderRoundView();return;}
-  const stock=TRADE_STOCKS.find(s=>s.id===S.selectedStock);
-  const tip=activeTipFor(stock.id);
   const limit=betLimitOf();
-  let tipHtml;
-  if(tip){
-    const src=NEWS_SOURCES.find(x=>x.key===tip.sourceKey);
-    const accTxt=S.revealedSources.includes(src.key)?` · 적중률 ~${Math.round(src.acc*100)}%`:' · 적중률 ?';
-    tipHtml=`<div class="tip-box"><span class="tip-emo">${src.icon}</span><div class="tip-mid">
-      <div class="tip-src">${src.name}${accTxt}</div>
-      <div class="tip-txt ${tip.dir>0?'up':'down'}">${stock.name} ${tip.dir>0?'▲ 상승':'▼ 하락'} 전망</div></div></div>`;
-  }else{
-    tipHtml=`<div class="tip-box none">이 종목엔 아직 소식이 없어요 — 감으로 베팅하면 반반이에요</div>`;
-  }
   const canGo=S.betAmount>0 && S.betAmount<=limit && S.betAmount<=S.cash;
   $('tradeBody').innerHTML=`
-    ${tipHtml}
     <div class="bet-row"><button id="betMinus">−</button><div class="amt">${fmtWon(S.betAmount)}</div><button id="betPlus">+</button></div>
     <div class="bet-quicks"><button data-q="0.1">10%</button><button data-q="0.5">50%</button><button data-q="1">최대</button></div>
-    <button class="trade-go" id="tradeGo" ${canGo?'':'disabled'}>15초 베팅 시작</button>`;
+    <button class="trade-go" id="tradeGo" ${canGo?'':'disabled'}>15초 베팅 시작</button>
+    <div class="trade-note">끝까지 들고만 있으면 손해예요 — 오르다 꺾이면 매도!</div>`;
   const step=Math.max(1000,Math.round(limit*0.05));
   $('betMinus').onclick=()=>{sfx.tap();setBet(S.betAmount-step);};
   $('betPlus').onclick=()=>{sfx.tap();setBet(S.betAmount+step);};
@@ -520,15 +502,18 @@ function renderRoundView(){
   const idx=currentTickIdx(), mult=r.path[idx];
   const remainSec=Math.max(0,Math.ceil((ROUND_TICKS-idx)*ROUND_TICK_MS/1000));
   const dir=mult>1.01?'up':mult<0.99?'down':'flat';
-  const path=r.path.slice(0,idx+1);
-  const pts=poly(path,300,70,6);
-  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const W=300,H=80,padX=6,padY=8;
+  const rng=(r.yMax-r.yMin)||0.001;
+  const xOf=i=>padX+(i/ROUND_TICKS)*(W-2*padX);
+  const yOf=v=>H-padY-((v-r.yMin)/rng)*(H-2*padY);
+  const pts=[];
+  for(let i=0;i<=idx;i++)pts.push([xOf(i),yOf(r.path[i])]);
   const col=dir==='up'?'#f04452':dir==='down'?'#3182F6':'#8b95a1';
   const profit=Math.round(r.bet*mult)-r.bet;
   $('tradeBody').innerHTML=`<div class="round-view">
     <div class="round-timer">${stock.emo} ${stock.name} · 남은 시간 ${remainSec}초</div>
     <div class="round-mult ${dir}">${mult.toFixed(2)}x</div>
-    <svg class="round-chart" viewBox="0 0 300 70" preserveAspectRatio="none"><path d="${line}" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg class="round-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${smoothPathD(pts)}" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <div class="round-pnl ${profit>=0?'up':'down'}">${profit>=0?'+':''}${fmtWon(profit)}</div>
     <button class="sell-btn" id="sellBtn">지금 매도</button>
   </div>`;
@@ -536,37 +521,39 @@ function renderRoundView(){
 }
 
 /* ===== 히어로/탭 ===== */
-function renderHero(){
-  $('cashView').textContent=fmtWon(S.cash);
-  $('incomeView').textContent=`+${fmtWon(S.incomePerSec)} / 초 (자동)`;
-}
-function renderTap(){$('tapSub').textContent=`+${fmtWon(tapIncome())}`;}
-const tapIncome=()=>Math.round((1000+Math.floor(S.incomePerSec*0.5))*(1+(S.tapBonus||0)));
+function renderHero(){$('cashView').textContent=fmtWon(S.cash);}
+const tapIncome=()=>Math.round(1000*(1+(S.tapBonus||0)));
 $('tapBtn').onclick=()=>{
   S.cash+=tapIncome(); S.totalTaps++; bumpPeak();
   sfx.tap();
   const pop=document.createElement('div');
   pop.className='float-pop'; pop.textContent='+'+fmtWon(tapIncome());
-  pop.style.left=(46+Math.random()*8)+'%';
+  pop.style.left='50%';
   $('tapBtn').parentElement.appendChild(pop);
   setTimeout(()=>pop.remove(),700);
   saveRun();
-  if(!checkLevelUp()){renderHero();renderBiz();renderTap();renderLevel();}
+  if(!checkLevelUp())renderHero();
 };
+$('tapSub').textContent=`+${fmtWon(1000)}`;
 
-function render(){renderHero();renderLevel();renderTradeTabs();renderTrade();renderTips();renderBiz();renderTap();}
+function render(){
+  renderHero();renderLevel();
+  switchMainTab(S.mainTab||'trade');
+  renderTradeTabs();renderTrade();
+  renderPower();renderBiz();
+}
 
 function showAwayModal(report){
-  const bits=[`<div class="lv-gain">💰 자동수입 <b>+${fmtWon(report.awaySec*S.incomePerSec)}</b>이(가) 이미 쌓였어요</div>`];
+  const bits=[`<div class="lv-gain">💰 종잣돈 통이 계속 채워졌어요 · 지금 <b>${fmtWon(S.seedPool)}</b> 있어요</div>`];
   if(report.roundResolved){
     const rr=report.roundResolved, profit=rr.payout-rr.bet;
     bits.push(`<div class="lv-gain">${rr.mult>=1?'📈':'📉'} 진행 중이던 단타가 <b>${rr.mult.toFixed(2)}x</b>로 마감 · ${profit>=0?'+':''}${fmtWon(profit)}</div>`);
   }
   const awayTxt=report.awaySec>=3600?`${Math.floor(report.awaySec/3600)}시간 ${Math.floor(report.awaySec%3600/60)}분`:`${Math.floor(report.awaySec/60)}분`;
   $('modalBox').innerHTML=`<div class="emo">⏱️</div><div class="tt">${awayTxt} 만이네요</div>
-    <div class="dc">그동안 자동수입이 계속 쌓였어요.</div>
+    <div class="dc">그동안 종잣돈 통이 계속 쌓였어요.</div>
     ${bits.join('')}
-    <div class="stat-grid" style="margin-top:14px"><div class="s"><div class="k">현재 잔액</div><div class="v">${fmtWon(S.cash)}</div></div><div class="s"><div class="k">초당 수입</div><div class="v">${fmtWon(S.incomePerSec)}</div></div></div>
+    <div class="stat-grid" style="margin-top:14px"><div class="s"><div class="k">현재 잔액</div><div class="v">${fmtWon(S.cash)}</div></div><div class="s"><div class="k">생산력</div><div class="v">${fmtWon(S.power)}/초</div></div></div>
     <button class="ok" id="mOk">확인</button>`;
   $('modal').classList.add('on');
   $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
@@ -575,30 +562,27 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clear
 
 $('muteBtn').onclick=()=>{META.mute=!META.mute;saveMeta();$('muteBtn').textContent=META.mute?'🔇':'🔊';if(!META.mute)sfx.tap();};
 
-/* main tick — 100ms 간격으로 부드럽게 현금 증가, 라운드 진행/자동청산 체크 */
+/* main tick — 100ms 간격으로 종잣돈 축적, 라운드 진행/자동청산 체크 */
 setInterval(()=>{
   const now=Date.now();
   const dt=(now-S.lastTick)/1000;
-  S.cash+=dt*S.incomePerSec;
-  bumpPeak();
+  const cap=seedCapOf();
+  S.seedPool=Math.min(cap,S.seedPool+dt*S.power);
   S.lastTick=now;
   if(S.activeRound){
     const idx=currentTickIdx();
     if(idx>=S.activeRound.path.length-1){ sellRound(); return; }
-    renderHero(); renderRoundView();
+    if(S.mainTab==='trade')renderRoundView();
   }else if(!checkLevelUp()){
-    renderHero(); renderBiz();
+    if(S.mainTab==='biz')renderPower();
   }
 }, 100);
-setInterval(spawnTip, TIP_SPAWN_MS);
 setInterval(saveRun, 3000);
 window.addEventListener('pagehide', saveRun);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveRun();});
 
 render();
-if(awayReport && awayReport.awaySec>=5){
-  if(awayReport.awaySec>=60 || awayReport.roundResolved) showAwayModal(awayReport);
-}
+if(awayReport && awayReport.awaySec>=60) showAwayModal(awayReport);
 </script>
 </body>
 </html>

@@ -165,7 +165,7 @@
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
-const RUN_KEY='moneyroad2_run_v5', META_KEY='moneyroad2_meta_v1';
+const RUN_KEY='moneyroad2_run_v6', META_KEY='moneyroad2_meta_v1';
 
 function fmtWon(v){const neg=v<0;let x=Math.round(Math.abs(v));if(x<10000)return (neg?'-':'')+x.toLocaleString()+'원';
   const eok=Math.floor(x/100000000),man=Math.floor((x%100000000)/10000);let s='';if(eok)s+=eok+'억';if(man)s+=(s?' ':'')+man.toLocaleString()+'만';return (neg?'-':'')+s+'원';}
@@ -178,8 +178,11 @@ function beep(f,d,t='sine',vol=.15){if(META.mute)return;try{AC=AC||new(window.Au
 const sfx={tap:()=>beep(720,.05,'triangle',.09),buy:()=>{beep(520,.07,'square',.1);setTimeout(()=>beep(780,.09,'square',.1),60);},pay:()=>{beep(880,.08,'sine',.13);setTimeout(()=>beep(1180,.12,'sine',.12),70);},warn:()=>beep(300,.15,'sawtooth',.12),win:()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.16,'triangle',.14),i*100));},bankrupt:()=>{[400,340,280,220].forEach((f,i)=>setTimeout(()=>beep(f,.22,'sawtooth',.1),i*130));}};
 
 /* config: 현금 성장의 유일한 엔진은 단타뿐이다. 상점 업그레이드는 전부
-   "단타를 더 잘/크게 할 수 있게" 만들 뿐, 그 자체로 현금을 만들지 않는다. */
-const BASE_LIMIT=50000, LIMIT_STEP=40000, LIMIT_COST_BASE=40000, LIMIT_COST_MULT=1.35;
+   "단타를 더 잘/크게 할 수 있게" 만들 뿐, 그 자체로 현금을 만들지 않는다.
+   베팅 한도는 따로 없다 — 보유 현금 전액까지 베팅 가능. 대신 레버리지를 사면
+   같은 돈으로 더 크게 걸 수 있다(손익 둘 다 배율만큼 커짐 — 위험도 커짐). */
+const LEVERAGE_MULTS=[1,2,3,5,10];
+const LEVERAGE_COSTS=[150000,450000,1200000,3000000];
 const STOPLOSS_COSTS=[80000,300000,900000];
 const STOPLOSS_PCT=[0,0.15,0.30,0.45];
 const HINT_COST=250000, AUTOSELL_COST=400000, SURGE_COST=800000;
@@ -271,13 +274,13 @@ const LEVELS=[
    reward:{emo:'💍',t:'결혼',d:'평생을 함께할 사람을 만났어요.',bonusTxt:'축의금 +50만원',f:S=>{S.cash+=500000;bumpPeak();}}},
   {lv:5, need:150000000},
   {lv:6, need:1000000000,
-   reward:{emo:'🏠',t:'내 집 마련',d:'드디어 내 집이 생겼어요. 배짱 있게 더 크게 굴려볼 수 있겠어요.',bonusTxt:'베팅 한도 영구 +50%',f:S=>{S.limitBonus=(S.limitBonus||0)+0.5;}}},
+   reward:{emo:'🏠',t:'내 집 마련',d:'집을 담보로 더 크게 굴릴 수 있게 됐어요.',bonusTxt:'레버리지 1단계 무료 강화',f:S=>{S.upg.leverageLv=Math.min(LEVERAGE_MULTS.length-1,(S.upg.leverageLv||0)+1);}}},
   {lv:7, need:8000000000},
   {lv:8, need:50000000000,
    reward:{emo:'🏆',t:'완전한 자유',d:'여기까지 왔어요. 더 이상 넘어야 할 관문은 없어요.',bonusTxt:'',final:true,f:S=>{}}},
 ];
-function betLimitOf(){return Math.round((BASE_LIMIT+(S.upg.limitLv||0)*LIMIT_STEP)*(1+(S.limitBonus||0)));}
-function limitCostOf(){return Math.round(LIMIT_COST_BASE*Math.pow(LIMIT_COST_MULT,S.upg.limitLv||0));}
+function leverageMultOf(){return LEVERAGE_MULTS[S.upg.leverageLv||0];}
+function leverageCostOf(){const lv=S.upg.leverageLv||0;return lv<LEVERAGE_COSTS.length?LEVERAGE_COSTS[lv]:null;}
 
 /* meta (설정 + 파산 후에도 남는 레거시 포인트) */
 let META;
@@ -290,9 +293,9 @@ function newState(){
   const now=Date.now();
   const legacyBonus=Math.min(START_CASH_LEGACY_CAP,(META.legacyPoints||0)*LEGACY_PER_POINT);
   const s={cash:START_CASH+legacyBonus, level:1, peakCash:START_CASH+legacyBonus,
-    limitBonus:0, themeUnlocked:false,
-    upg:{limitLv:0, stoplossLv:0, hint:false, autosell:false, surge:false},
-    selectedStock:'stable', betAmount:10000, betAutoTarget:0,
+    themeUnlocked:false,
+    upg:{leverageLv:0, stoplossLv:0, hint:false, autosell:false, surge:false},
+    selectedStock:'stable', betAmount:10000, betAutoTarget:0, betLeverage:1,
     activeRound:null, mainTab:'trade', lastTick:now};
   S=s;
   return s;
@@ -319,9 +322,11 @@ function catchUp(){
     const idx=currentTickIdx();
     if(idx>=S.activeRound.path.length-1){
       const mult=S.activeRound.path[idx];
-      const rawProfit=Math.round(S.activeRound.bet*mult)-S.activeRound.bet;
+      const lev=S.activeRound.leverage||1;
+      const rawProfit=Math.round(S.activeRound.bet*(mult-1)*lev);
       const profit=applyStoploss(rawProfit);
-      S.cash+=S.activeRound.bet+profit; bumpPeak();
+      const payout=Math.max(0,S.activeRound.bet+profit);
+      S.cash+=payout; bumpPeak();
       roundResolved={mult,profit,bet:S.activeRound.bet};
       S.activeRound=null;
     }
@@ -332,7 +337,9 @@ function catchUp(){
 
 function loadRun(){
   try{const r=localStorage.getItem(RUN_KEY);if(r){S=JSON.parse(r);
-    if(!S.upg)S.upg={limitLv:0,stoplossLv:0,hint:false,autosell:false,surge:false};
+    if(!S.upg)S.upg={leverageLv:0,stoplossLv:0,hint:false,autosell:false,surge:false};
+    if(typeof S.upg.leverageLv!=='number')S.upg.leverageLv=0;
+    if(typeof S.betLeverage!=='number')S.betLeverage=1;
     return true;}
   }catch(e){}
   return false;
@@ -347,11 +354,13 @@ if(loadRun()){ awayReport=catchUp(); } else { startRun(); }
 saveRun();
 
 /* ===== 상점 ===== */
-const UPGRADE_IDS=['limit','stoploss','hint','autosell','surge'];
+const UPGRADE_IDS=['leverage','stoploss','hint','autosell','surge'];
 function upgradeInfo(id){
-  if(id==='limit'){
-    const lv=S.upg.limitLv;
-    return {emo:'💰',name:'베팅 한도',cnt:lv>0?`Lv.${lv}`:'', ds:`현재 한도 ${fmtWon(betLimitOf())}`, cost:limitCostOf(), buyLabel:'업그레이드'};
+  if(id==='leverage'){
+    const lv=S.upg.leverageLv||0, curMult=LEVERAGE_MULTS[lv];
+    if(lv>=LEVERAGE_MULTS.length-1)return {emo:'🎚️',name:'레버리지',cnt:`${curMult}배`, ds:'최대 배율까지 강화했어요', maxed:true};
+    const nextMult=LEVERAGE_MULTS[lv+1];
+    return {emo:'🎚️',name:'레버리지',cnt:lv>0?`${curMult}배`:'', ds:`${lv>0?`현재 최대 ${curMult}배 · `:''}다음 최대 ${nextMult}배 (손익 둘 다 배율만큼 커져요)`, cost:leverageCostOf(), buyLabel:'강화'};
   }
   if(id==='stoploss'){
     const lv=S.upg.stoplossLv;
@@ -375,7 +384,7 @@ function buyUpgrade(id){
   const info=upgradeInfo(id);
   if(info.maxed||S.cash<info.cost)return;
   S.cash-=info.cost;
-  if(id==='limit')S.upg.limitLv++;
+  if(id==='leverage')S.upg.leverageLv++;
   else if(id==='stoploss')S.upg.stoplossLv++;
   else if(id==='hint')S.upg.hint=true;
   else if(id==='autosell')S.upg.autosell=true;
@@ -484,19 +493,21 @@ function currentTickIdx(){
   return Math.min(S.activeRound.path.length-1,Math.floor(elapsed/ROUND_TICK_MS));
 }
 function setBet(n){
-  S.betAmount=Math.max(0,Math.min(betLimitOf(),Math.min(Math.floor(S.cash),Math.round(n))));
+  S.betAmount=Math.max(0,Math.min(Math.floor(S.cash),Math.round(n)));
   renderTrade();
 }
 function startRound(){
   if(S.activeRound)return;
   const stock=TRADE_STOCKS.find(s=>s.id===S.selectedStock);
   const bet=S.betAmount;
-  if(bet<=0||bet>betLimitOf()||bet>S.cash)return;
+  if(bet<=0||bet>S.cash)return;
   const {patternId,patternEmo,path}=genRound(stock);
+  const maxLev=leverageMultOf();
+  const leverage=Math.min(Math.max(1,S.betLeverage||1),maxLev);
   S.cash-=bet;
-  S.activeRound={stockId:stock.id,bet,path,patternId,patternEmo,
+  S.activeRound={stockId:stock.id,bet,path,patternId,patternEmo,leverage,
     autoTarget:S.upg.autosell?(S.betAutoTarget||0):0,
-    startedAt:Date.now(),yMin:Math.min(...path),yMax:Math.max(...path)};
+    startedAt:Date.now()};
   sfx.buy();
   saveRun(); render();
 }
@@ -505,11 +516,13 @@ function sellRound(auto){
   const idx=currentTickIdx();
   const mult=S.activeRound.path[idx];
   const bet=S.activeRound.bet;
-  const rawProfit=Math.round(bet*mult)-bet;
+  const lev=S.activeRound.leverage||1;
+  const rawProfit=Math.round(bet*(mult-1)*lev);
   const profit=applyStoploss(rawProfit);
-  S.cash+=bet+profit; bumpPeak();
+  const payout=Math.max(0,bet+profit);
+  S.cash+=payout; bumpPeak();
   sfx[profit>=0?'pay':'warn']();
-  toast(`${auto?'🎯 자동 익절! ':''}${mult>=1?'📈':'📉'} ${mult.toFixed(2)}x 청산 · ${profit>=0?'+':''}${fmtWon(profit)}`);
+  toast(`${auto?'🎯 자동 익절! ':''}${mult>=1?'📈':'📉'} ${mult.toFixed(2)}x${lev>1?` ×${lev}`:''} 청산 · ${profit>=0?'+':''}${fmtWon(profit)}`);
   S.activeRound=null;
   saveRun();
   if(checkBankrupt())return;
@@ -545,10 +558,10 @@ function renderTradeTabs(){
   });
 }
 function renderTrade(){
-  $('tpLimit').textContent=`한도 ${fmtWon(betLimitOf())}`;
+  const maxLev=leverageMultOf();
+  $('tpLimit').textContent=maxLev>1?`레버리지 최대 ${maxLev}배`:'레버리지 없음';
   if(S.activeRound){renderRoundView();return;}
-  const limit=betLimitOf();
-  const canGo=S.betAmount>0 && S.betAmount<=limit && S.betAmount<=S.cash;
+  const canGo=S.betAmount>0 && S.betAmount<=S.cash;
   const autoRow=S.upg.autosell?`<div class="auto-label">🎯 자동 익절 목표</div>
     <div class="auto-row">
       <button data-t="0" class="${!S.betAutoTarget?'sel':''}">끄기</button>
@@ -556,18 +569,25 @@ function renderTrade(){
       <button data-t="1.5" class="${S.betAutoTarget===1.5?'sel':''}">1.5x</button>
       <button data-t="2" class="${S.betAutoTarget===2?'sel':''}">2.0x</button>
     </div>`:'';
+  const levOptions=LEVERAGE_MULTS.slice(0,maxLev>1?LEVERAGE_MULTS.indexOf(maxLev)+1:1);
+  const levRow=maxLev>1?`<div class="auto-label">🎚️ 레버리지 배율</div>
+    <div class="auto-row">${levOptions.map(m=>`<button data-lev="${m}" class="${(S.betLeverage||1)===m?'sel':''}">${m}배</button>`).join('')}</div>`:'';
   $('tradeBody').innerHTML=`
     <div class="bet-row"><button id="betMinus">−</button><div class="amt">${fmtWon(S.betAmount)}</div><button id="betPlus">+</button></div>
     <div class="bet-quicks"><button data-q="0.1">10%</button><button data-q="0.5">50%</button><button data-q="1">최대</button></div>
+    ${levRow}
     ${autoRow}
     <button class="trade-go" id="tradeGo" ${canGo?'':'disabled'}>15초 베팅 시작</button>
     <div class="trade-note">끝까지 들고만 있으면 손해예요 — 패턴을 보고 반응하세요!</div>`;
-  const step=Math.max(1000,Math.round(limit*0.05));
+  const step=Math.max(1000,Math.round(S.cash*0.05));
   $('betMinus').onclick=()=>{sfx.tap();setBet(S.betAmount-step);};
   $('betPlus').onclick=()=>{sfx.tap();setBet(S.betAmount+step);};
-  $('tradeBody').querySelectorAll('.bet-quicks button').forEach(b=>b.onclick=()=>{sfx.tap();setBet(Math.min(limit,S.cash)*parseFloat(b.dataset.q));});
+  $('tradeBody').querySelectorAll('.bet-quicks button').forEach(b=>b.onclick=()=>{sfx.tap();setBet(S.cash*parseFloat(b.dataset.q));});
+  if(maxLev>1){
+    $('tradeBody').querySelectorAll('.auto-row button[data-lev]').forEach(b=>b.onclick=()=>{sfx.tap();S.betLeverage=parseFloat(b.dataset.lev);saveRun();renderTrade();});
+  }
   if(S.upg.autosell){
-    $('tradeBody').querySelectorAll('.auto-row button').forEach(b=>b.onclick=()=>{sfx.tap();S.betAutoTarget=parseFloat(b.dataset.t);saveRun();renderTrade();});
+    $('tradeBody').querySelectorAll('.auto-row button[data-t]').forEach(b=>b.onclick=()=>{sfx.tap();S.betAutoTarget=parseFloat(b.dataset.t);saveRun();renderTrade();});
   }
   $('tradeGo').onclick=()=>startRound();
 }
@@ -577,17 +597,26 @@ function renderRoundView(){
   const remainSec=Math.max(0,Math.ceil((ROUND_TICKS-idx)*ROUND_TICK_MS/1000));
   const dir=mult>1.01?'up':mult<0.99?'down':'flat';
   const W=300,H=80,padX=6,padY=8;
-  const rng=(r.yMax-r.yMin)||0.001;
+  /* y축은 "지금까지 실제로 본 값"만으로 매 렌더마다 다시 계산한다(미래 전체 경로의
+     최고/최저로 미리 고정하면, 선이 차트 위/아래 끝에 닿는 순간 "이게 그 라운드의
+     진짜 고점/저점이다"를 그래프가 스포일러처럼 알려주게 되어 패턴을 볼 필요가 없어짐) */
+  const seen=r.path.slice(0,idx+1);
+  const rawMin=Math.min(...seen), rawMax=Math.max(...seen);
+  const rawRng=(rawMax-rawMin)||0.001, pad=rawRng*0.15;
+  const yMin=rawMin-pad, yMax=rawMax+pad;
+  const rng=(yMax-yMin)||0.001;
   const xOf=i=>padX+(i/ROUND_TICKS)*(W-2*padX);
-  const yOf=v=>H-padY-((v-r.yMin)/rng)*(H-2*padY);
+  const yOf=v=>H-padY-((v-yMin)/rng)*(H-2*padY);
   const pts=[];
   for(let i=0;i<=idx;i++)pts.push([xOf(i),yOf(r.path[i])]);
   const col=dir==='up'?'#f04452':dir==='down'?'#3182F6':'#8b95a1';
-  const profit=Math.round(r.bet*mult)-r.bet;
+  const lev=r.leverage||1;
+  const profit=Math.round(r.bet*(mult-1)*lev);
   const hintTxt=S.upg.hint?`${r.patternEmo} `:'';
+  const levTxt=lev>1?` · 🎚️${lev}배`:'';
   const autoTxt=r.autoTarget?` · 🎯${r.autoTarget}x 자동`:'';
   $('tradeBody').innerHTML=`<div class="round-view">
-    <div class="round-timer">${hintTxt}${stock.emo} ${stock.name} · 남은 시간 ${remainSec}초${autoTxt}</div>
+    <div class="round-timer">${hintTxt}${stock.emo} ${stock.name} · 남은 시간 ${remainSec}초${levTxt}${autoTxt}</div>
     <div class="round-mult ${dir}">${mult.toFixed(2)}x</div>
     <svg class="round-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${smoothPathD(pts)}" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <div class="round-pnl ${profit>=0?'up':'down'}">${profit>=0?'+':''}${fmtWon(profit)}</div>

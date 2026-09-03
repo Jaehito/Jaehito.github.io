@@ -499,7 +499,7 @@ function updateRankDrift(now){
     else mult=1+(0.01+Math.random()*0.03);
     const start=rankDrift;
     const target=Math.min(2.0,Math.max(0.5,start*mult));
-    driftSeg={start,target,t0:now,t1:now+6000+Math.random()*6000};
+    driftSeg={start,target,t0:now,t1:now+57000+Math.random()*6000};
   }
   const frac=Math.min(1,(now-driftSeg.t0)/(driftSeg.t1-driftSeg.t0));
   rankDrift=driftSeg.start+(driftSeg.target-driftSeg.start)*Math.sin(frac*Math.PI/2);

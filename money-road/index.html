@@ -517,7 +517,7 @@ function startRound(){
   S.cash-=bet;
   S.activeRound={stockId:stock.id,bet,path,patternId,patternEmo,leverage,
     autoTarget:S.upg.autosell?(S.betAutoTarget||0):0,
-    startedAt:Date.now(), yMin:1, yMax:1, boundsIdx:0};
+    startedAt:Date.now(), yMin:0.96, yMax:1.04, boundsIdx:0, dispYMin:0.96, dispYMax:1.04};
   sfx.buy();
   saveRun(); render();
 }
@@ -609,10 +609,13 @@ function renderRoundView(){
   const W=300,H=80,padX=6,padY=8;
   /* y축은 "지금까지 실제로 본 값"만 확장형(expand-only)으로 반영한다 — 미래 전체 경로의
      최고/최저로 미리 고정하면, 선이 차트 위/아래 끝에 닿는 순간 "이게 그 라운드의 진짜
-     고점/저점이다"를 그래프가 스포일러처럼 알려줘서 패턴을 볼 필요가 없어짐. 그렇다고
-     매 렌더마다 보인 구간의 min/max를 처음부터 다시 계산하면, 사소한 노이즈만으로도
-     축이 매 틱 흔들려서 그래프 전체가 미세하게 계속 출렁이는 것처럼 보임 — 그래서
-     한 번 넓어진 경계는 절대 좁아지지 않게(축소 없음) 라운드 객체에 누적해서 저장한다 */
+     고점/저점이다"를 그래프가 스포일러처럼 알려줘서 패턴을 볼 필요가 없어짐. 하지만
+     상승/하락이 쭉 이어지는 구간에서는 "진짜 새 고점/저점"이 거의 매 틱 갱신되기 때문에,
+     목표 경계(yMin/yMax)를 그대로 그리기에 쓰면 이미 그려둔 예전 구간의 픽셀 위치까지
+     매 틱 같이 밀려서 그래프가 통째로 다시 그려지는 것처럼 흔들려 보임. 그래서 실제
+     그리기에 쓰는 화면상 경계(dispYMin/dispYMax)는 목표치를 향해 서서히(이징) 따라가게
+     만들어서, 예전 구간은 순간이동하지 않고 부드럽게만 자리를 조정하도록 한다 */
+  if(typeof r.yMin!=='number'){r.yMin=0.96;r.yMax=1.04;r.boundsIdx=0;}
   if(idx>r.boundsIdx){
     for(let i=r.boundsIdx+1;i<=idx;i++){
       if(r.path[i]<r.yMin)r.yMin=r.path[i];
@@ -620,8 +623,13 @@ function renderRoundView(){
     }
     r.boundsIdx=idx;
   }
+  if(typeof r.dispYMin!=='number'){r.dispYMin=r.yMin;r.dispYMax=r.yMax;}
   const rawRng=(r.yMax-r.yMin)||0.001, pad=rawRng*0.15;
-  const yMin=r.yMin-pad, yMax=r.yMax+pad;
+  const targetYMin=r.yMin-pad, targetYMax=r.yMax+pad;
+  const EASE=0.2;
+  r.dispYMin+=(targetYMin-r.dispYMin)*EASE;
+  r.dispYMax+=(targetYMax-r.dispYMax)*EASE;
+  const yMin=r.dispYMin, yMax=r.dispYMax;
   const rng=(yMax-yMin)||0.001;
   const xOf=i=>padX+(i/ROUND_TICKS)*(W-2*padX);
   const yOf=v=>H-padY-((v-yMin)/rng)*(H-2*padY);

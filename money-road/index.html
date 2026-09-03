@@ -225,9 +225,9 @@ const BROKE_LIMIT=1000;
 /* 단타 종목 — 종목마다 변동성(pMult/noiseMult)이 다르다. 실제 가격 흐름은
    아래 PATTERNS(5종)이 만들고, 종목은 그 흐름의 진폭만 키운다. */
 const TRADE_STOCKS=[
-  {id:'stable', emo:'🏦', name:'안정주', pMult:1.0, noiseMult:1.0},
-  {id:'theme',  emo:'🚀', name:'테마주', pMult:1.6, noiseMult:1.8},
-  {id:'surge',  emo:'🔥', name:'급등주', pMult:2.3, noiseMult:2.6},
+  {id:'stable', emo:'🏦', name:'사성전자', pMult:1.0, noiseMult:1.0},
+  {id:'theme',  emo:'🚀', name:'네코프로', pMult:1.6, noiseMult:1.8},
+  {id:'surge',  emo:'🔥', name:'유메이드', pMult:2.3, noiseMult:2.6},
 ];
 const ROUND_TICKS=300, ROUND_TICK_MS=50; // 15초를 0.05초 단위로 나눠서 더 부드럽고 잦게 움직이게
 const NOISE_SCALE=Math.sqrt(30/ROUND_TICKS); // 기존 30틱 기준으로 검증한 노이즈 강도를 촘촘한 해상도에 맞게 보정
@@ -316,11 +316,11 @@ const LEVELS=[
   {lv:2, need:500000,
    reward:{emo:'🚗',t:'첫 차 · 패턴 힌트 해금',d:'중고차를 뽑았어요. 이제 라운드가 어떤 패턴인지 시작 전에 볼 수 있어요.',bonusTxt:'현금 +20만원 · 🔍 패턴 힌트 해금',f:S=>{S.cash+=200000;S.upg.hint=true;bumpPeak();}}},
   {lv:3, need:3000000,
-   reward:{emo:'🚀',t:'테마주 해금',d:'변동성 큰 테마주에도 손댈 수 있게 됐어요.',bonusTxt:'🚀 테마주 해금',f:S=>{S.themeUnlocked=true;}}},
+   reward:{emo:'🚀',t:'네코프로 해금',d:'변동성 큰 네코프로에도 손댈 수 있게 됐어요.',bonusTxt:'🚀 네코프로 해금',f:S=>{S.themeUnlocked=true;}}},
   {lv:4, need:20000000,
    reward:{emo:'💍',t:'결혼 · 자동 익절 해금',d:'평생의 짝을 만났어요. 목표 배율에 닿으면 자동으로 매도해주는 기능도 열렸어요.',bonusTxt:'축의금 +50만원 · 🎯 자동 익절 해금',f:S=>{S.cash+=500000;S.upg.autosell=true;bumpPeak();}}},
   {lv:5, need:150000000,
-   reward:{emo:'🔥',t:'급등주 해금',d:'변동성이 가장 큰 급등주까지 손댈 수 있게 됐어요.',bonusTxt:'🔥 급등주 해금',f:S=>{S.upg.surge=true;}}},
+   reward:{emo:'🔥',t:'유메이드 해금',d:'변동성이 가장 큰 유메이드까지 손댈 수 있게 됐어요.',bonusTxt:'🔥 유메이드 해금',f:S=>{S.upg.surge=true;}}},
   {lv:6, need:1000000000,
    reward:{emo:'🏠',t:'내 집 마련',d:'집을 담보로 더 크게 굴릴 수 있게 됐어요.',bonusTxt:'레버리지 1단계 무료 강화',f:S=>{S.upg.leverageLv=Math.min(LEVERAGE_MULTS.length-1,(S.upg.leverageLv||0)+1);}}},
   {lv:7, need:8000000000},
@@ -446,9 +446,9 @@ function renderShop(){
 /* ===== 해금(무료 · 레벨로 열림) ===== */
 const UNLOCKS=[
   {id:'hint',    emo:'🔍', name:'패턴 힌트', ds:'라운드 시작 시 패턴을 미리 보여줘요', lv:2, has:()=>S.upg.hint},
-  {id:'theme',   emo:'🚀', name:'테마주',   ds:'변동성 큰 테마주를 거래할 수 있어요', lv:3, has:()=>S.themeUnlocked},
+  {id:'theme',   emo:'🚀', name:'네코프로',  ds:'변동성 큰 네코프로를 거래할 수 있어요', lv:3, has:()=>S.themeUnlocked},
   {id:'autosell',emo:'🎯', name:'자동 익절', ds:'목표 배율에 닿으면 자동으로 매도해요', lv:4, has:()=>S.upg.autosell},
-  {id:'surge',   emo:'🔥', name:'급등주',   ds:'변동성이 가장 큰 종목을 거래할 수 있어요', lv:5, has:()=>S.upg.surge},
+  {id:'surge',   emo:'🔥', name:'유메이드',  ds:'변동성이 가장 큰 종목을 거래할 수 있어요', lv:5, has:()=>S.upg.surge},
 ];
 function renderUnlock(){
   $('unlockList').innerHTML=UNLOCKS.map(u=>{
@@ -473,24 +473,34 @@ function rankOf(){
   return Math.max(1,Math.round(worst*Math.pow(1/worst,t)));
 }
 let feed=[];
+let nextChatterAt=Date.now()+4000+Math.random()*6000;
 function pushFeed(av,name,text){
   feed.unshift({av,name,text});
   if(feed.length>3)feed.length=3;
   if(S.mainTab==='trade')renderCommunity();
 }
 function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
-function reactSell(profit,bet){
-  const r=bet>0?profit/bet:0;
-  let pool;
-  if(r>=1.2) pool=[['🤑','고점 매도 실화냐 ㄷㄷ'],['🔥','님 지금 몇 배 먹은거임?'],['😱','이걸 잡네…']];
-  else if(r>=0.15) pool=[['😎','오 깔끔한 익절 축하'],['👍','타이밍 좋네요'],['🙂','저도 방금 같이 탔음']];
-  else if(r>-0.15) pool=[['😐','본전치기 ㅋㅋ'],['🤔','애매하게 나왔네'],['😴','이번 판은 노잼']];
-  else if(r>-0.5) pool=[['😭','물렸네요 ㅠㅠ'],['🥲','저도 방금 손절함'],['📉','에고 조금 아쉽']];
-  else pool=[['💀','괜찮아요…? ㅠㅠ'],['🚑','한강 가지 마세요'],['🫠','크게 물렸다…']];
-  const [av,text]=pick(pool);
-  pushFeed(av,nameFor(profit+bet),text);
+/* 주가/내 매매 결과와는 완전히 무관한 잡담·밈 위주 — 디씨/토스 증권게시판 특유의
+   드립을 흉내낸 것(실제 사이트를 실시간으로 긁어올 방법이 없어 직접 작성). 몇 초마다
+   하나씩 무작위로 피드에 올라와서 "옆에서 다른 사람들이 떠드는" 느낌만 준다. */
+const CHATTER=[
+  ['🍚','점심 뭐 드셨어요'],['☕','아 커피 필요하다'],['😪','아침부터 존버 중...'],
+  ['🐢','오늘따라 시간 안 감'],['🎮','장 끝나고 게임이나 해야지'],['🧦','양말 한 짝이 없어짐'],
+  ['📱','폰 배터리 20%인데 충전기가 없음'],['🌧️','밖에 비 옴?'],['🐱','옆집 고양이가 웁니다'],
+  ['💸','월급날 언제냐'],['🛌','퇴근하고 싶다'],['🍜','라면 먹을까 말까'],
+  ['📉','근데 제 통장은 왜 항상 하락장임'],['🤖','AI가 대신 눌러줬으면'],['🎧','노래 추천좀'],
+  ['🧃','편의점 감자칩 신제품 나왔던데'],['🐹','손절은 마음이 아니라 손이 하는거임'],
+  ['🚬','담배 한 대 피고 옴'],['🐔','치킨 시킬 사람'],['🌙','오늘 밤 야식 각'],
+  ['💤','5분만 자야지'],['📺','드라마 뭐 보세요'],['🐢','존버는 승리한다'],
+  ['🧊','에어컨 안 트나요'],['🚗','차 막힘 실화냐'],['🎂','오늘 제 생일인데 아무도 몰라줌'],
+  ['🐣','병아리 투자자입니다 잘 부탁드려요'],['🥱','하품만 나온다'],['📦','택배 언제 오지'],
+  ['🌵','사무실 화분 다 말라죽음'],['🧻','휴지 다 떨어짐'],['🐟','붕어빵 파는데 안 삼'],
+  ['🎣','낚시나 갈까'],['🛴','퀵보드 타고 출근함'],['🍦','아이스크림 먹고싶다'],
+];
+function scheduleChatter(){
+  const [av,text]=pick(CHATTER);
+  pushFeed(av,nameFor(Math.random()*100000),text);
 }
-const CHATTER=[['💬','다들 뭐 사요?'],['🚀','테마주 각인가요'],['📊','지금 장 좋네'],['🧐','급등주 무섭다…'],['☕','존버 중입니다']];
 function renderCommunity(){
   const el=$('community'); if(!el)return;
   const rank=rankOf();
@@ -639,7 +649,6 @@ function sellRound(auto){
   S.cash+=payout; bumpPeak();
   sfx[profit>=0?'pay':'warn']();
   toast(`${auto?'🎯 자동 익절! ':''}${mult>=1?'📈':'📉'} ${mult.toFixed(2)}x${lev>1?` ×${lev}`:''} 청산 · ${profit>=0?'+':''}${fmtWon(profit)}`);
-  reactSell(profit,bet);
   S.activeRound=null;
   saveRun();
   if(checkBankrupt())return;
@@ -794,6 +803,7 @@ setInterval(()=>{
   const dt=Math.min(200, now-S.lastTick);
   S.lastTick=now;
   if($('modal').classList.contains('on'))return;
+  if(now>=nextChatterAt){ scheduleChatter(); nextChatterAt=now+7000+Math.random()*8000; }
   if((S.upg.dividendLv||0)>0){
     divAcc+=dt;
     while(divAcc>=DIVIDEND_INTERVAL_MS){ divAcc-=DIVIDEND_INTERVAL_MS; payDividend(); }
@@ -813,8 +823,8 @@ window.addEventListener('pagehide', saveRun);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveRun();});
 
 feed=[
-  {av:'🔥',name:nameFor(3),text:'오늘 급등주 미쳤다 ㄷㄷ'},
-  {av:'💬',name:nameFor(9),text:'다들 안정주로 버는 중?'},
+  {av:CHATTER[3][0],name:nameFor(3),text:CHATTER[3][1]},
+  {av:CHATTER[9][0],name:nameFor(9),text:CHATTER[9][1]},
 ];
 render();
 if(!checkBankrupt() && awayReport && awayReport.awaySec>=60) showAwayModal(awayReport);

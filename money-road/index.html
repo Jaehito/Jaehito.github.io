@@ -26,7 +26,9 @@
 
   .topbar{position:sticky; top:0; z-index:20; background:var(--bg); display:flex; align-items:center; justify-content:space-between; padding:14px 20px 8px;}
   .topbar .brand{font-size:18px; font-weight:800;} .topbar .brand span{color:var(--blue);}
-  .top-right{display:flex; align-items:center; gap:8px;}
+  .top-right{display:flex; flex-direction:column; align-items:flex-end; gap:6px;}
+  .top-right-row{display:flex; align-items:center; gap:8px;}
+  .rank-chip{font-size:11.5px; font-weight:800; color:var(--blue); background:var(--blue-weak); padding:5px 10px; border-radius:999px; white-space:nowrap; font-variant-numeric:tabular-nums;}
   .lv-chip{font-size:13px; font-weight:800; color:var(--gray); background:var(--card); padding:7px 12px; border-radius:999px; box-shadow:var(--shadow);}
   .icon-btn{border:none; background:var(--card); color:var(--gray); width:36px; height:36px; border-radius:12px; font-size:15px; box-shadow:var(--shadow); display:grid; place-items:center; cursor:pointer;}
 
@@ -111,17 +113,10 @@
 
   /* 커뮤니티/랭킹 카드 */
   .community{margin:12px 20px 0; background:var(--card); border-radius:20px; padding:14px 16px; box-shadow:var(--shadow);}
+  .community.hide{display:none !important;}
   .cm-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
   .cm-title{font-size:13.5px; font-weight:800;}
-  .cm-rank{font-size:12px; font-weight:800; color:var(--blue); background:var(--blue-weak); padding:4px 10px; border-radius:999px;}
-  .cm-board{background:var(--field); border-radius:13px; padding:5px 3px; margin-bottom:10px;}
-  .cm-row{display:flex; align-items:center; gap:8px; padding:5px 9px; font-size:12px; border-radius:9px;}
-  .cm-row.me{background:#fff; box-shadow:0 1px 6px rgba(49,130,246,.15);}
-  .cm-row .rk{width:88px; flex-shrink:0; color:var(--gray2); font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap;}
-  .cm-row .nm{flex:1; min-width:0; color:var(--gray); font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .cm-row.me .nm{color:var(--blue); font-weight:800;}
-  .cm-row .amt{flex-shrink:0; color:var(--ink); font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap;}
-  .cm-feed{display:flex; flex-direction:column; gap:7px;}
+  .cm-feed{display:flex; flex-direction:column; gap:7px; min-height:21px;}
   .cm-msg{display:flex; align-items:flex-start; gap:7px; font-size:12px; font-weight:650; color:var(--gray); line-height:1.35; animation:cmIn .3s ease-out;}
   .cm-msg .av{width:21px; height:21px; border-radius:7px; background:var(--field); display:grid; place-items:center; font-size:12px; flex-shrink:0;}
   .cm-msg b{color:var(--ink); font-weight:800;}
@@ -147,8 +142,11 @@
   <div class="topbar">
     <div class="brand">머니<span>로드</span></div>
     <div class="top-right">
-      <div class="lv-chip" id="lvChip">Lv.1</div>
-      <button class="icon-btn" id="muteBtn">🔊</button>
+      <div class="rank-chip" id="rankChip">-</div>
+      <div class="top-right-row">
+        <div class="lv-chip" id="lvChip">Lv.1</div>
+        <button class="icon-btn" id="muteBtn">🔊</button>
+      </div>
     </div>
   </div>
 
@@ -175,7 +173,7 @@
       <div class="stock-tabs" id="stockTabs"></div>
       <div id="tradeBody"></div>
     </div>
-    <div class="community" id="community"></div>
+    <div class="community hide" id="community"></div>
   </div>
 
   <div id="panelShop" class="hide">
@@ -462,27 +460,64 @@ function renderUnlock(){
   }).join('');
 }
 
-/* ===== 커뮤니티/랭킹 (순수 연출 — 현금은 일절 주지 않는다) ===== */
+/* ===== 랭킹 (우측상단 · 순수 연출 — 현금은 일절 주지 않는다) =====
+   보유 현금(S.cash)을 로그 스케일로 전국 순위에 매핑한다. peakCash가 아니라 실시간
+   cash를 쓰기 때문에 베팅으로 돈이 오르내리면 등수도 그대로 오르내린다. 여기에
+   "가만히 있어도" 등수가 조금씩 흔들리도록, 실제 현금은 건드리지 않는 화면표시 전용
+   보정치(rankDrift)를 따로 두고 몇 초 단위로 소폭 상승/하락/횡보 구간을 이어붙인다 —
+   등수가 좋을수록(1위에 가까울수록) 하락 구간이 더 자주 나오게 해서, 상위권일수록
+   가만히 있으면 등수가 밀리기 쉽게 만든다(계속 단타를 해야 할 이유). */
 const FAKE_NAMES=['존버킹','단타의신','물타기장인','칼손절러','한강뷰거주','우량주러버','고점매수단','익절요정','풀매수맨','존리형','개미핥기','반대매매각','손절은없다','불장기원단','떡상기도중'];
 function nameFor(seed){return FAKE_NAMES[Math.abs(Math.floor(seed))%FAKE_NAMES.length];}
-/* 최고 현금(peakCash)을 로그 스케일로 전국 순위처럼 매핑: 시작 ~1300만등 → 최종 1등 */
-function rankOf(){
-  const p=Math.max(1,S.peakCash), minP=100000, maxP=50000000000;
-  const t=Math.min(1,Math.max(0,(Math.log10(p)-Math.log10(minP))/(Math.log10(maxP)-Math.log10(minP))));
-  const worst=13000000;
-  return Math.max(1,Math.round(worst*Math.pow(1/worst,t)));
+const RANK1_AMOUNT=50000000000, RANK_MIN_AMOUNT=100000, RANK_WORST=13000000;
+function rankGoodness(amount){
+  const p=Math.max(1,amount);
+  return Math.min(1,Math.max(0,(Math.log10(p)-Math.log10(RANK_MIN_AMOUNT))/(Math.log10(RANK1_AMOUNT)-Math.log10(RANK_MIN_AMOUNT))));
 }
+function rankFromAmount(amount){
+  const t=rankGoodness(amount);
+  return Math.max(1,Math.round(RANK_WORST*Math.pow(1/RANK_WORST,t)));
+}
+let rankDrift=1;
+let driftSeg={start:1,target:1,t0:Date.now(),t1:Date.now()};
+function effectiveRankAmount(){return Math.max(1,S.cash*rankDrift);}
+function rankOf(){return rankFromAmount(effectiveRankAmount());}
+function rankText(){
+  const r=rankOf();
+  const pct=r/RANK_WORST*100;
+  const pctTxt=pct<1?pct.toFixed(2):Math.round(pct);
+  return `${r.toLocaleString()}위 (상위 ${pctTxt}%)`;
+}
+function updateRankDrift(now){
+  if(now>=driftSeg.t1){
+    const goodness=rankGoodness(effectiveRankAmount());
+    const declineProb=0.30+goodness*0.45, flatProb=0.25;
+    const roll=Math.random();
+    let mult;
+    if(roll<declineProb) mult=1-(0.01+Math.random()*0.035);
+    else if(roll<declineProb+flatProb) mult=1+(Math.random()-0.5)*0.01;
+    else mult=1+(0.01+Math.random()*0.03);
+    const start=rankDrift;
+    const target=Math.min(2.0,Math.max(0.5,start*mult));
+    driftSeg={start,target,t0:now,t1:now+6000+Math.random()*6000};
+  }
+  const frac=Math.min(1,(now-driftSeg.t0)/(driftSeg.t1-driftSeg.t0));
+  rankDrift=driftSeg.start+(driftSeg.target-driftSeg.start)*Math.sin(frac*Math.PI/2);
+}
+function renderRankChip(){ $('rankChip').textContent=rankText(); }
+
+/* ===== 배팅 중 실시간 반응 (기존 랭킹판 자리 재사용) — 베팅 시작~종료 동안만 보이고,
+   주가/내 매매 결과와는 완전히 무관한 잡담·밈 위주다. 실제 디씨/토스 댓글을 실시간으로
+   가져올 방법은 없어서(정적 사이트라 스크래핑 불가, 저작권 문제도 있음) 그 텐션만
+   흉내낸 문구를 직접 작성해 두고 베팅이 진행되는 동안 몇 초마다 하나씩 올라오게 한다. */
 let feed=[];
-let nextChatterAt=Date.now()+4000+Math.random()*6000;
+let nextBetChatterAt=0;
 function pushFeed(av,name,text){
   feed.unshift({av,name,text});
   if(feed.length>3)feed.length=3;
-  if(S.mainTab==='trade')renderCommunity();
+  if(S.activeRound && S.mainTab==='trade')renderBetChat();
 }
 function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
-/* 주가/내 매매 결과와는 완전히 무관한 잡담·밈 위주 — 디씨/토스 증권게시판 특유의
-   드립을 흉내낸 것(실제 사이트를 실시간으로 긁어올 방법이 없어 직접 작성). 몇 초마다
-   하나씩 무작위로 피드에 올라와서 "옆에서 다른 사람들이 떠드는" 느낌만 준다. */
 const CHATTER=[
   ['🍚','점심 뭐 드셨어요'],['☕','아 커피 필요하다'],['😪','아침부터 존버 중...'],
   ['🐢','오늘따라 시간 안 감'],['🎮','장 끝나고 게임이나 해야지'],['🧦','양말 한 짝이 없어짐'],
@@ -501,20 +536,21 @@ function scheduleChatter(){
   const [av,text]=pick(CHATTER);
   pushFeed(av,nameFor(Math.random()*100000),text);
 }
-function renderCommunity(){
+function startBetChat(){
+  feed=[];
+  nextBetChatterAt=Date.now()+1200+Math.random()*1200;
+  renderBetChat();
+}
+function endBetChat(){
+  feed=[];
+  const el=$('community'); if(el){el.classList.add('hide'); el.innerHTML='';}
+}
+function renderBetChat(){
   const el=$('community'); if(!el)return;
-  const rank=rankOf();
-  const aRank=Math.max(1,Math.round(rank*0.86)), bRank=Math.round(rank*1.15)+1;
-  const aCash=Math.round(S.peakCash*1.18), bCash=Math.max(START_CASH,Math.round(S.peakCash*0.83));
-  const rows=[
-    {rk:aRank,nm:nameFor(aRank),amt:aCash,me:false},
-    {rk:rank,nm:'나',amt:S.peakCash,me:true},
-    {rk:bRank,nm:nameFor(bRank),amt:bCash,me:false},
-  ];
-  const board=rows.map(r=>`<div class="cm-row ${r.me?'me':''}"><span class="rk">${r.rk.toLocaleString()}위</span><span class="nm">${r.nm}</span><span class="amt">${fmtWon(r.amt)}</span></div>`).join('');
-  const msgs=(feed.length?feed:[{av:'💬',name:nameFor(7),text:'오늘 장 어떰?'}]).map(m=>`<div class="cm-msg"><span class="av">${m.av}</span><span><b>${m.name}</b> ${m.text}</span></div>`).join('');
-  el.innerHTML=`<div class="cm-head"><span class="cm-title">🏆 실시간 랭킹</span><span class="cm-rank">전국 ${rank.toLocaleString()}위</span></div>
-    <div class="cm-board">${board}</div>
+  if(!S.activeRound){ el.classList.add('hide'); el.innerHTML=''; return; }
+  el.classList.remove('hide');
+  const msgs=feed.map(m=>`<div class="cm-msg"><span class="av">${m.av}</span><span><b>${m.name}</b> ${m.text}</span></div>`).join('');
+  el.innerHTML=`<div class="cm-head"><span class="cm-title">💬 실시간 반응</span></div>
     <div class="cm-feed">${msgs}</div>`;
 }
 
@@ -525,7 +561,7 @@ function payDividend(){
   if(amt<=0)return;
   S.cash+=amt; bumpPeak();
   renderHero();
-  pushFeed('🏦','배당봇',`배당금 <b>+${fmtWon(amt)}</b> 입금됐어요`);
+  toast(`🏦 배당금 +${fmtWon(amt)} 입금됐어요`);
   if(!S.activeRound){
     if(S.mainTab==='shop')renderShop();
     if(!checkLevelUp())renderHero();
@@ -635,6 +671,7 @@ function startRound(){
     autoTarget:S.upg.autosell?(S.betAutoTarget||0):0,
     startedAt:Date.now(), yMin:0.96, yMax:1.04, boundsIdx:0, dispYMin:0.96, dispYMax:1.04};
   sfx.buy();
+  startBetChat();
   saveRun(); render();
 }
 function sellRound(auto){
@@ -650,6 +687,7 @@ function sellRound(auto){
   sfx[profit>=0?'pay':'warn']();
   toast(`${auto?'🎯 자동 익절! ':''}${mult>=1?'📈':'📉'} ${mult.toFixed(2)}x${lev>1?` ×${lev}`:''} 청산 · ${profit>=0?'+':''}${fmtWon(profit)}`);
   S.activeRound=null;
+  endBetChat();
   saveRun();
   if(checkBankrupt())return;
   if(!checkLevelUp())render();
@@ -771,10 +809,10 @@ function renderRoundView(){
 function renderHero(){$('cashView').textContent=fmtWon(S.cash);}
 
 function render(){
-  renderHero();renderLevel();
+  renderHero();renderLevel();renderRankChip();
   switchMainTab(S.mainTab||'trade');
   renderTradeTabs();renderTrade();
-  renderShop();renderUnlock();renderCommunity();
+  renderShop();renderUnlock();renderBetChat();
 }
 
 function showAwayModal(report){
@@ -803,12 +841,12 @@ setInterval(()=>{
   const dt=Math.min(200, now-S.lastTick);
   S.lastTick=now;
   if($('modal').classList.contains('on'))return;
-  if(now>=nextChatterAt){ scheduleChatter(); nextChatterAt=now+7000+Math.random()*8000; }
   if((S.upg.dividendLv||0)>0){
     divAcc+=dt;
     while(divAcc>=DIVIDEND_INTERVAL_MS){ divAcc-=DIVIDEND_INTERVAL_MS; payDividend(); }
   }
   if(S.activeRound){
+    if(now>=nextBetChatterAt){ scheduleChatter(); nextBetChatterAt=now+2000+Math.random()*2500; }
     const idx=currentTickIdx();
     const mult=S.activeRound.path[idx];
     if(idx>=S.activeRound.path.length-1){ sellRound(false); return; }
@@ -818,14 +856,12 @@ setInterval(()=>{
     checkBankrupt()||checkLevelUp();
   }
 }, ROUND_TICK_MS);
+setInterval(()=>{ updateRankDrift(Date.now()); renderRankChip(); }, 1000);
 setInterval(saveRun, 3000);
 window.addEventListener('pagehide', saveRun);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveRun();});
 
-feed=[
-  {av:CHATTER[3][0],name:nameFor(3),text:CHATTER[3][1]},
-  {av:CHATTER[9][0],name:nameFor(9),text:CHATTER[9][1]},
-];
+updateRankDrift(Date.now());
 render();
 if(!checkBankrupt() && awayReport && awayReport.awaySec>=60) showAwayModal(awayReport);
 </script>

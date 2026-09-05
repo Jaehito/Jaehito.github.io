@@ -106,6 +106,32 @@
   .biz-buy .p{display:block; font-size:13.5px; font-weight:900;}
   .biz-buy .l{display:block; font-size:10.5px; font-weight:700; opacity:.75; margin-top:1px;}
 
+  /* 장세 신호 */
+  .signal{display:flex; align-items:center; gap:10px; border-radius:14px; padding:9px 12px; margin-bottom:10px; border:2px solid transparent;}
+  .signal.strong{background:#e9f9f0; border-color:#00c47133;}
+  .signal.mid{background:#fff6e5; border-color:#ffb02033;}
+  .signal.weak{background:var(--red-weak); border-color:#f0445233;}
+  .signal .sg-left{display:flex; align-items:center; gap:5px; flex-shrink:0;}
+  .signal .sg-emo{font-size:16px;}
+  .signal .sg-name{font-size:13.5px; font-weight:900;}
+  .signal.strong .sg-name{color:#00a862;} .signal.mid .sg-name{color:#c98600;} .signal.weak .sg-name{color:var(--red);}
+  .signal .sg-mid{min-width:0;}
+  .signal .sg-ds{font-size:11.5px; font-weight:700; color:var(--gray);}
+  .signal .sg-acc{font-size:10.5px; font-weight:700; color:var(--gray3); margin-top:1px;}
+  .liq-note{font-size:11px; font-weight:700; color:var(--gray2); background:var(--field); border-radius:10px; padding:7px 10px; margin-bottom:11px;}
+  .liq-note b{color:var(--red); font-weight:900;}
+
+  /* 거래 결과 카드 */
+  .rs-badge{font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px;}
+  .rs-badge.hot{background:var(--red-weak); color:var(--red);}
+  .rs-badge.cold{background:var(--field); color:var(--gray2);}
+  .rs-sum{font-size:19px; font-weight:900; font-variant-numeric:tabular-nums;}
+  .rs-sum.up{color:var(--red);} .rs-sum.down{color:var(--blue);}
+  .rs-rank{font-size:11.5px; font-weight:700; color:var(--gray2); margin-top:3px; font-variant-numeric:tabular-nums;}
+  .rs-rank b{color:var(--ink); font-weight:800;}
+  .rs-rank .up{color:var(--green); font-weight:800;} .rs-rank .down{color:var(--red); font-weight:800;}
+  .rs-like{color:var(--gray3); font-weight:800; font-size:11px; margin-left:5px; white-space:nowrap;}
+
   /* 해금 태그 */
   .unlock-tag{flex-shrink:0; border-radius:13px; padding:10px 12px; font-size:11.5px; font-weight:800; text-align:center; min-width:92px;}
   .unlock-tag.open{background:var(--green); color:#fff;}
@@ -193,7 +219,7 @@
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
-const RUN_KEY='moneyroad2_run_v7', META_KEY='moneyroad2_meta_v1';
+const RUN_KEY='moneyroad2_run_v8', META_KEY='moneyroad2_meta_v1';
 
 function fmtWon(v){const neg=v<0;let x=Math.round(Math.abs(v));if(x<10000)return (neg?'-':'')+x.toLocaleString()+'원';
   const eok=Math.floor(x/100000000),man=Math.floor((x%100000000)/10000);let s='';if(eok)s+=eok+'억';if(man)s+=(s?' ':'')+man.toLocaleString()+'만';return (neg?'-':'')+s+'원';}
@@ -304,25 +330,60 @@ function pickPattern(){
   for(const p of PATTERNS){acc+=p.weight; if(r<=acc)return p;}
   return PATTERNS[PATTERNS.length-1];
 }
-function genRound(stock){
-  const pat=pickPattern();
+function genRound(stock,patId){
+  const pat=PATTERNS.find(p=>p.id===patId)||pickPattern();
   return {patternId:pat.id, patternEmo:pat.emo, path:pat.gen(stock)};
 }
 
+/* ===== 장세 신호 =====
+   패턴을 "도달 가능한 고점이 얼마나 큰가"로 3단계로 묶는다. 베팅 전에 이 등급을
+   확률적으로만 알려줘서, 레버리지를 지를 "근거"는 주되 확신은 주지 않는다.
+   (패턴 힌트처럼 정답을 알려주면 게임이 무너지므로 일부러 틀릴 수 있게 둔다.)
+   시뮬레이션 검증: 5배 사용 시 전액 손실률이 신호 없음 43% → 기본신호 15% → 정보력
+   최대 4.6%로 떨어진다. 신호의 값어치는 수익 증가가 아니라 "사고를 줄이는 것"에 있다. */
+const PATTERN_TIER={up:'strong',spike:'strong',delayup:'strong',
+  v:'mid',w:'mid',m:'mid',invv:'mid',
+  down:'weak',flat:'weak',delaydown:'weak'};
+const SIGNAL_TIERS=['strong','mid','weak'];
+const SIGNAL_INFO={
+  strong:{emo:'🟢',name:'강세',ds:'큰 고점이 나올 만한 장'},
+  mid:   {emo:'🟡',name:'보통',ds:'적당한 고점은 기대해 볼 만한 장'},
+  weak:  {emo:'🔴',name:'약세',ds:'고점 없이 흘러내리기 쉬운 장'},
+};
+const INFO_ACC=[0.55,0.65,0.75,0.85];
+const INFO_COSTS=[300000,1200000,5000000];
+function infoAccOf(){return INFO_ACC[Math.min(INFO_ACC.length-1,S.upg.infoLv||0)];}
+/* 다음 라운드의 패턴을 미리 뽑아두고 그에 대한 신호를 만든다. 라운드가 끝날 때만
+   새로 뽑기 때문에, 탭을 옮기거나 종목을 바꿔서 좋은 신호가 뜰 때까지 돌리는 건 불가능. */
+function rollPending(){
+  const pat=pickPattern();
+  const tier=PATTERN_TIER[pat.id]||'mid';
+  let sig=tier;
+  if(Math.random()>=infoAccOf()){
+    const others=SIGNAL_TIERS.filter(t=>t!==tier);
+    sig=others[Math.floor(Math.random()*others.length)];
+  }
+  S.pending={patId:pat.id, sig};
+}
+function ensurePending(){ if(!S.pending||!S.pending.patId)rollPending(); }
+/* 레버리지 청산선: 배율 L에서 (mult-1)*L = -1 이 되는 지점 = 1-1/L */
+function liqMultOf(lev){return lev>1?1-1/lev:0;}
+
 /* 레벨 = 지금까지 도달한 최고 현금(peakCash) 기준. 보상은 전부 무료 지급. */
 const LEVELS=[
-  {lv:2, need:500000,
-   reward:{emo:'🚗',t:'첫 차 · 패턴 힌트 해금',d:'중고차를 뽑았어요. 이제 라운드가 어떤 패턴인지 시작 전에 볼 수 있어요.',bonusTxt:'현금 +20만원 · 🔍 패턴 힌트 해금',f:S=>{S.cash+=200000;S.upg.hint=true;bumpPeak();}}},
-  {lv:3, need:3000000,
+  {lv:2, need:500000, tag:'현금 +20만원',
+   reward:{emo:'🚗',t:'첫 차',d:'중고차를 뽑았어요.',bonusTxt:'현금 +20만원',f:S=>{S.cash+=200000;bumpPeak();}}},
+  {lv:3, need:3000000, tag:'🚀 네코프로 거래 해금',
    reward:{emo:'🚀',t:'네코프로 해금',d:'변동성 큰 네코프로에도 손댈 수 있게 됐어요.',bonusTxt:'🚀 네코프로 해금',f:S=>{S.themeUnlocked=true;}}},
-  {lv:4, need:20000000,
+  {lv:4, need:20000000, tag:'현금 +50만원 · 🎯 자동 익절 해금',
    reward:{emo:'💍',t:'결혼 · 자동 익절 해금',d:'평생의 짝을 만났어요. 목표 배율에 닿으면 자동으로 매도해주는 기능도 열렸어요.',bonusTxt:'축의금 +50만원 · 🎯 자동 익절 해금',f:S=>{S.cash+=500000;S.upg.autosell=true;bumpPeak();}}},
-  {lv:5, need:150000000,
+  {lv:5, need:150000000, tag:'🔥 유메이드 거래 해금',
    reward:{emo:'🔥',t:'유메이드 해금',d:'변동성이 가장 큰 유메이드까지 손댈 수 있게 됐어요.',bonusTxt:'🔥 유메이드 해금',f:S=>{S.upg.surge=true;}}},
-  {lv:6, need:1000000000,
+  {lv:6, need:1000000000, tag:'🎚️ 레버리지 1단계 무료 강화',
    reward:{emo:'🏠',t:'내 집 마련',d:'집을 담보로 더 크게 굴릴 수 있게 됐어요.',bonusTxt:'레버리지 1단계 무료 강화',f:S=>{S.upg.leverageLv=Math.min(LEVERAGE_MULTS.length-1,(S.upg.leverageLv||0)+1);}}},
-  {lv:7, need:8000000000},
-  {lv:8, need:50000000000,
+  {lv:7, need:8000000000, tag:'🔎 정보력 1단계 무료 강화',
+   reward:{emo:'🔎',t:'인맥',d:'업계 사람들과 선이 닿았어요. 장세를 보는 눈이 더 정확해졌어요.',bonusTxt:'정보력 1단계 무료 강화',f:S=>{S.upg.infoLv=Math.min(INFO_ACC.length-1,(S.upg.infoLv||0)+1);}}},
+  {lv:8, need:50000000000, tag:'🏆 최종 목표 달성',
    reward:{emo:'🏆',t:'완전한 자유',d:'여기까지 왔어요. 더 이상 넘어야 할 관문은 없어요.',bonusTxt:'',final:true,f:S=>{}}},
 ];
 function leverageMultOf(){return LEVERAGE_MULTS[S.upg.leverageLv||0];}
@@ -340,9 +401,9 @@ function newState(){
   const legacyBonus=Math.min(START_CASH_LEGACY_CAP,(META.legacyPoints||0)*LEGACY_PER_POINT);
   const s={cash:START_CASH+legacyBonus, level:1, peakCash:START_CASH+legacyBonus,
     themeUnlocked:false,
-    upg:{leverageLv:0, stoplossLv:0, dividendLv:0, hint:false, autosell:false, surge:false},
+    upg:{leverageLv:0, stoplossLv:0, dividendLv:0, infoLv:0, autosell:false, surge:false},
     selectedStock:'stable', betAmount:10000, betAutoTarget:0, betLeverage:1,
-    activeRound:null, mainTab:'trade', lastTick:now};
+    activeRound:null, pending:null, lastResult:null, mainTab:'trade', lastTick:now};
   S=s;
   return s;
 }
@@ -371,6 +432,8 @@ function catchUp(){
       S.cash+=S.activeRound.bet;
       roundRefunded={bet:S.activeRound.bet};
       S.activeRound=null;
+      S.lastResult=null;
+      rollPending(); // 이미 흘러가버린 라운드의 신호는 버리고 새로 뽑는다
     }
   }
   S.lastTick=now;
@@ -379,9 +442,10 @@ function catchUp(){
 
 function loadRun(){
   try{const r=localStorage.getItem(RUN_KEY);if(r){S=JSON.parse(r);
-    if(!S.upg)S.upg={leverageLv:0,stoplossLv:0,dividendLv:0,hint:false,autosell:false,surge:false};
+    if(!S.upg)S.upg={leverageLv:0,stoplossLv:0,dividendLv:0,infoLv:0,autosell:false,surge:false};
     if(typeof S.upg.leverageLv!=='number')S.upg.leverageLv=0;
     if(typeof S.upg.dividendLv!=='number')S.upg.dividendLv=0;
+    if(typeof S.upg.infoLv!=='number')S.upg.infoLv=0;
     if(typeof S.betLeverage!=='number')S.betLeverage=1;
     return true;}
   }catch(e){}
@@ -397,7 +461,7 @@ if(loadRun()){ awayReport=catchUp(); } else { startRun(); }
 saveRun();
 
 /* ===== 상점(유료 · 투자성) ===== */
-const SHOP_IDS=['leverage','stoploss','dividend'];
+const SHOP_IDS=['leverage','info','stoploss','dividend'];
 function upgradeInfo(id){
   if(id==='leverage'){
     const lv=S.upg.leverageLv||0, curMult=LEVERAGE_MULTS[lv];
@@ -409,6 +473,11 @@ function upgradeInfo(id){
     const lv=S.upg.stoplossLv;
     if(lv>=3)return {emo:'🛡️',name:'손절 보험',cnt:'MAX', ds:`손실 ${Math.round(STOPLOSS_PCT[3]*100)}% 환급`, maxed:true};
     return {emo:'🛡️',name:'손절 보험',cnt:lv>0?`Lv.${lv}`:'', ds:`${lv>0?`현재 ${Math.round(STOPLOSS_PCT[lv]*100)}% 환급 · `:''}다음 ${Math.round(STOPLOSS_PCT[lv+1]*100)}% 환급`, cost:STOPLOSS_COSTS[lv], buyLabel:'강화'};
+  }
+  if(id==='info'){
+    const lv=S.upg.infoLv||0, cur=Math.round(INFO_ACC[lv]*100);
+    if(lv>=INFO_ACC.length-1)return {emo:'🔎',name:'정보력',cnt:`${cur}%`, ds:'장세 신호 적중률 최대치예요', maxed:true};
+    return {emo:'🔎',name:'정보력',cnt:`${cur}%`, ds:`장세 신호 적중률 ${cur}% → ${Math.round(INFO_ACC[lv+1]*100)}% (레버리지 판단 근거가 정확해져요)`, cost:INFO_COSTS[lv], buyLabel:'강화'};
   }
   if(id==='dividend'){
     const lv=S.upg.dividendLv||0;
@@ -423,6 +492,7 @@ function buyUpgrade(id){
   if(id==='leverage')S.upg.leverageLv++;
   else if(id==='stoploss')S.upg.stoplossLv++;
   else if(id==='dividend')S.upg.dividendLv++;
+  else if(id==='info')S.upg.infoLv++;
   sfx.buy(); toast(`${info.name} 구매!`);
   saveRun(); render();
 }
@@ -441,21 +511,16 @@ function renderShop(){
   $('shopList').querySelectorAll('.biz-buy:not([disabled])').forEach(btn=>btn.onclick=()=>buyUpgrade(btn.dataset.id));
 }
 
-/* ===== 해금(무료 · 레벨로 열림) ===== */
-const UNLOCKS=[
-  {id:'hint',    emo:'🔍', name:'패턴 힌트', ds:'라운드 시작 시 패턴을 미리 보여줘요', lv:2, has:()=>S.upg.hint},
-  {id:'theme',   emo:'🚀', name:'네코프로',  ds:'변동성 큰 네코프로를 거래할 수 있어요', lv:3, has:()=>S.themeUnlocked},
-  {id:'autosell',emo:'🎯', name:'자동 익절', ds:'목표 배율에 닿으면 자동으로 매도해요', lv:4, has:()=>S.upg.autosell},
-  {id:'surge',   emo:'🔥', name:'유메이드',  ds:'변동성이 가장 큰 종목을 거래할 수 있어요', lv:5, has:()=>S.upg.surge},
-];
+/* ===== 해금 탭 = 레벨 보상 로드맵 전체 (무료로 열리는 건 전부 여기 모아둔다) ===== */
 function renderUnlock(){
-  $('unlockList').innerHTML=UNLOCKS.map(u=>{
-    const open=u.has();
+  $('unlockList').innerHTML=LEVELS.filter(l=>l.reward).map(l=>{
+    const open=S.level>=l.lv, r=l.reward;
     const tag=open
       ? `<span class="unlock-tag open">✓ 해금됨</span>`
-      : `<span class="unlock-tag closed">Lv.${u.lv} 도달 시</span>`;
-    return `<div class="biz"><div class="logo">${open?u.emo:'🔒'}</div>
-      <div class="mid"><div class="nm">${u.name}</div><div class="ds">${u.ds}</div></div>
+      : `<span class="unlock-tag closed">Lv.${l.lv} 도달 시</span>`;
+    return `<div class="biz"><div class="logo">${open?r.emo:'🔒'}</div>
+      <div class="mid"><div class="nm">${r.t}<span class="cnt">Lv.${l.lv}</span></div>
+      <div class="ds">${l.tag||r.bonusTxt||r.d}</div></div>
       ${tag}</div>`;
   }).join('');
 }
@@ -506,52 +571,68 @@ function updateRankDrift(now){
 }
 function renderRankChip(){ $('rankChip').textContent=rankText(); }
 
-/* ===== 배팅 중 실시간 반응 (기존 랭킹판 자리 재사용) — 베팅 시작~종료 동안만 보이고,
-   주가/내 매매 결과와는 완전히 무관한 잡담·밈 위주다. 실제 디씨/토스 댓글을 실시간으로
-   가져올 방법은 없어서(정적 사이트라 스크래핑 불가, 저작권 문제도 있음) 그 텐션만
-   흉내낸 문구를 직접 작성해 두고 베팅이 진행되는 동안 몇 초마다 하나씩 올라오게 한다. */
-let feed=[];
-let nextBetChatterAt=0;
-function pushFeed(av,name,text){
-  feed.unshift({av,name,text});
-  if(feed.length>3)feed.length=3;
-  if(S.activeRound && S.mainTab==='trade')renderBetChat();
-}
+/* ===== 거래 결과에 대한 사회적 반응 =====
+   베팅 "중"에는 그래프와 배율만 보게 되므로 그때 띄우는 잡담은 아무도 안 본다.
+   그래서 반응은 매도가 끝난 "직후"에, 결과 크기에 비례해서 보여준다.
+   소액 익절은 아무도 관심 없고(시큰둥한 한 줄), 대박은 댓글이 쏟아지고 좋아요가 터진다 —
+   "따도 아무도 몰라주면 재미없다"를 정면으로 겨냥한 장치. 레버리지를 쓴 거래는
+   반응이 더 커져서, 크게 거는 이유가 돈 말고 하나 더 생긴다. */
 function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
-const CHATTER=[
-  ['🍚','점심 뭐 드셨어요'],['☕','아 커피 필요하다'],['😪','아침부터 존버 중...'],
-  ['🐢','오늘따라 시간 안 감'],['🎮','장 끝나고 게임이나 해야지'],['🧦','양말 한 짝이 없어짐'],
-  ['📱','폰 배터리 20%인데 충전기가 없음'],['🌧️','밖에 비 옴?'],['🐱','옆집 고양이가 웁니다'],
-  ['💸','월급날 언제냐'],['🛌','퇴근하고 싶다'],['🍜','라면 먹을까 말까'],
-  ['📉','근데 제 통장은 왜 항상 하락장임'],['🤖','AI가 대신 눌러줬으면'],['🎧','노래 추천좀'],
-  ['🧃','편의점 감자칩 신제품 나왔던데'],['🐹','손절은 마음이 아니라 손이 하는거임'],
-  ['🚬','담배 한 대 피고 옴'],['🐔','치킨 시킬 사람'],['🌙','오늘 밤 야식 각'],
-  ['💤','5분만 자야지'],['📺','드라마 뭐 보세요'],['🐢','존버는 승리한다'],
-  ['🧊','에어컨 안 트나요'],['🚗','차 막힘 실화냐'],['🎂','오늘 제 생일인데 아무도 몰라줌'],
-  ['🐣','병아리 투자자입니다 잘 부탁드려요'],['🥱','하품만 나온다'],['📦','택배 언제 오지'],
-  ['🌵','사무실 화분 다 말라죽음'],['🧻','휴지 다 떨어짐'],['🐟','붕어빵 파는데 안 삼'],
-  ['🎣','낚시나 갈까'],['🛴','퀵보드 타고 출근함'],['🍦','아이스크림 먹고싶다'],
-];
-function scheduleChatter(){
-  const [av,text]=pick(CHATTER);
-  pushFeed(av,nameFor(Math.random()*100000),text);
-}
-function startBetChat(){
-  feed=[];
-  nextBetChatterAt=Date.now()+1200+Math.random()*1200;
-  renderBetChat();
+const REACTIONS={
+  jackpot:['미쳤다 이걸 잡네 ㄷㄷ','와 이거 실화임? 손 떨림','형님 소리가 절로 나온다','저도 좀 알려주세요 제발','이건 캡처각이다','오늘의 주인공 등장'],
+  win:['깔끔하게 먹었네요','타이밍 좋았다','오 축하합니다','이게 실력이지','부럽습니다 진짜'],
+  meh:['음... 수고하셨습니다','본전치기 ㅋㅋ','조용히 지나가겠습니다','뭐 나쁘진 않네요'],
+  loss:['에고 아쉽다','저도 방금 물렸어요','다음 판 가시죠','괜찮아요 흔한 일'],
+  disaster:['헉 괜찮으세요...?','아이고 이건 좀','제 계좌 보는 것 같아서 눈물이','한강은 참으세요 진짜','같이 웁시다','이건 좀 아프겠는데'],
+};
+const LEV_REACTIONS={
+  win:['레버리지 배짱 좋네요','풀레버로 이걸 성공한다고?','간이 크시네 ㄷㄷ'],
+  loss:['레버리지가 사람 잡네','그러니까 배율을 좀...','청산 당하셨네요 ㅠㅠ'],
+};
+function buildReactions(profit,bet,lev){
+  const r=bet>0?profit/bet:0;
+  let tier,count,likeBase;
+  if(r>=1.0){tier='jackpot';count=3;likeBase=260;}
+  else if(r>=0.15){tier='win';count=2;likeBase=28;}
+  else if(r>-0.15){tier='meh';count=1;likeBase=1;}
+  else if(r>-0.5){tier='loss';count=2;likeBase=16;}
+  else {tier='disaster';count=3;likeBase=140;}
+  const pool=[...REACTIONS[tier]];
+  if(lev>1){
+    const extra=LEV_REACTIONS[r>=0.15?'win':r<=-0.15?'loss':null];
+    if(extra)pool.unshift(pick(extra));
+    count=Math.min(4,count+1);
+    likeBase=Math.round(likeBase*(1+lev*0.35));
+  }
+  const used=new Set(), out=[];
+  for(let i=0;i<count && used.size<pool.length;i++){
+    let t; do{t=pick(pool);}while(used.has(t));
+    used.add(t);
+    out.push({name:nameFor(Math.random()*100000), text:t,
+      likes:Math.max(0,Math.round(likeBase*(0.5+Math.random())))});
+  }
+  return {tier,list:out};
 }
 function endBetChat(){
-  feed=[];
   const el=$('community'); if(el){el.classList.add('hide'); el.innerHTML='';}
 }
-function renderBetChat(){
+function renderResultCard(){
   const el=$('community'); if(!el)return;
-  if(!S.activeRound){ el.classList.add('hide'); el.innerHTML=''; return; }
+  const R=S.lastResult;
+  if(S.activeRound||!R){ el.classList.add('hide'); el.innerHTML=''; return; }
   el.classList.remove('hide');
-  const msgs=feed.map(m=>`<div class="cm-msg"><span class="av">${m.av}</span><span><b>${m.name}</b> ${m.text}</span></div>`).join('');
-  el.innerHTML=`<div class="cm-head"><span class="cm-title">💬 실시간 반응</span></div>
-    <div class="cm-feed">${msgs}</div>`;
+  const up=R.profit>=0;
+  const badge=R.tier==='jackpot'?`<span class="rs-badge hot">🔥 실시간 인기</span>`
+    :R.tier==='disaster'?`<span class="rs-badge cold">💀 오늘의 참사</span>`:'';
+  const rankTxt=R.rankBefore!==R.rankAfter
+    ? `<div class="rs-rank">${R.rankBefore.toLocaleString()}위 → <b>${R.rankAfter.toLocaleString()}위</b> <span class="${R.rankAfter<R.rankBefore?'up':'down'}">${R.rankAfter<R.rankBefore?'▲':'▼'}${Math.abs(R.rankBefore-R.rankAfter).toLocaleString()}</span></div>`
+    : `<div class="rs-rank">순위 변동 없음</div>`;
+  const msgs=R.list.map(m=>`<div class="cm-msg"><span class="av">💬</span><span><b>${m.name}</b> ${m.text}
+    <span class="rs-like">♥ ${m.likes.toLocaleString()}</span></span></div>`).join('');
+  el.innerHTML=`<div class="cm-head"><span class="cm-title">💬 거래 결과</span>${badge}</div>
+    <div class="rs-sum ${up?'up':'down'}">${R.mult.toFixed(2)}x${R.lev>1?` · 🎚️${R.lev}배`:''} · ${up?'+':''}${fmtWon(R.profit)}</div>
+    ${rankTxt}
+    <div class="cm-feed" style="margin-top:10px">${msgs}</div>`;
 }
 
 /* ===== 배당 (화면 켜둔 동안에만 5초마다 소액 입금) ===== */
@@ -663,15 +744,18 @@ function startRound(){
   const stock=TRADE_STOCKS.find(s=>s.id===S.selectedStock);
   const bet=S.betAmount;
   if(bet<=0||bet>S.cash)return;
-  const {patternId,patternEmo,path}=genRound(stock);
+  ensurePending();
+  const {patternId,patternEmo,path}=genRound(stock,S.pending.patId);
   const maxLev=leverageMultOf();
   const leverage=Math.min(Math.max(1,S.betLeverage||1),maxLev);
+  const rankBefore=rankOf(); // 베팅금 차감 전 순위 — 결과 카드에서 변화를 보여주기 위해
   S.cash-=bet;
-  S.activeRound={stockId:stock.id,bet,path,patternId,patternEmo,leverage,
+  S.activeRound={stockId:stock.id,bet,path,patternId,patternEmo,leverage,rankBefore,
     autoTarget:S.upg.autosell?(S.betAutoTarget||0):0,
     startedAt:Date.now(), yMin:0.96, yMax:1.04, boundsIdx:0, dispYMin:0.96, dispYMax:1.04};
+  S.lastResult=null;
   sfx.buy();
-  startBetChat();
+  endBetChat();
   saveRun(); render();
 }
 function sellRound(auto){
@@ -683,11 +767,14 @@ function sellRound(auto){
   const rawProfit=Math.round(bet*(mult-1)*lev);
   const profit=applyStoploss(rawProfit);
   const payout=Math.max(0,bet+profit);
+  const rankBefore=S.activeRound.rankBefore||rankOf();
   S.cash+=payout; bumpPeak();
   sfx[profit>=0?'pay':'warn']();
   toast(`${auto?'🎯 자동 익절! ':''}${mult>=1?'📈':'📉'} ${mult.toFixed(2)}x${lev>1?` ×${lev}`:''} 청산 · ${profit>=0?'+':''}${fmtWon(profit)}`);
   S.activeRound=null;
-  endBetChat();
+  const rx=buildReactions(profit,bet,lev);
+  S.lastResult={mult,profit,bet,lev,rankBefore,rankAfter:rankOf(),tier:rx.tier,list:rx.list};
+  rollPending(); // 다음 라운드 패턴/신호를 새로 뽑는다(라운드가 끝날 때만)
   saveRun();
   if(checkBankrupt())return;
   if(!checkLevelUp())render();
@@ -734,9 +821,22 @@ function renderTrade(){
       <button data-t="2" class="${S.betAutoTarget===2?'sel':''}">2.0x</button>
     </div>`:'';
   const levOptions=LEVERAGE_MULTS.slice(0,maxLev>1?LEVERAGE_MULTS.indexOf(maxLev)+1:1);
+  const curLev=Math.min(Math.max(1,S.betLeverage||1),maxLev);
+  const liq=liqMultOf(curLev);
   const levRow=maxLev>1?`<div class="auto-label">🎚️ 레버리지 배율</div>
-    <div class="auto-row">${levOptions.map(m=>`<button data-lev="${m}" class="${(S.betLeverage||1)===m?'sel':''}">${m}배</button>`).join('')}</div>`:'';
+    <div class="auto-row">${levOptions.map(m=>`<button data-lev="${m}" class="${curLev===m?'sel':''}">${m}배</button>`).join('')}</div>
+    <div class="liq-note">${curLev>1
+      ? `⚠️ ${curLev}배 — <b>${liq.toFixed(2)}x</b> 밑으로 내려가면 베팅금 전액 손실`
+      : '1배 — 청산 없음, 판 값만 손해봐요'}</div>`:'';
+  ensurePending();
+  const sg=SIGNAL_INFO[S.pending.sig];
+  const acc=Math.round(infoAccOf()*100);
+  const signalRow=`<div class="signal ${S.pending.sig}">
+      <div class="sg-left"><span class="sg-emo">${sg.emo}</span><span class="sg-name">${sg.name}</span></div>
+      <div class="sg-mid"><div class="sg-ds">${sg.ds}</div><div class="sg-acc">이 신호가 맞을 확률 ${acc}%</div></div>
+    </div>`;
   $('tradeBody').innerHTML=`
+    ${signalRow}
     <div class="bet-row"><button id="betMinus">−</button><div class="amt">${fmtWon(S.betAmount)}</div><button id="betPlus">+</button></div>
     <div class="bet-quicks"><button data-q="0.1">10%</button><button data-q="0.5">50%</button><button data-q="1">최대</button></div>
     ${levRow}
@@ -792,13 +892,19 @@ function renderRoundView(){
   const col=dir==='up'?'#f04452':dir==='down'?'#3182F6':'#8b95a1';
   const lev=r.leverage||1;
   const profit=Math.round(r.bet*(mult-1)*lev);
-  const hintTxt=S.upg.hint?`${r.patternEmo} `:'';
   const levTxt=lev>1?` · 🎚️${lev}배`:'';
   const autoTxt=r.autoTarget?` · 🎯${r.autoTarget}x 자동`:'';
+  /* 레버리지를 걸었으면 청산선(이 아래로 가면 전액 손실)을 빨간 점선으로 그려준다 */
+  const liq=liqMultOf(lev);
+  const liqY=liq>0?yOf(liq):null;
+  const liqLine=(liqY!==null&&liqY>padY&&liqY<H-padY)
+    ? `<line x1="0" y1="${liqY.toFixed(1)}" x2="${W}" y2="${liqY.toFixed(1)}" stroke="#f04452" stroke-width="1.5" stroke-dasharray="5 4" opacity=".75"/>`
+    : '';
+  const liqTxt=lev>1?` · 청산 ${liq.toFixed(2)}x`:'';
   $('tradeBody').innerHTML=`<div class="round-view">
-    <div class="round-timer">${hintTxt}${stock.emo} ${stock.name} · 남은 시간 ${remainSec}초${levTxt}${autoTxt}</div>
+    <div class="round-timer">${stock.emo} ${stock.name} · 남은 시간 ${remainSec}초${levTxt}${autoTxt}${liqTxt}</div>
     <div class="round-mult ${dir}">${mult.toFixed(2)}x</div>
-    <svg class="round-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${smoothPathD(pts)}" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg class="round-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${liqLine}<path d="${smoothPathD(pts)}" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <div class="round-pnl ${profit>=0?'up':'down'}">${profit>=0?'+':''}${fmtWon(profit)}</div>
     <button class="sell-btn" id="sellBtn">지금 매도</button>
   </div>`;
@@ -812,7 +918,7 @@ function render(){
   renderHero();renderLevel();renderRankChip();
   switchMainTab(S.mainTab||'trade');
   renderTradeTabs();renderTrade();
-  renderShop();renderUnlock();renderBetChat();
+  renderShop();renderUnlock();renderResultCard();
 }
 
 function showAwayModal(report){
@@ -846,7 +952,6 @@ setInterval(()=>{
     while(divAcc>=DIVIDEND_INTERVAL_MS){ divAcc-=DIVIDEND_INTERVAL_MS; payDividend(); }
   }
   if(S.activeRound){
-    if(now>=nextBetChatterAt){ scheduleChatter(); nextBetChatterAt=now+2000+Math.random()*2500; }
     const idx=currentTickIdx();
     const mult=S.activeRound.path[idx];
     if(idx>=S.activeRound.path.length-1){ sellRound(false); return; }

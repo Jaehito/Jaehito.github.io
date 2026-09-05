@@ -83,12 +83,34 @@
 
   /* 진행중인 라운드 */
   .round-view{text-align:center;}
-  .round-timer{font-size:11.5px; font-weight:800; color:var(--gray2); font-variant-numeric:tabular-nums;}
-  .round-mult{font-size:40px; font-weight:900; letter-spacing:-.03em; margin:4px 0; font-variant-numeric:tabular-nums;}
+  .round-timer{font-size:11.5px; font-weight:800; color:var(--gray2); font-variant-numeric:tabular-nums;
+    display:flex; justify-content:space-between; gap:8px;}
+  .round-timer .rt-r{transition:color .2s;}
+  .round-timer .rt-r.warn{color:var(--red);}
+  .round-mult{font-size:40px; font-weight:900; letter-spacing:-.03em; margin:4px 0; font-variant-numeric:tabular-nums;
+    transition:transform .12s cubic-bezier(.2,1.6,.4,1), color .18s;}
   .round-mult.up{color:var(--red);} .round-mult.down{color:var(--blue);} .round-mult.flat{color:var(--gray2);}
-  .round-chart{width:100%; height:80px; display:block; margin:4px 0 12px; background:var(--field); border-radius:12px;}
-  .round-pnl{font-size:13px; font-weight:800; margin-bottom:12px;}
+  .round-chartbox{position:relative; margin:4px 0 10px; border-radius:12px;}
+  .round-chart{width:100%; height:150px; display:block; background:var(--field); border-radius:12px;}
+  .round-view.tense .round-chartbox{animation:rvEdge .5s ease-in-out infinite alternate;}
+  @keyframes rvEdge{ from{box-shadow:inset 0 0 0 0 rgba(240,68,82,0);} to{box-shadow:inset 0 0 0 2px var(--red);} }
+  .round-count{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:56px; font-weight:900; color:var(--red); opacity:0; pointer-events:none;
+    font-variant-numeric:tabular-nums;}
+  .round-count.on{animation:rvCnt .95s ease-out;}
+  @keyframes rvCnt{ 0%{opacity:.5; transform:scale(.7);} 70%{opacity:.16;} 100%{opacity:0; transform:scale(1.4);} }
+  .rv-txt{stroke:var(--field); stroke-width:2.5px; paint-order:stroke fill; stroke-linejoin:round;}
+  .rv-pulse{transform-box:fill-box; transform-origin:center; animation:rvPulse 1.15s ease-out infinite;}
+  @keyframes rvPulse{ 0%{transform:scale(1); opacity:.5;} 100%{transform:scale(3.4); opacity:0;} }
+  @media(prefers-reduced-motion:reduce){
+    .rv-pulse,.round-view.tense .round-chartbox,.round-count.on{animation:none;}
+    .round-mult{transition:none;}
+  }
+  .round-pnl{font-size:13px; font-weight:800; margin-bottom:8px;}
   .round-pnl.up{color:var(--red);} .round-pnl.down{color:var(--blue);}
+  .round-bar{height:3px; background:var(--line); border-radius:2px; margin-bottom:12px; overflow:hidden;}
+  .round-bar i{display:block; height:100%; width:0%; background:var(--gray3);}
+  .round-view.tense .round-bar i{background:var(--red);}
   .sell-btn{width:100%; border:none; border-radius:14px; padding:15px; font-size:16px; font-weight:900; color:#fff; cursor:pointer;
     background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
 
@@ -752,7 +774,8 @@ function startRound(){
   S.cash-=bet;
   S.activeRound={stockId:stock.id,bet,path,patternId,patternEmo,leverage,rankBefore,
     autoTarget:S.upg.autosell?(S.betAutoTarget||0):0,
-    startedAt:Date.now(), yMin:0.96, yMax:1.04, boundsIdx:0, dispYMin:0.96, dispYMax:1.04};
+    startedAt:Date.now(), yMin:0.96, yMax:1.04, boundsIdx:0, dispYMin:0.96, dispYMax:1.04,
+    peak:1, peakIdx:0};
   S.lastResult=null;
   sfx.buy();
   endBetChat();
@@ -812,6 +835,7 @@ function renderTrade(){
   const maxLev=leverageMultOf();
   $('tpLimit').textContent=maxLev>1?`레버리지 최대 ${maxLev}배`:'레버리지 없음';
   if(S.activeRound){renderRoundView();return;}
+  RV=null; /* 아래에서 tradeBody를 통째로 갈아엎으므로 라운드 뷰 노드 캐시를 버린다 */
   const canGo=S.betAmount>0 && S.betAmount<=S.cash;
   const autoRow=S.upg.autosell?`<div class="auto-label">🎯 자동 익절 목표</div>
     <div class="auto-row">
@@ -855,12 +879,72 @@ function renderTrade(){
   }
   $('tradeGo').onclick=()=>startRound();
 }
+/* 라운드 뷰는 "한 번 만들고 좌표만 갱신"한다.
+   예전에는 50ms마다 tradeBody.innerHTML을 통째로 다시 썼는데, 그러면
+   (a) CSS transition/animation이 매 틱 초기화돼서 어떤 연출도 살아남지 못하고
+   (b) 매도 버튼 핸들러를 초당 20번 다시 붙이게 된다.
+   그래서 노드를 RV에 캐시해 두고 update만 돌린다. */
+let RV=null;
+const RV_H=150, RV_PADX=8, RV_PADY=16;
+
+function buildRoundView(r,stock){
+  const lev=r.leverage||1;
+  $('tradeBody').innerHTML=`<div class="round-view" id="rvRoot">
+    <div class="round-timer"><span class="rt-l" id="rvT1"></span><span class="rt-r" id="rvT2"></span></div>
+    <div class="round-mult" id="rvMult">1.00x</div>
+    <div class="round-chartbox">
+      <svg class="round-chart" id="rvSvg" viewBox="0 0 320 ${RV_H}">
+        <defs>
+          <clipPath id="rvClipUp"><rect id="rvRectUp" x="0" y="0" width="320" height="${RV_H}"/></clipPath>
+          <clipPath id="rvClipDn"><rect id="rvRectDn" x="0" y="0" width="320" height="0"/></clipPath>
+        </defs>
+        <rect id="rvZone" x="0" width="320" fill="#f04452" opacity="0"/>
+        <line id="rvBase" x1="0" x2="320" stroke="#8b95a1" stroke-width="1" stroke-dasharray="2 3" opacity=".45"/>
+        <text id="rvBaseT" class="rv-txt" text-anchor="end" font-size="9" font-weight="700" fill="#8b95a1" opacity=".9">1.00x 진입</text>
+        <path id="rvAreaUp" fill="#f04452" opacity=".13" clip-path="url(#rvClipUp)"/>
+        <path id="rvAreaDn" fill="#3182F6" opacity=".13" clip-path="url(#rvClipDn)"/>
+        <line id="rvLiq" x1="0" x2="320" stroke="#f04452" stroke-width="1.5" stroke-dasharray="5 4" opacity="0"/>
+        <path id="rvLine" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <line id="rvPkL" stroke="#ffb020" stroke-width="1" stroke-dasharray="2 2" opacity="0"/>
+        <circle id="rvPkD" r="3.2" fill="none" stroke="#ffb020" stroke-width="2" opacity="0"/>
+        <text id="rvPkT" class="rv-txt" font-size="10" font-weight="800" fill="#c9820f" opacity="0"/>
+        <circle id="rvPulse" class="rv-pulse" r="4" fill="none" stroke-width="2"/>
+        <circle id="rvHead" r="4.2" stroke="#ffffff" stroke-width="2"/>
+        <text id="rvTHi" class="rv-txt" x="6" font-size="9" font-weight="700" fill="#8b95a1"/>
+        <text id="rvTLo" class="rv-txt" x="6" font-size="9" font-weight="700" fill="#8b95a1"/>
+        <text id="rvLiqT" class="rv-txt" text-anchor="end" font-size="10" font-weight="800" fill="#f04452" opacity="0"/>
+      </svg>
+      <div class="round-count" id="rvCount"></div>
+    </div>
+    <div class="round-pnl up" id="rvPnl">+0원</div>
+    <div class="round-bar"><i id="rvBar"></i></div>
+    <button class="sell-btn" id="sellBtn">지금 매도</button>
+  </div>`;
+  const g=id=>$(id);
+  RV={round:r, lev, cw:320, lastCnt:-1, lastMult:1,
+    root:g('rvRoot'), t1:g('rvT1'), t2:g('rvT2'), mult:g('rvMult'), svg:g('rvSvg'),
+    rectUp:g('rvRectUp'), rectDn:g('rvRectDn'), zone:g('rvZone'), base:g('rvBase'), baseT:g('rvBaseT'),
+    areaUp:g('rvAreaUp'), areaDn:g('rvAreaDn'), liq:g('rvLiq'), line:g('rvLine'),
+    pkL:g('rvPkL'), pkD:g('rvPkD'), pkT:g('rvPkT'), pulse:g('rvPulse'), head:g('rvHead'),
+    tHi:g('rvTHi'), tLo:g('rvTLo'), liqT:g('rvLiqT'), count:g('rvCount'),
+    pnl:g('rvPnl'), bar:g('rvBar')};
+  /* viewBox 폭 = 실제 픽셀 폭으로 맞춰야 SVG 안의 글자가 가로로 늘어나지 않는다 */
+  const fit=w=>{ w=Math.round(w); if(w<40||w===RV.cw)return;
+    RV.cw=w; RV.svg.setAttribute('viewBox',`0 0 ${w} ${RV_H}`);
+    RV.rectUp.setAttribute('width',w); RV.rectDn.setAttribute('width',w);
+    RV.zone.setAttribute('width',w); RV.base.setAttribute('x2',w); RV.liq.setAttribute('x2',w); };
+  if(window.ResizeObserver){ RV.ro=new ResizeObserver(es=>fit(es[0].contentRect.width)); RV.ro.observe(RV.svg); }
+  fit(RV.svg.clientWidth||320);
+  $('sellBtn').onclick=()=>sellRound(false);
+}
+
 function renderRoundView(){
   const r=S.activeRound, stock=TRADE_STOCKS.find(s=>s.id===r.stockId);
+  if(!RV || RV.round!==r || !document.body.contains(RV.root)) buildRoundView(r,stock);
   const idx=currentTickIdx(), mult=r.path[idx];
-  const remainSec=Math.max(0,Math.ceil((ROUND_TICKS-idx)*ROUND_TICK_MS/1000));
+  const remain=Math.max(0,(ROUND_TICKS-idx)*ROUND_TICK_MS/1000);
   const dir=mult>1.01?'up':mult<0.99?'down':'flat';
-  const W=300,H=80,padX=6,padY=8;
+  const W=RV.cw, H=RV_H, padX=RV_PADX, padY=RV_PADY;
   /* y축은 "지금까지 실제로 본 값"만 확장형(expand-only)으로 반영한다 — 미래 전체 경로의
      최고/최저로 미리 고정하면, 선이 차트 위/아래 끝에 닿는 순간 "이게 그 라운드의 진짜
      고점/저점이다"를 그래프가 스포일러처럼 알려줘서 패턴을 볼 필요가 없어짐. 하지만
@@ -870,10 +954,12 @@ function renderRoundView(){
      그리기에 쓰는 화면상 경계(dispYMin/dispYMax)는 목표치를 향해 서서히(이징) 따라가게
      만들어서, 예전 구간은 순간이동하지 않고 부드럽게만 자리를 조정하도록 한다 */
   if(typeof r.yMin!=='number'){r.yMin=0.96;r.yMax=1.04;r.boundsIdx=0;}
+  if(typeof r.peak!=='number'){r.peak=1;r.peakIdx=0;} /* 예전 세이브에서 이어붙은 라운드 대비 */
   if(idx>r.boundsIdx){
     for(let i=r.boundsIdx+1;i<=idx;i++){
       if(r.path[i]<r.yMin)r.yMin=r.path[i];
       if(r.path[i]>r.yMax)r.yMax=r.path[i];
+      if(r.path[i]>r.peak){r.peak=r.path[i];r.peakIdx=i;}
     }
     r.boundsIdx=idx;
   }
@@ -887,28 +973,98 @@ function renderRoundView(){
   const rng=(yMax-yMin)||0.001;
   const xOf=i=>padX+(i/ROUND_TICKS)*(W-2*padX);
   const yOf=v=>H-padY-((v-yMin)/rng)*(H-2*padY);
+  const clampY=y=>Math.max(2,Math.min(H-2,y));
   const pts=[];
   for(let i=0;i<=idx;i++)pts.push([xOf(i),yOf(r.path[i])]);
+  const d=smoothPathD(pts);
   const col=dir==='up'?'#f04452':dir==='down'?'#3182F6':'#8b95a1';
   const lev=r.leverage||1;
   const profit=Math.round(r.bet*(mult-1)*lev);
-  const levTxt=lev>1?` · 🎚️${lev}배`:'';
-  const autoTxt=r.autoTarget?` · 🎯${r.autoTarget}x 자동`:'';
-  /* 레버리지를 걸었으면 청산선(이 아래로 가면 전액 손실)을 빨간 점선으로 그려준다 */
+
+  RV.line.setAttribute('d',d);
+  RV.line.setAttribute('stroke',col);
+
+  /* 1.00x 진입선 + 그 위/아래를 손익 색으로 채워서 "내가 산 자리" 기준 손익이 면적으로 읽히게 */
+  const baseY=clampY(yOf(1));
+  RV.base.setAttribute('y1',baseY.toFixed(1)); RV.base.setAttribute('y2',baseY.toFixed(1));
+  RV.baseT.setAttribute('x',W-6); RV.baseT.setAttribute('y',(baseY-4).toFixed(1));
+  const first=pts[0], last=pts[pts.length-1];
+  const areaD=d+` L${last[0].toFixed(1)} ${baseY.toFixed(1)} L${first[0].toFixed(1)} ${baseY.toFixed(1)} Z`;
+  RV.areaUp.setAttribute('d',areaD); RV.areaDn.setAttribute('d',areaD);
+  RV.rectUp.setAttribute('height',baseY.toFixed(1));
+  RV.rectDn.setAttribute('y',baseY.toFixed(1)); RV.rectDn.setAttribute('height',(H-baseY).toFixed(1));
+
+  /* 레버리지를 걸었으면 청산선(이 아래로 가면 전액 손실) + 가까워질수록 짙어지는 경고 영역 */
   const liq=liqMultOf(lev);
   const liqY=liq>0?yOf(liq):null;
-  const liqLine=(liqY!==null&&liqY>padY&&liqY<H-padY)
-    ? `<line x1="0" y1="${liqY.toFixed(1)}" x2="${W}" y2="${liqY.toFixed(1)}" stroke="#f04452" stroke-width="1.5" stroke-dasharray="5 4" opacity=".75"/>`
-    : '';
-  const liqTxt=lev>1?` · 청산 ${liq.toFixed(2)}x`:'';
-  $('tradeBody').innerHTML=`<div class="round-view">
-    <div class="round-timer">${stock.emo} ${stock.name} · 남은 시간 ${remainSec}초${levTxt}${autoTxt}${liqTxt}</div>
-    <div class="round-mult ${dir}">${mult.toFixed(2)}x</div>
-    <svg class="round-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${liqLine}<path d="${smoothPathD(pts)}" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <div class="round-pnl ${profit>=0?'up':'down'}">${profit>=0?'+':''}${fmtWon(profit)}</div>
-    <button class="sell-btn" id="sellBtn">지금 매도</button>
-  </div>`;
-  $('sellBtn').onclick=()=>sellRound(false);
+  const liqOn=(liqY!==null&&liqY>padY&&liqY<H-padY);
+  RV.liq.setAttribute('opacity',liqOn?'.75':'0');
+  if(liqOn){ RV.liq.setAttribute('y1',liqY.toFixed(1)); RV.liq.setAttribute('y2',liqY.toFixed(1)); }
+  let zoneOp=0;
+  if(lev>1){ const head=(mult-liq)/Math.max(0.02,1-liq); zoneOp=Math.max(0,Math.min(.42,(1-head)*.55)); }
+  const zy=liqOn?liqY:H;
+  RV.zone.setAttribute('y',zy.toFixed(1));
+  RV.zone.setAttribute('height',Math.max(0,H-zy).toFixed(1));
+  RV.zone.setAttribute('opacity',zoneOp.toFixed(3));
+  const liqWarn=lev>1&&zoneOp>0.08;
+  RV.liqT.setAttribute('opacity',liqWarn?'1':'0');
+  if(liqWarn){
+    RV.liqT.setAttribute('x',W-6);
+    RV.liqT.setAttribute('y',(liqOn?Math.min(H-5,liqY+12):H-6).toFixed(1));
+    RV.liqT.textContent=mult<=liq?'⚠️ 전액 손실 구간':`청산까지 ${(mult-liq).toFixed(2)}`;
+  }
+
+  /* 최고점 마커 — "아까 얼마까지 갔었는지"가 매도 타이밍 게임의 학습이자 후회 훅 */
+  const pkOn=r.peakIdx>0&&r.peak>1.005;
+  RV.pkD.setAttribute('opacity',pkOn?'1':'0');
+  RV.pkL.setAttribute('opacity',pkOn?'.5':'0');
+  RV.pkT.setAttribute('opacity',pkOn?'1':'0');
+  if(pkOn){
+    const px=xOf(r.peakIdx), py=clampY(yOf(r.peak));
+    RV.pkD.setAttribute('cx',px.toFixed(1)); RV.pkD.setAttribute('cy',py.toFixed(1));
+    RV.pkL.setAttribute('x1',px.toFixed(1)); RV.pkL.setAttribute('x2',px.toFixed(1));
+    RV.pkL.setAttribute('y1',py.toFixed(1)); RV.pkL.setAttribute('y2',(H-2).toFixed(1));
+    const rightish=px>W-78;
+    RV.pkT.setAttribute('x',(rightish?Math.min(W-6,px-6):px+6).toFixed(1));
+    RV.pkT.setAttribute('text-anchor',rightish?'end':'start');
+    RV.pkT.setAttribute('y',Math.max(11,py-7).toFixed(1));
+    RV.pkT.textContent=`최고 ${r.peak.toFixed(2)}x`;
+  }
+
+  /* 현재가 지점 — 눈이 여기를 보게 만든다 */
+  const hx=last[0], hy=clampY(last[1]);
+  RV.head.setAttribute('cx',hx.toFixed(1)); RV.head.setAttribute('cy',hy.toFixed(1));
+  RV.head.setAttribute('fill',col);
+  RV.pulse.setAttribute('cx',hx.toFixed(1)); RV.pulse.setAttribute('cy',hy.toFixed(1));
+  RV.pulse.setAttribute('stroke',col);
+
+  RV.tHi.setAttribute('y',11); RV.tHi.textContent=yMax.toFixed(2)+'x';
+  RV.tLo.setAttribute('y',H-4); RV.tLo.textContent=yMin.toFixed(2)+'x';
+
+  /* 배율 숫자는 변동폭에 반응해서 살짝 튄다 */
+  RV.mult.textContent=mult.toFixed(2)+'x';
+  RV.mult.className='round-mult '+dir;
+  RV.mult.style.transform='scale('+(1+Math.min(0.14,Math.abs(mult-RV.lastMult)*9)).toFixed(3)+')';
+  RV.lastMult=mult;
+
+  RV.pnl.textContent=(profit>=0?'+':'')+fmtWon(profit);
+  RV.pnl.className='round-pnl '+(profit>=0?'up':'down');
+
+  const levTxt=lev>1?` · 🎚️${lev}배 · 청산 ${liq.toFixed(2)}x`:'';
+  const autoTxt=r.autoTarget?` · 🎯${r.autoTarget}x 자동`:'';
+  RV.t1.textContent=`${stock.emo} ${stock.name}${levTxt}${autoTxt}`;
+  RV.t2.textContent=`${remain.toFixed(1)}초`;
+
+  /* 마지막 3초 — 강제 매도 직전의 압박 */
+  const tense=remain<=3&&remain>0;
+  RV.t2.className='rt-r'+(tense?' warn':'');
+  RV.root.classList.toggle('tense',tense);
+  const c=Math.ceil(remain);
+  if(tense&&c>0&&c!==RV.lastCnt){
+    RV.lastCnt=c; RV.count.textContent=c;
+    RV.count.className='round-count'; void RV.count.offsetWidth; RV.count.className='round-count on';
+  }
+  RV.bar.style.width=(idx/ROUND_TICKS*100).toFixed(1)+'%';
 }
 
 /* ===== 히어로 ===== */

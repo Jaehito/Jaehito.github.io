@@ -44,11 +44,44 @@
   .lv-bar>i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,var(--green),#00e5a0); transition:width .3s;}
   .lv-name b{color:var(--ink); font-weight:900;}
   .dday{font-size:13px; font-weight:900; color:var(--gray2); font-variant-numeric:tabular-nums; flex-shrink:0;}
-  .dday.urgent{color:var(--red);}
   .repay-sub{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:5px;
     font-size:10.5px; font-weight:700; color:var(--gray3);}
   .extend{border:none; background:var(--red-weak); color:var(--red); font-size:10.5px; font-weight:900;
     border-radius:8px; padding:4px 9px; cursor:pointer; white-space:nowrap;}
+  /* 기한 경고 3단계 — D 숫자만 작아지면 "갑자기 마감"으로 느껴진다. 색과 문구가 같이 움직여야 다가오는 게 보인다. */
+  .dday.p-warn{color:var(--gold);}
+  .dday.p-bad{color:var(--red);}
+  .dday.last{color:var(--red); animation:ddayPulse 1.5s ease-in-out infinite;}
+  @keyframes ddayPulse{0%,100%{opacity:1} 50%{opacity:.4}}
+  .repay-sub b{font-weight:900; color:var(--gray2);}
+  .repay-sub.p-warn b{color:var(--gold);}
+  .repay-sub.p-bad b{color:var(--red);}
+  /* 진행바도 같이 물든다 — 색이 한 곳에서만 변하면 경고로 안 읽힌다 */
+  .lv-bar.p-warn>i{background:linear-gradient(90deg,#f0a500,var(--gold));}
+  .lv-bar.p-bad>i{background:linear-gradient(90deg,#d32f3c,var(--red));}
+  /* 시작 버튼 위 한 줄 — 평소엔 안 뜨고, 페이스가 위험할 때만 나온다 */
+  .pace-line{font-size:11.5px; font-weight:800; text-align:center; padding:8px; border-radius:11px; margin-bottom:9px;}
+  .pace-line.p-warn{background:#fff8e8; color:#b57800;}
+  .pace-line.p-bad{background:var(--red-weak); color:var(--red);}
+  .trade-go.danger{background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
+  /* 결과 팝업 맨 아래 장 마감 줄 */
+  .rs-close{margin-top:12px; padding:10px 12px; border-radius:12px; background:var(--field); border:1px solid var(--line);}
+  .cl-top{display:flex; justify-content:space-between; align-items:center; gap:8px;
+    font-size:11.5px; font-weight:800; color:var(--gray2);}
+  .cl-dd{font-variant-numeric:tabular-nums; color:var(--gray); flex-shrink:0;}
+  .cl-dd b{font-size:14px;}
+  .cl-need{margin-top:5px; font-size:11.5px; font-weight:700; color:var(--gray3); line-height:1.5;}
+  .cl-need b{color:var(--gray);}
+  .rs-close.p-warn{background:#fff8e8; border-color:#ffe3ad;}
+  .rs-close.p-warn .cl-dd, .rs-close.p-warn .cl-need b{color:#b57800;}
+  .rs-close.p-bad{background:var(--red-weak); border-color:#fbd2d6;}
+  .rs-close.p-bad .cl-dd, .rs-close.p-bad .cl-need b{color:var(--red);}
+  .rs-close.p-done{background:#e7f9f1; border-color:#b8ecd6;}
+  .rs-close.p-done .cl-dd, .rs-close.p-done .cl-need b{color:var(--green);}
+  .intro-li{display:flex; gap:9px; align-items:flex-start; text-align:left; font-size:12.5px;
+    font-weight:700; color:var(--gray); line-height:1.55; margin-top:9px;}
+  .intro-li .e{flex-shrink:0; font-size:14px; line-height:1.4;}
+  @media (prefers-reduced-motion:reduce){ .dday.last{animation:none;} }
 
   /* 잔고는 sticky 상단바에 둔다 — 히어로 카드는 스크롤하면 사라져서 정작 베팅할 때 안 보였고,
      지갑 줄·파산선 안내까지 합쳐 같은 숫자가 화면에 세 번 나왔다. */
@@ -538,6 +571,20 @@ function dateOfDay(n){
   while(left>0){ d.setDate(d.getDate()+1); if(d.getDay()!==0&&d.getDay()!==6)left--; }
   return `${d.getMonth()+1}월 ${d.getDate()}일 (${'일월화수목금토'[d.getDay()]})`;
 }
+/* 판당 필요 수익률 = (목표 ÷ 현금)^(1 ÷ 남은 거래일) − 1.
+   D 숫자만으로는 위험한지 알 수가 없다 — 같은 D-5라도 목표의 90%를 모았으면 여유고
+   10%면 사실상 끝난 판이다. 복리 기준으로 "판당 몇 % 필요"로 환산해야 한 눈에 읽힌다.
+   판당 기댓값이 3배에서 1.68이라 20%는 여유, 45%를 넘으면 사실상 한 방이 필요하다. */
+const PACE_OK=0.20, PACE_WARN=0.45;
+function riskAt(cash,days){
+  const g=gateOf();
+  const need=Math.pow(g.goal/Math.max(cash,MIN_BET),1/Math.max(1,days))-1;
+  let cls='p-ok';
+  if(need>PACE_WARN)cls='p-bad'; else if(need>PACE_OK)cls='p-warn';
+  if(days<=1)cls='p-bad'; else if(days<=3&&cls==='p-ok')cls='p-warn';
+  const p=Math.max(0,need)*100;
+  return {need,cls,last:days<=1,txt:`+${p<10?p.toFixed(1):Math.round(p)}%`};
+}
 
 /* 레벨 = 상환 회차와 같이 움직인다. 보상은 전부 무료 지급. */
 const LEVELS=[
@@ -636,10 +683,11 @@ function loadMeta(){
     if(r){META=JSON.parse(r);
       if(typeof META.legacyPoints!=='number')META.legacyPoints=0;
       if(!META.legacy)META.legacy=blankLegacy();
+      if(typeof META.seenIntro!=='boolean')META.seenIntro=false;
       for(const k in blankLegacy())if(typeof META.legacy[k]!=='number')META.legacy[k]=0;
       return;}
   }catch(e){}
-  META={mute:false,legacyPoints:0,legacy:blankLegacy(),pendingLegacy:false};
+  META={mute:false,legacyPoints:0,legacy:blankLegacy(),pendingLegacy:false,seenIntro:false};
 }
 function saveMeta(){try{localStorage.setItem(META_KEY,JSON.stringify(META));}catch(e){}}
 
@@ -962,7 +1010,26 @@ function resultModalHTML(R){
       <span class="${better?'u':'d'}">${moved?`${better?'▲':'▼'} ${Math.abs(R.rankBefore-R.rankAfter).toLocaleString()}`:'변동 없음'}</span></div>
     ${earnRow}
     <div class="cm-feed" style="margin-top:11px">${msgs}</div>
-    <div class="rs-wallet">잔고 <b>${fmtWon(S.cash)}</b></div>`;
+    <div class="rs-wallet">잔고 <b>${fmtWon(S.cash)}</b></div>
+    ${closeRowHTML()}`;
+}
+/* 한 판이 끝나면 하루가 간다 — 그런데 지금까지는 팝업을 닫는 순간 D가 조용히 줄어서
+   처음 하는 사람은 마감이 갑자기 닥친 걸로 느낀다. 소모되는 하루를 여기서 보여준다.
+   endOfDay()는 이 팝업을 닫은 뒤에 돌기 때문에 여기 값은 아직 줄기 전이다. */
+function closeRowHTML(){
+  if(gateDone())return '';
+  const g=gateOf(), before=S.daysLeft, after=before-1;
+  const head=`📅 ${dateOfDay(S.dayCount)} 장 마감`;
+  if(S.peakCash>=g.goal)return `<div class="rs-close p-done">
+    <div class="cl-top"><span>${head}</span><span class="cl-dd"><b>상환 가능</b></span></div>
+    <div class="cl-need">${g.n} 상환금 <b>${fmtWon(g.goal)}</b>을 만들었어요</div></div>`;
+  if(after<=0)return `<div class="rs-close p-bad">
+    <div class="cl-top"><span>${head}</span><span class="cl-dd"><b>기한 만료</b></span></div>
+    <div class="cl-need">${g.n} 상환금 <b>${fmtWon(g.goal-S.cash)}</b>이 모자라요 — 반대매매</div></div>`;
+  const r=riskAt(S.cash,after);
+  return `<div class="rs-close ${r.cls}">
+    <div class="cl-top"><span>${head}</span><span class="cl-dd">D-${before} → <b>D-${after}</b></span></div>
+    <div class="cl-need">${fmtWon(g.goal)}까지 <b>${fmtWon(g.goal-S.cash)}</b> · 판당 <b>${r.txt}</b> 필요</div></div>`;
 }
 function showResultModal(R,after){
   $('modalBox').innerHTML=`<div class="rs-box">${resultModalHTML(R)}</div>
@@ -1052,14 +1119,15 @@ function renderLevel(){
   const g=gateOf();
   const pct=Math.max(0,Math.min(100,S.cash/g.goal*100));
   const d=S.daysLeft, urgent=d<=3;
+  const r=riskAt(S.cash,d);
   const canExtend=S.cash*(1-EXTEND_COST_FRAC)>=MIN_BET;
   el.innerHTML=`<div class="lv-row">
       <span class="lv-name">🔗 ${g.n} 상환금 <b>${fmtWon(g.goal)}</b></span>
-      <span class="dday ${urgent?'urgent':''}">D-${d}</span>
+      <span class="dday ${r.cls}${r.last?' last':''}">${r.last?'마지막 거래일':`D-${d}`}</span>
     </div>
-    <div class="lv-bar"><i style="width:${pct}%"></i></div>
-    <div class="repay-sub">
-      <span>${dateOfDay(S.dayCount)} · 미상환 시 반대매매</span>
+    <div class="lv-bar ${r.cls}"><i style="width:${pct}%"></i></div>
+    <div class="repay-sub ${r.cls}">
+      <span>${dateOfDay(S.dayCount)} · 판당 <b>${r.txt}</b> 필요</span>
       ${urgent&&canExtend?`<button class="extend" id="extendBtn">기한 +${EXTEND_DAYS}일 · ${fmtWon(Math.floor(S.cash*EXTEND_COST_FRAC))}</button>`:''}
     </div>`;
   if($('extendBtn'))$('extendBtn').onclick=()=>{sfx.tap();extendDeadline();};
@@ -1288,6 +1356,9 @@ function renderTrade(){
     </div>`;
   const canGo=S.betAmount>=MIN_BET && S.betAmount<=S.cash;
   const room=S.cash-MIN_BET;
+  /* 페이스 경고는 위험할 때만 뜬다 — 늘 떠 있으면 단타 화면만 더 빽빽해지고 경고 구실을 못 한다 */
+  const pr=gateDone()?null:riskAt(S.cash,S.daysLeft);
+  const paceLine=(pr&&pr.cls!=='p-ok')?`<div class="pace-line ${pr.cls}">${pr.last?'⚠️ 마지막 거래일':`D-${S.daysLeft}`} · 판당 <b>${pr.txt}</b> 필요</div>`:'';
   $('tradeBody').innerHTML=`
     ${signalRow}
     ${levRow}
@@ -1296,7 +1367,8 @@ function renderTrade(){
     <div class="opt-row">${autoChip}<span class="opt room">🪦 여유 ${fmtWon(Math.max(0,room))}</span></div>
     ${autoPanel}
     ${buffLine}
-    <button class="trade-go" id="tradeGo" ${canGo?'':'disabled'}>${canGo?`${fmtWon(S.betAmount)} × ${curLev}배로 시작`:'베팅금이 부족해요'}</button>
+    ${paceLine}
+    <button class="trade-go ${pr&&pr.cls==='p-bad'?'danger':''}" id="tradeGo" ${canGo?'':'disabled'}>${canGo?`${fmtWon(S.betAmount)} × ${curLev}배로 시작`:'베팅금이 부족해요'}</button>
     ${(S.today.rounds<3)?'<div class="trade-note">끝까지 들고만 있으면 손해예요 — 패턴을 보고 반응하세요!</div>':''}`;
   const step=Math.max(MIN_BET,Math.round(S.cash*0.05));
   $('betMinus').onclick=()=>{sfx.tap();setBet(S.betAmount-step);};
@@ -1557,6 +1629,22 @@ function showAwayModal(report){
   $('modal').classList.add('on');
   $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
 }
+/* 규칙을 모른 채 맞는 마감이 제일 억울하다 — 첫 판 시작 전에 한 번만 알려준다 */
+function showIntroModal(){
+  const g=GATES[0];
+  $('modalBox').innerHTML=`<div class="emo">🔗</div><div class="tt">이 돈, 빌린 돈이에요</div>
+    <div class="dc">시드머니는 대출금이에요. 정해진 거래일 안에 상환금을 만들어 갚아야 해요.</div>
+    <div class="stat-grid">
+      <div class="s"><div class="k">1차 상환금</div><div class="v">${fmtWon(g.goal)}</div></div>
+      <div class="s"><div class="k">기한</div><div class="v">${g.days}거래일</div></div></div>
+    <div class="intro-li"><span class="e">📅</span><span>단타 <b>한 판이 끝날 때마다 하루</b>가 지나요.</span></div>
+    <div class="intro-li"><span class="e">🏦</span><span>기한 안에 못 갚으면 <b>반대매매</b>로 계좌가 청산돼요.</span></div>
+    <div class="intro-li"><span class="e">🔁</span><span>일찍 갚으면 남은 날은 최대 ${CARRY_MAX}일까지 다음 회차로 이월돼요.</span></div>
+    <button class="ok" id="mOk">시작하기</button>`;
+  $('modal').classList.add('on');
+  META.seenIntro=true; saveMeta();
+  $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
+}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),1600);}
 
 $('muteBtn').onclick=()=>{META.mute=!META.mute;saveMeta();$('muteBtn').textContent=META.mute?'🔇':'🔊';if(!META.mute)sfx.tap();};
@@ -1585,6 +1673,7 @@ updateRankDrift(Date.now());
 render();
 if(META.pendingLegacy){ showLegacyModal(); }
 if(!checkBankrupt() && awayReport && awayReport.awaySec>=60) showAwayModal(awayReport);
+if(!$('modal').classList.contains('on') && !META.seenIntro && !gateDone() && S.dayCount===0) showIntroModal();
 </script>
 </body>
 </html>

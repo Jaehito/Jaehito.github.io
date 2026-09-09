@@ -24,7 +24,9 @@
   html{overscroll-behavior-y:contain;}
   #app{max-width:460px; margin:0 auto; min-height:100vh; position:relative; padding-bottom:calc(24px + var(--safe-b));}
 
-  .topbar{position:sticky; top:0; z-index:20; background:var(--bg); display:flex; align-items:center; justify-content:space-between; padding:14px 20px 8px;}
+  .topbar{position:sticky; top:0; z-index:20; background:var(--bg); display:flex; align-items:flex-start;
+    justify-content:space-between; gap:10px; padding:12px 20px 8px;
+    box-shadow:0 6px 12px -8px rgba(0,0,0,.12);}
   .topbar .brand{font-size:18px; font-weight:800;} .topbar .brand span{color:var(--blue);}
   .top-right{display:flex; flex-direction:column; align-items:flex-end; gap:6px;}
   .top-right-row{display:flex; align-items:center; gap:8px;}
@@ -36,17 +38,16 @@
   .level-strip{margin:2px 20px 0; padding:0 2px;}
   .lv-row{display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:5px;}
   .lv-name{font-size:12.5px; font-weight:800; color:var(--gray); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .lv-name small{font-weight:700; color:var(--gray3); font-size:11px; margin-left:4px;}
   .lv-pct{font-size:12.5px; font-weight:800; color:var(--green); flex-shrink:0;}
   .lv-bar{height:5px; background:var(--line); border-radius:999px; overflow:hidden;}
   .lv-bar>i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,var(--green),#00e5a0); transition:width .3s;}
-  .lv-hint{font-size:11px; font-weight:700; color:var(--gray3); margin-top:4px; text-align:right;}
 
-  /* 히어로: 현금 */
-  .hero{margin:12px 20px 0; padding:16px 20px 14px; border-radius:22px; position:relative; overflow:hidden;
-    background:linear-gradient(135deg,#0b1b3a 0%,#12336e 55%,#1d4fb0 100%); color:#fff;}
-  .hero::after{content:""; position:absolute; top:-40%; right:-20%; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle,#4c8dff55,transparent 70%);}
-  .hero .k{font-size:12px; font-weight:700; color:#9fc0ff; position:relative;}
-  .hero .cash{font-size:31px; font-weight:900; letter-spacing:-.04em; margin-top:3px; position:relative; font-variant-numeric:tabular-nums;}
+  /* 잔고는 sticky 상단바에 둔다 — 히어로 카드는 스크롤하면 사라져서 정작 베팅할 때 안 보였고,
+     지갑 줄·파산선 안내까지 합쳐 같은 숫자가 화면에 세 번 나왔다. */
+  .tb-left{min-width:0;}
+  .cash-top{font-size:23px; font-weight:900; letter-spacing:-.04em; margin-top:1px;
+    font-variant-numeric:tabular-nums; white-space:nowrap;}
 
   /* 메인 탭 스위처 */
   .main-tabs{display:flex; gap:6px; margin:14px 20px 0; background:var(--card); border-radius:15px; padding:5px; box-shadow:var(--shadow);}
@@ -55,13 +56,14 @@
 
   /* 단타 패널 */
   .trade-panel{margin:12px 20px 0; background:var(--card); border-radius:20px; padding:14px 16px 16px; box-shadow:var(--shadow);}
-  .tp-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
-  .tp-title{font-size:14.5px; font-weight:800;}
+  .tp-head{display:flex; justify-content:flex-start; align-items:center; margin-bottom:9px;}
   .tp-limit{font-size:11.5px; font-weight:700; color:var(--gray2); background:var(--field); padding:4px 9px; border-radius:999px;}
   .stock-tabs{display:flex; gap:7px; margin-bottom:11px;}
   .stock-tab{flex:1; border:2px solid var(--line); background:var(--card); border-radius:14px; padding:9px 8px; cursor:pointer; text-align:center;}
   .stock-tab.sel{border-color:var(--blue); background:var(--blue-weak);}
-  .stock-tab.locked{opacity:.5; cursor:default;}
+  .stock-tab.locked{opacity:.45; cursor:default;}
+  .stock-tab.mini{flex:0 0 auto; padding:9px 11px;}
+  .stock-tab.mini .n{font-size:10.5px; color:var(--gray2);}
   .stock-tab .e{font-size:19px;}
   .stock-tab .n{font-size:12px; font-weight:800; margin-top:2px;}
   .stock-tab .v{font-size:10px; font-weight:700; color:var(--gray2); margin-top:1px;}
@@ -75,6 +77,9 @@
   .auto-row{display:flex; gap:6px; margin-bottom:11px;}
   .auto-row button{flex:1; border:2px solid var(--line); background:var(--card); color:var(--gray); font-weight:800; font-size:11.5px; padding:8px 0; border-radius:10px; cursor:pointer;}
   .auto-row button.sel{border-color:var(--blue); background:var(--blue-weak); color:var(--blue);}
+  .lev-row button{padding:7px 0 6px; line-height:1.15;}
+  .lev-row button small{display:block; font-size:9.5px; font-weight:700; color:var(--gray3); margin-top:2px;}
+  .lev-row button.sel small{color:var(--blue); opacity:.8;}
   .auto-label{font-size:11px; font-weight:700; color:var(--gray3); margin-bottom:6px;}
   .trade-go{width:100%; border:none; border-radius:14px; padding:14px; font-size:15.5px; font-weight:900; color:#fff; cursor:pointer;
     background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 8px 20px rgba(49,130,246,.3);}
@@ -194,11 +199,16 @@
   .min-note{font-size:11px; font-weight:700; color:var(--gray2); background:var(--field);
     border-radius:10px; padding:7px 10px; margin-bottom:9px;}
   .min-note b{color:var(--ink); font-weight:900;}
-  /* 잔고 — 히어로는 스크롤하면 사라져서 정작 베팅할 때 안 보인다 */
-  .wallet{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;}
-  .wallet .k{font-size:11px; font-weight:800; color:var(--gray3);}
-  .wallet .v{font-size:16px; font-weight:900; font-variant-numeric:tabular-nums;}
-  .wallet .m{font-size:10.5px; font-weight:700; color:var(--gray3);}
+  .opt-row{display:flex; gap:6px; margin-bottom:9px;}
+  .opt{flex:1; border:none; background:var(--field); border-radius:10px; padding:8px 10px;
+    font-size:11px; font-weight:800; color:var(--gray2); text-align:left; cursor:pointer;
+    display:flex; align-items:center; gap:5px;}
+  .opt b{color:var(--blue); font-weight:900; margin-left:auto;}
+  .opt.open{background:var(--blue-weak);}
+  .opt.room{flex:0 0 auto; cursor:default; font-variant-numeric:tabular-nums;}
+  .buff-line{display:flex; align-items:center; gap:7px; background:#fff9ec; border:1.5px solid #ffb02040;
+    border-radius:10px; padding:7px 10px; margin-bottom:9px; font-size:11px; font-weight:800;
+    color:#8a5a00;}
   .rv-wallet{font-size:11px; font-weight:700; color:var(--gray3); margin-bottom:8px;
     font-variant-numeric:tabular-nums;}
   .rv-wallet b{color:var(--gray); font-weight:800;}
@@ -259,7 +269,10 @@
 <body>
 <div id="app">
   <div class="topbar">
-    <div class="brand">머니<span>로드</span></div>
+    <div class="tb-left">
+      <div class="brand">머니<span>로드</span></div>
+      <div class="cash-top" id="cashView">0원</div>
+    </div>
     <div class="top-right">
       <div class="rank-chip" id="rankChip">-</div>
       <div class="top-right-row">
@@ -272,12 +285,6 @@
   <div class="level-strip">
     <div class="lv-row"><span class="lv-name" id="lvName">—</span><span class="lv-pct" id="lvPct"></span></div>
     <div class="lv-bar"><i id="lvBar"></i></div>
-    <div class="lv-hint" id="lvHint"></div>
-  </div>
-
-  <div class="hero">
-    <div class="k">보유 현금</div>
-    <div class="cash" id="cashView">0원</div>
   </div>
 
   <div class="main-tabs">
@@ -290,7 +297,7 @@
 
   <div id="panelTrade">
     <div class="trade-panel">
-      <div class="tp-head"><span class="tp-title">📊 단타 (15초)</span><span class="tp-limit" id="tpLimit">한도 0원</span></div>
+      <div class="tp-head"><span class="tp-limit" id="tpLimit"></span></div>
       <div class="stock-tabs" id="stockTabs"></div>
       <div id="tradeBody"></div>
     </div>
@@ -597,7 +604,7 @@ function newState(){
     upg:{leverageLv:START_LEVERAGE_LV, stoplossLv:0, dividendLv:0, infoLv:0, autosell:false, surge:false},
     selectedStock:'stable', betAmount:Math.min(seed,MIN_BET*5), betAutoTarget:0, betLeverage:minLev,
     activeRound:null, pending:null, lastResult:null, mainTab:'trade', lastTick:now,
-    streak:0, buffs:[], today:null, stripOpen:false};
+    streak:0, buffs:[], today:null, stripOpen:false, autoOpen:false};
   /* 유산: 배당주를 갖고 시작 */
   s.upg.dividendLv=Math.min(DIVIDEND_PER5S.length-1,legacyLv('heir'));
   S=s;
@@ -651,6 +658,7 @@ function loadRun(){
     if(typeof S.betLeverage!=='number')S.betLeverage=minLevOf();
     if(typeof S.streak!=='number')S.streak=0;
     if(!Array.isArray(S.buffs))S.buffs=[];
+    if(typeof S.autoOpen!=='boolean')S.autoOpen=false;
     ensureToday();
     return true;}
   }catch(e){}
@@ -938,15 +946,13 @@ function renderLevel(){
   $('lvChip').textContent=`Lv.${S.level}`;
   if(nl){
     const pct=Math.max(0,Math.min(100,S.peakCash/nl.need*100));
-    $('lvName').textContent=`Lv.${S.level} → Lv.${nl.lv}`;
+    $('lvName').innerHTML=`Lv.${S.level} → Lv.${nl.lv} <small>목표 ${fmtWon(nl.need)}</small>`;
     $('lvPct').textContent=Math.floor(pct)+'%';
     $('lvBar').style.width=pct+'%';
-    $('lvHint').textContent=`최고 ${fmtWon(S.peakCash)} · 목표 ${fmtWon(nl.need)}`;
   }else{
-    $('lvName').textContent='🏆 최종 레벨 달성';
+    $('lvName').innerHTML=`🏆 최종 레벨 달성 <small>최고 ${fmtWon(S.peakCash)}</small>`;
     $('lvPct').textContent='100%';
     $('lvBar').style.width='100%';
-    $('lvHint').textContent=`최고 ${fmtWon(S.peakCash)}`;
   }
 }
 
@@ -1111,9 +1117,12 @@ function renderTradeTabs(){
   $('stockTabs').innerHTML=TRADE_STOCKS.map(s=>{
     const locked=(s.id==='theme'&&!S.themeUnlocked)||(s.id==='surge'&&!S.upg.surge);
     const lockTxt=s.id==='theme'?'Lv.3 해금':'Lv.5 해금';
-    return `<div class="stock-tab ${s.id===S.selectedStock?'sel':''} ${locked?'locked':''}" data-stock="${s.id}">
-      <div class="e">${locked?'🔒':s.emo}</div><div class="n">${s.name}</div>
-      <div class="v">${locked?lockTxt:(s.id==='stable'?'낮은 변동성':s.id==='theme'?'높은 변동성':'매우 높은 변동성')}</div></div>`;
+    /* 잠긴 종목은 자리만 차지하므로 자물쇠 + 해금 레벨만 좁게 */
+    if(locked)return `<div class="stock-tab locked mini"><div class="e">🔒</div>
+      <div class="n">${s.id==='theme'?'Lv.3':'Lv.5'}</div></div>`;
+    return `<div class="stock-tab ${s.id===S.selectedStock?'sel':''}" data-stock="${s.id}">
+      <div class="e">${s.emo}</div><div class="n">${s.name}</div>
+      <div class="v">${s.id==='stable'?'낮은 변동성':s.id==='theme'?'높은 변동성':'매우 높은 변동성'}</div></div>`;
   }).join('');
   $('stockTabs').querySelectorAll('.stock-tab').forEach(el=>{
     if(el.classList.contains('locked'))return;
@@ -1123,25 +1132,38 @@ function renderTradeTabs(){
 }
 function renderTrade(){
   const maxLev=leverageMultOf();
-  $('tpLimit').textContent=hasDebt()?`🔗 최소 ${minLevOf()}배`:(maxLev>1?`레버리지 최대 ${maxLev}배`:'레버리지 없음');
+  $('tpLimit').textContent=hasDebt()
+    ? `🔗 빚 때문에 최소 ${minLevOf()}배 · 최대 ${maxLev}배`
+    : `🎚️ 레버리지 1~${maxLev}배`;
   if(S.activeRound){renderRoundView();return;}
   RV=null; /* 아래에서 tradeBody를 통째로 갈아엎으므로 라운드 뷰 노드 캐시를 버린다 */
-  const autoRow=S.upg.autosell?`<div class="auto-label">🎯 자동 익절 목표</div>
-    <div class="auto-row">
+  /* 자동 익절은 한 번 정하면 잘 안 바꾸는 값이라 접어 둔다 */
+  const autoChip=S.upg.autosell
+    ? `<button class="opt auto ${S.autoOpen?'open':''}" id="autoToggle">🎯 자동 익절
+        <b>${S.betAutoTarget?S.betAutoTarget+'x':'끄기'}</b> ${S.autoOpen?'∧':'∨'}</button>`
+    : '';
+  const autoPanel=(S.upg.autosell&&S.autoOpen)?`<div class="auto-row">
       <button data-t="0" class="${!S.betAutoTarget?'sel':''}">끄기</button>
       <button data-t="1.3" class="${S.betAutoTarget===1.3?'sel':''}">1.3x</button>
       <button data-t="1.5" class="${S.betAutoTarget===1.5?'sel':''}">1.5x</button>
       <button data-t="2" class="${S.betAutoTarget===2?'sel':''}">2.0x</button>
     </div>`:'';
+  /* 티켓은 위쪽 스트립에 큰 카드로 두지 않고, 시작 버튼 바로 위에 한 줄로만 알린다 —
+     "지금 시작할 이 판"에 걸리는 것이므로 그 자리가 맞다. */
+  const bl=(S.buffs||[]);
+  const buffLine=bl.length?`<div class="buff-line">${bl.map(b=>BUFFS[b].emo).join('')}
+      <span>다음 판 한정 · ${bl.map(b=>BUFFS[b].name).join(' + ')}</span></div>`:'';
   const minLev=minLevOf();
   const levOptions=LEVERAGE_MULTS.filter(m=>m>=minLev&&m<=maxLev);
   const curLev=Math.min(Math.max(minLev,S.betLeverage||minLev),maxLev);
   const liq=liqMultOf(curLev);
-  const levRow=`<div class="auto-label">${hasDebt()?'🔗 레버리지 — 빚 때문에 '+minLev+'배 밑으로는 못 내려요':'🎚️ 레버리지 배율'}</div>
-    <div class="auto-row">${levOptions.map(m=>`<button data-lev="${m}" class="${curLev===m?'sel':''}">${m}배</button>`).join('')}</div>
-    <div class="liq-note">${curLev>1
-      ? `⚠️ ${curLev}배 — <b>${liq.toFixed(2)}x</b> 밑으로 내려가면 베팅금 전액 손실`
-      : '1배 — 청산 없음, 판 값만 손해봐요'}</div>`;
+  /* 청산선은 배율마다 다른 값이라 버튼 안에 적는 게 맞다.
+     라벨 + 버튼 + 경고 세 줄(79px)이 한 줄로 줄어든다. */
+  const levRow=`<div class="auto-row lev-row">${levOptions.map(m=>{
+      const l=liqMultOf(m);
+      return `<button data-lev="${m}" class="${curLev===m?'sel':''}">${m}배
+        <small>${l>0?`청산 ${l.toFixed(2)}x`:'청산 없음'}</small></button>`;
+    }).join('')}</div>`;
   ensurePending();
   /* 🔎 정보 확신권이 걸려 있으면 신호를 참값으로 보여준다 */
   const sigId=(S.buffs||[]).includes('info')?(PATTERN_TIER[S.pending.patId]||'mid'):S.pending.sig;
@@ -1157,18 +1179,18 @@ function renderTrade(){
   $('tradeBody').innerHTML=`
     ${signalRow}
     ${levRow}
-    <div class="wallet"><span class="k">💰 보유 현금</span>
-      <span><span class="v">${fmtWon(S.cash)}</span> <span class="m">최소 ${fmtWon(MIN_BET)}</span></span></div>
     <div class="bet-row"><button id="betMinus">−</button><div class="amt">${fmtWon(S.betAmount)}</div><button id="betPlus">+</button></div>
     <div class="bet-quicks"><button data-q="0.25">25%</button><button data-q="0.5">50%</button><button data-q="0.75">75%</button><button data-q="1">최대</button></div>
-    <div class="min-note">🪦 ${fmtWon(MIN_BET)} 밑으로 떨어지면 파산이에요${room>0?` — 여유 <b>${fmtWon(room)}</b>`:''}</div>
-    ${autoRow}
-    <button class="trade-go" id="tradeGo" ${canGo?'':'disabled'}>${canGo?`${fmtWon(S.betAmount)} × ${curLev}배로 15초 베팅`:'베팅금이 부족해요'}</button>
-    <div class="trade-note">끝까지 들고만 있으면 손해예요 — 패턴을 보고 반응하세요!</div>`;
+    <div class="opt-row">${autoChip}<span class="opt room">🪦 여유 ${fmtWon(Math.max(0,room))}</span></div>
+    ${autoPanel}
+    ${buffLine}
+    <button class="trade-go" id="tradeGo" ${canGo?'':'disabled'}>${canGo?`${fmtWon(S.betAmount)} × ${curLev}배로 시작`:'베팅금이 부족해요'}</button>
+    ${(S.today.rounds<3)?'<div class="trade-note">끝까지 들고만 있으면 손해예요 — 패턴을 보고 반응하세요!</div>':''}`;
   const step=Math.max(MIN_BET,Math.round(S.cash*0.05));
   $('betMinus').onclick=()=>{sfx.tap();setBet(S.betAmount-step);};
   $('betPlus').onclick=()=>{sfx.tap();setBet(S.betAmount+step);};
   $('tradeBody').querySelectorAll('.bet-quicks button').forEach(b=>b.onclick=()=>{sfx.tap();setBet(S.cash*parseFloat(b.dataset.q));});
+  if($('autoToggle'))$('autoToggle').onclick=()=>{sfx.tap();S.autoOpen=!S.autoOpen;saveRun();renderTrade();};
   $('tradeBody').querySelectorAll('.auto-row button[data-lev]').forEach(b=>b.onclick=()=>{sfx.tap();S.betLeverage=parseFloat(b.dataset.lev);saveRun();renderTrade();});
   if(S.upg.autosell){
     $('tradeBody').querySelectorAll('.auto-row button[data-t]').forEach(b=>b.onclick=()=>{sfx.tap();S.betAutoTarget=parseFloat(b.dataset.t);saveRun();renderTrade();});
@@ -1348,7 +1370,7 @@ function renderRoundView(){
 
   RV.pnl.textContent=(profit>=0?'+':'')+fmtWon(profit);
   RV.pnl.className='round-pnl '+(profit>=0?'up':'down');
-  RV.wallet.innerHTML=`잔고 ${fmtWon(S.cash)} &nbsp;·&nbsp; 지금 팔면 <b>${fmtWon(S.cash+Math.max(0,r.bet+profit))}</b>`;
+  RV.wallet.innerHTML=`지금 팔면 잔고 <b>${fmtWon(S.cash+Math.max(0,r.bet+profit))}</b>`;
 
   const levTxt=lev>1?` · 🎚️${lev}배 · 청산 ${liq.toFixed(2)}x`:'';
   const autoTxt=r.autoTarget?` · 🎯${r.autoTarget}x 자동`:'';
@@ -1375,9 +1397,7 @@ function renderStrip(){
   const T=S.today, st=S.streak||0;
   const buffs=(S.buffs||[]);
   const winRate=T.rounds?Math.round(T.wins/T.rounds*100):0;
-  const buffRow=buffs.length?`<div class="strip-buff"><span class="e">${buffs.map(b=>BUFFS[b].emo).join('')}</span>
-      <div><div class="t">다음 판 한정 — ${buffs.map(b=>BUFFS[b].name).join(' + ')}</div>
-        <div class="d">${buffs.map(b=>BUFFS[b].ds).join(' · ')}</div></div></div>`:'';
+  const buffRow='';   // 티켓 안내는 베팅 화면 하단 한 줄로 옮겼다
   const open=S.stripOpen?`
     <div class="rec-grid">
       <div class="rec"><div class="k">오늘 판수</div><div class="v">${T.rounds}판 <small style="font-size:10px;color:var(--gray3)">승률 ${winRate}%</small></div></div>

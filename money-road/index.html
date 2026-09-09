@@ -186,13 +186,41 @@
     display:flex; justify-content:space-between; font-size:12px; font-weight:800; color:var(--gray);
     font-variant-numeric:tabular-nums;}
   .rs-rankline .u{color:var(--green);} .rs-rankline .d{color:var(--red);}
+  .rs-box{text-align:left; max-height:56vh; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .rs-wallet{margin-top:12px; padding-top:10px; border-top:1px solid var(--line);
+    font-size:12px; font-weight:700; color:var(--gray2); font-variant-numeric:tabular-nums;}
+  .rs-wallet b{color:var(--ink); font-weight:900;}
   /* 최소 베팅/빚 안내 */
   .min-note{font-size:11px; font-weight:700; color:var(--gray2); background:var(--field);
     border-radius:10px; padding:7px 10px; margin-bottom:9px;}
   .min-note b{color:var(--ink); font-weight:900;}
+  /* 잔고 — 히어로는 스크롤하면 사라져서 정작 베팅할 때 안 보인다 */
+  .wallet{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;}
+  .wallet .k{font-size:11px; font-weight:800; color:var(--gray3);}
+  .wallet .v{font-size:16px; font-weight:900; font-variant-numeric:tabular-nums;}
+  .wallet .m{font-size:10.5px; font-weight:700; color:var(--gray3);}
+  .rv-wallet{font-size:11px; font-weight:700; color:var(--gray3); margin-bottom:8px;
+    font-variant-numeric:tabular-nums;}
+  .rv-wallet b{color:var(--gray); font-weight:800;}
   .debt-note{font-size:11px; font-weight:700; color:#8a5a00; background:#fff9ec;
     border-radius:10px; padding:7px 10px; margin-bottom:9px;}
   /* 레거시 */
+  .lg-pts{font-size:12.5px; font-weight:800; color:var(--gray2); margin-top:12px;}
+  .lg-pts b{color:var(--gold); font-size:16px; font-weight:900;}
+  .lg-list{text-align:left; margin-top:8px; max-height:46vh; overflow-y:auto;
+    display:flex; flex-direction:column; gap:6px;}
+  .lg-row{display:flex; align-items:center; gap:9px; background:var(--field);
+    border-radius:12px; padding:9px 11px;}
+  .lg-emo{font-size:17px; flex-shrink:0;}
+  .lg-mid{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .lg-nm{font-size:12.5px; font-weight:800;} .lg-nm b{color:var(--blue); font-size:10.5px;}
+  .lg-ds{font-size:10.5px; font-weight:650; color:var(--gray2); margin-top:1px;}
+  .lg-buy{flex-shrink:0; border:none; border-radius:10px; padding:8px 11px; font-size:11.5px;
+    font-weight:900; cursor:pointer; min-width:56px; text-align:center;}
+  .lg-buy.can{background:var(--ink); color:#fff;}
+  .lg-buy.cant{background:var(--card); color:var(--gray3); cursor:default;}
+  .lg-buy.done{background:var(--card); color:var(--green); padding:8px 11px; border-radius:10px;
+    font-size:11.5px; font-weight:900;}
   .pt-chip{font-size:12px; font-weight:900; color:var(--gold); background:#fff9ec;
     padding:5px 11px; border-radius:999px;}
   .retire-btn{display:block; width:calc(100% - 40px); margin:14px 20px 0; border:none; border-radius:15px;
@@ -204,9 +232,7 @@
   .unlock-tag.open{background:var(--green); color:#fff;}
   .unlock-tag.closed{background:var(--field); color:var(--gray3);}
 
-  /* 커뮤니티/랭킹 카드 */
-  .community{margin:12px 20px 0; background:var(--card); border-radius:20px; padding:14px 16px; box-shadow:var(--shadow);}
-  .community.hide{display:none !important;}
+  /* 거래 결과 오버레이 내부 */
   .cm-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
   .cm-title{font-size:13.5px; font-weight:800;}
   .cm-feed{display:flex; flex-direction:column; gap:7px; min-height:21px;}
@@ -257,15 +283,12 @@
   <div class="main-tabs">
     <button class="main-tab on" data-tab="trade">🎯 단타</button>
     <button class="main-tab" data-tab="shop">🛒 상점</button>
-    <button class="main-tab" data-tab="unlock">🔓 성장</button>
+    <button class="main-tab" data-tab="unlock">🔓 해금</button>
   </div>
 
   <div class="strip" id="strip"></div>
 
   <div id="panelTrade">
-    <!-- 결과 카드는 단타 패널 "위"에 둔다. 아래에 두면 라운드가 끝난 뒤
-         스크롤해야 보여서, 정작 보상 순간을 아무도 안 보게 된다. -->
-    <div class="community hide" id="community"></div>
     <div class="trade-panel">
       <div class="tp-head"><span class="tp-title">📊 단타 (15초)</span><span class="tp-limit" id="tpLimit">한도 0원</span></div>
       <div class="stock-tabs" id="stockTabs"></div>
@@ -279,9 +302,7 @@
   </div>
 
   <div id="panelUnlock" class="hide">
-    <div id="growthTop"></div>
-    <div id="legacyList"></div>
-    <div class="section-title">🏆 이번 판 해금 <small style="font-weight:600;color:var(--gray3)">· 레벨을 올리면 무료로 열려요</small></div>
+    <div class="section-title">🏆 해금 <small style="font-weight:600;color:var(--gray3)">· 레벨을 올리면 무료로 열려요</small></div>
     <div id="unlockList"></div>
     <div id="retireBox"></div>
   </div>
@@ -293,7 +314,7 @@
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
-const RUN_KEY='moneyroad2_run_v9', META_KEY='moneyroad2_meta_v2';
+const RUN_KEY='moneyroad2_run_v10', META_KEY='moneyroad2_meta_v3';
 
 function fmtWon(v){const neg=v<0;let x=Math.round(Math.abs(v));if(x<10000)return (neg?'-':'')+x.toLocaleString()+'원';
   const eok=Math.floor(x/100000000),man=Math.floor((x%100000000)/10000);let s='';if(eok)s+=eok+'억';if(man)s+=(s?' ':'')+man.toLocaleString()+'만';return (neg?'-':'')+s+'원';}
@@ -310,7 +331,6 @@ const sfx={tap:()=>beep(720,.05,'triangle',.09),buy:()=>{beep(520,.07,'square',.
    시뮬레이션으로 확인: 배당은 어느 시점에서든 활발한 단타 수익의 극히 일부(수%)에 불과해서
    단타를 대체하지 못하고, "천천히 쌓이는 바닥" 역할만 한다. 해금(무료)은 레벨로 열린다. */
 const LEVERAGE_MULTS=[1,2,3,5,10];
-const LEVERAGE_COSTS=[150000,450000,1200000,3000000];
 const STOPLOSS_COSTS=[80000,300000,900000];
 const STOPLOSS_PCT=[0,0.15,0.30,0.45];
 /* 배당주 — 화면 켜둔 동안 5초마다 DIVIDEND_PER5S[lv]원 자동 입금(오프라인 X). 초반엔 비싸고 아주 조금. */
@@ -438,8 +458,12 @@ const SIGNAL_INFO={
   mid:   {emo:'🟡',name:'보통',ds:'적당한 고점은 기대해 볼 만한 장'},
   weak:  {emo:'🔴',name:'약세',ds:'고점 없이 흘러내리기 쉬운 장'},
 };
-const INFO_ACC=[0.55,0.65,0.75,0.85];
-const INFO_COSTS=[300000,1200000,5000000];
+/* 정보력 — 예전엔 30만/120만/500만에 85%까지 올라가서 Lv.4 전에 다 살 수 있었다.
+   시뮬(각 500회, 목표 1억): 적중률 55% → 85%가 도달률은 97% → 98%로 거의 안 바꾸고
+   도달 속도만 41판 → 29판으로 줄인다. 즉 정보력의 값어치는 "난이도"가 아니라 "속도"인데
+   가격이 속도값에 비해 터무니없이 쌌다. 상한을 78%로 낮추고 가격을 성장 곡선에 맞춘다. */
+const INFO_ACC=[0.55,0.62,0.70,0.78];
+const INFO_COSTS=[30000000,400000000,5000000000];
 function infoAccOf(){
   return Math.min(0.95, INFO_ACC[Math.min(INFO_ACC.length-1,S.upg.infoLv||0)]+INFO_BONUS[legacyLv('sense')]);
 }
@@ -473,20 +497,22 @@ const LEVELS=[
    reward:{emo:'🏠',t:'내 집 마련',d:'집을 담보로 더 크게 굴릴 수 있게 됐어요.',bonusTxt:'레버리지 1단계 무료 강화',f:S=>{S.upg.leverageLv=Math.min(LEVERAGE_MULTS.length-1,(S.upg.leverageLv||0)+1);}}},
   {lv:7, need:8000000000, tag:'🔎 정보력 1단계 무료 강화',
    reward:{emo:'🔎',t:'인맥',d:'업계 사람들과 선이 닿았어요. 장세를 보는 눈이 더 정확해졌어요.',bonusTxt:'정보력 1단계 무료 강화',f:S=>{S.upg.infoLv=Math.min(INFO_ACC.length-1,(S.upg.infoLv||0)+1);}}},
-  {lv:8, need:50000000000, tag:'🏆 최종 목표 달성',
-   reward:{emo:'🏆',t:'완전한 자유',d:'여기까지 왔어요. 더 이상 넘어야 할 관문은 없어요.',bonusTxt:'',final:true,f:S=>{}}},
+  {lv:8, need:50000000000, tag:'🏆 최종 목표 달성 · 🎚️ 레버리지 최대 10배',
+   reward:{emo:'🏆',t:'완전한 자유',d:'여기까지 왔어요. 더 이상 넘어야 할 관문은 없어요.',
+     bonusTxt:'🎚️ 레버리지 최대 10배',final:true,
+     f:S=>{S.upg.leverageLv=Math.min(LEVERAGE_MULTS.length-1,(S.upg.leverageLv||0)+1);}}},
 ];
 /* ===== 레거시 (파산/은퇴해도 남는 영구 강화) =====
    포인트는 그 판의 최고 기록을 로그 스케일로 환산한다. 선형(최고÷100만)으로 두면
    500억을 찍는 순간 5만 포인트가 나와서 트리가 한 판에 끝나버린다. */
 const SEED_CASH=[100000,200000,400000,800000];
-const INFO_BONUS=[0,0.03,0.06,0.09];
+const INFO_BONUS=[0,0.02,0.04,0.06];
 const LEGACY=[
   {id:'debt', emo:'🔗', name:'빚 청산', costs:[15,60],
    ds:lv=>`최소 레버리지 ${DEBT_LEVS[lv]}배 → ${DEBT_LEVS[lv+1]}배`, max:'빚을 다 갚았어요 · 최소 1배'},
   {id:'seed', emo:'💰', name:'시드머니', costs:[10,30,70],
    ds:lv=>`시작 현금 ${fmtWon(SEED_CASH[lv])} → ${fmtWon(SEED_CASH[lv+1])}`, max:'시작 현금 최대'},
-  {id:'sense', emo:'🔎', name:'타고난 촉', costs:[15,40,90],
+  {id:'sense', emo:'🔎', name:'타고난 촉', costs:[40,110,260],
    ds:lv=>`장세 신호 적중 +${Math.round(INFO_BONUS[lv]*100)}%p → +${Math.round(INFO_BONUS[lv+1]*100)}%p`, max:'촉이 최대치예요'},
   {id:'ticket', emo:'🎟️', name:'뒷배', costs:[25,70],
    ds:lv=>`새 판 첫 라운드에 티켓 ${lv}개 → ${lv+1}개`, max:'첫 라운드에 티켓 2개'},
@@ -502,8 +528,6 @@ function buyLegacy(id){
   if((META.legacyPoints||0)<cost)return;
   META.legacyPoints-=cost; META.legacy[id]=lv+1; saveMeta();
   sfx.buy(); toast(`${it.name} 강화!`);
-  if(id==='seed'||id==='heir'){ /* 다음 판부터 적용 */ }
-  render();
 }
 
 /* ===== 티켓 (연승 보상) =====
@@ -541,9 +565,11 @@ function ensureToday(){
     S.today={key:todayKey(),rounds:0,wins:0,bestMult:0,bestProfit:0,bestStreak:0,sCount:0};
 }
 
-/* 빚이 남아 있으면 최소 배율이 강제되므로, 선택 가능한 최대 배율도 그 밑으로 못 내려간다 */
-function leverageMultOf(){return Math.max(minLevOf(),LEVERAGE_MULTS[S.upg.leverageLv||0]);}
-function leverageCostOf(){const lv=S.upg.leverageLv||0;return lv<LEVERAGE_COSTS.length?LEVERAGE_COSTS[lv]:null;}
+/* 최대 배율은 빚과 무관한 별도 축이다. 빚 3배로 시작하니 최대도 3배(leverageLv=2)에서
+   출발하고, 레벨 보상으로만 올라간다(Lv.6 → 5배, Lv.8 → 10배).
+   최소 배율(빚)과 최대 배율을 한 값에 섞으면 빚을 갚을 때 최대까지 같이 내려간다. */
+function leverageMultOf(){return LEVERAGE_MULTS[Math.min(LEVERAGE_MULTS.length-1,S.upg.leverageLv||0)];}
+const START_LEVERAGE_LV=2;   // = 3배. 빚 3배로 시작하므로 최대도 3배부터.
 
 /* meta (설정 + 파산 후에도 남는 레거시 포인트) */
 let META;
@@ -556,7 +582,7 @@ function loadMeta(){
       for(const k in blankLegacy())if(typeof META.legacy[k]!=='number')META.legacy[k]=0;
       return;}
   }catch(e){}
-  META={mute:false,legacyPoints:0,legacy:blankLegacy()};
+  META={mute:false,legacyPoints:0,legacy:blankLegacy(),pendingLegacy:false};
 }
 function saveMeta(){try{localStorage.setItem(META_KEY,JSON.stringify(META));}catch(e){}}
 
@@ -568,7 +594,7 @@ function newState(){
   const minLev=minLevOf();
   const s={cash:seed, level:1, peakCash:seed,
     themeUnlocked:false,
-    upg:{leverageLv:0, stoplossLv:0, dividendLv:0, infoLv:0, autosell:false, surge:false},
+    upg:{leverageLv:START_LEVERAGE_LV, stoplossLv:0, dividendLv:0, infoLv:0, autosell:false, surge:false},
     selectedStock:'stable', betAmount:Math.min(seed,MIN_BET*5), betAutoTarget:0, betLeverage:minLev,
     activeRound:null, pending:null, lastResult:null, mainTab:'trade', lastTick:now,
     streak:0, buffs:[], today:null, stripOpen:false};
@@ -640,16 +666,8 @@ if(loadRun()){ awayReport=catchUp(); } else { startRun(); }
 saveRun();
 
 /* ===== 상점(유료 · 투자성) ===== */
-const SHOP_IDS=['leverage','info','stoploss','dividend'];
+const SHOP_IDS=['info','stoploss','dividend'];   // 레버리지는 팔지 않는다 — 빚/레벨 보상으로만 움직인다
 function upgradeInfo(id){
-  if(id==='leverage'){
-    const lv=S.upg.leverageLv||0, curMult=LEVERAGE_MULTS[lv];
-    if(lv>=LEVERAGE_MULTS.length-1)return {emo:'🎚️',name:'레버리지',cnt:`${curMult}배`, ds:'최대 배율까지 강화했어요', maxed:true};
-    const nextMult=LEVERAGE_MULTS[lv+1];
-    const eff=leverageMultOf();
-    const debtTxt=hasDebt()?`빚 때문에 최소 ${minLevOf()}배 — 지금 최대 ${eff}배 · `:'';
-    return {emo:'🎚️',name:'레버리지',cnt:eff>1?`${eff}배`:'', ds:`${debtTxt}다음 최대 ${Math.max(minLevOf(),nextMult)}배 (손익 둘 다 배율만큼 커져요)`, cost:leverageCostOf(), buyLabel:'강화'};
-  }
   if(id==='stoploss'){
     const lv=S.upg.stoplossLv;
     if(lv>=3)return {emo:'🛡️',name:'손절 보험',cnt:'MAX', ds:`손실 ${Math.round(STOPLOSS_PCT[3]*100)}% 환급`, maxed:true};
@@ -693,25 +711,48 @@ function renderShop(){
 }
 
 /* ===== 해금 탭 = 레벨 보상 로드맵 전체 (무료로 열리는 건 전부 여기 모아둔다) ===== */
-function renderGrowth(){
+/* 레거시는 탭에 깔지 않는다. 파산하거나 은퇴한 "직후"에만 여는 화면이다 —
+   죽고 나서 강화하고 다시 들어가는 게 로그라이크의 리듬이고, 평소 화면도 깨끗해진다. */
+function legacyRowsHTML(){
   const pts=META.legacyPoints||0;
-  $('growthTop').innerHTML=`<div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
-    <span>🧬 레거시 <small style="font-weight:600;color:var(--gray3)">· 파산하거나 은퇴해도 남아요</small></span>
-    <span class="pt-chip">${pts}pt</span></div>`;
-  $('legacyList').innerHTML=LEGACY.map(it=>{
+  return LEGACY.map(it=>{
     const lv=legacyLv(it.id), maxed=lv>=it.costs.length;
     const cost=maxed?null:it.costs[lv];
     const can=!maxed&&pts>=cost;
-    const btn=maxed?`<button class="biz-buy cant" disabled><span class="p">완료</span></button>`
-      :`<button class="biz-buy ${can?'can':'cant'}" data-lg="${it.id}"><span class="p">${cost}pt</span><span class="l">강화</span></button>`;
-    return `<div class="biz"><div class="logo">${it.emo}</div>
-      <div class="mid"><div class="nm">${it.name}${lv>0?`<span class="cnt">Lv.${lv}</span>`:''}</div>
-      <div class="ds">${maxed?it.max:it.ds(lv)}</div></div>${btn}</div>`;
+    const btn=maxed?`<span class="lg-buy done">완료</span>`
+      :`<button class="lg-buy ${can?'can':'cant'}" data-lg="${it.id}">${cost}pt</button>`;
+    return `<div class="lg-row"><span class="lg-emo">${it.emo}</span>
+      <span class="lg-mid"><span class="lg-nm">${it.name}${lv>0?` <b>Lv.${lv}</b>`:''}</span>
+      <span class="lg-ds">${maxed?it.max:it.ds(lv)}</span></span>${btn}</div>`;
   }).join('');
-  $('legacyList').querySelectorAll('.biz-buy:not([disabled])').forEach(b=>b.onclick=()=>buyLegacy(b.dataset.lg));
+}
+function showLegacyModal(){
+  META.pendingLegacy=true; saveMeta();
+  $('modalBox').innerHTML=`<div class="emo">🧬</div><div class="tt">레거시 강화</div>
+    <div class="dc">파산해도 남는 영구 강화예요. 지금 쓰지 않으면 다음 판이 끝날 때까지 기다려야 해요.</div>
+    <div class="lg-pts">보유 <b id="lgPts">${META.legacyPoints||0}</b>pt</div>
+    <div class="lg-list" id="lgList">${legacyRowsHTML()}</div>
+    <button class="ok" id="mOk">새 인생 시작</button>`;
+  $('modal').classList.add('on');
+  bindLegacy();
+  $('mOk').onclick=()=>{
+    sfx.tap(); META.pendingLegacy=false; saveMeta();
+    $('modal').classList.remove('on');
+    clearRun(); startRun(); render();
+  };
+}
+function bindLegacy(){
+  $('lgList').querySelectorAll('.lg-buy.can').forEach(b=>b.onclick=()=>{
+    buyLegacy(b.dataset.lg);
+    $('lgPts').textContent=META.legacyPoints||0;
+    $('lgList').innerHTML=legacyRowsHTML();
+    bindLegacy();
+  });
+}
+function renderGrowth(){
   $('retireBox').innerHTML=canRetire()
     ? `<button class="retire-btn" id="retireBtn">🏖️ 은퇴하고 새 인생 — ${legacyGain(S.peakCash)}pt 받기</button>`
-    : `<div class="trade-note" style="margin:14px 20px 0">🏖️ 은퇴는 Lv.${RETIRE_LEVEL} 부터 열려요 — 자발적으로 접으면 포인트를 100% 받아요</div>`;
+    : `<div class="trade-note" style="margin:14px 20px 0">🏖️ 은퇴는 Lv.${RETIRE_LEVEL} 부터 열려요 · 🧬 레거시 강화는 파산하거나 은퇴한 직후에 열려요 (보유 ${META.legacyPoints||0}pt)</div>`;
   if(canRetire())$('retireBtn').onclick=()=>{sfx.tap();showRetireModal();};
 }
 function renderUnlock(){
@@ -815,43 +856,41 @@ function buildReactions(profit,bet,lev){
   }
   return {tier,list:out};
 }
-function endBetChat(){
-  const el=$('community'); if(el){el.classList.add('hide'); el.innerHTML='';}
-}
-function renderResultCard(){
-  const el=$('community'); if(!el)return;
-  const R=S.lastResult;
-  if(S.activeRound||!R){ el.classList.add('hide'); el.innerHTML=''; return; }
-  el.classList.remove('hide');
-  const up=R.profit>=0;
+/* 거래 결과는 메인에 붙여두지 않고 매도 직후 오버레이로 띄운다.
+   메인에 두면 베팅 UI를 계속 밀어내서 화면이 어지럽고, 다음 판을 시작할 때까지 남아 있다. */
+function resultModalHTML(R){
+  const up=R.profit>=0, g=R.grade;
   const badge=R.tier==='jackpot'?`<span class="rs-badge hot">🔥 실시간 인기</span>`
     :R.tier==='disaster'?`<span class="rs-badge cold">💀 오늘의 참사</span>`:'';
-  /* 쩜으로 이어붙인 한 줄을 버리고, 번 돈만 크게 띄운 뒤 나머지는 칩으로 분리한다 */
-  const g=R.grade;
   const chips=[];
   if(g)chips.push(`<span class="rs-chip grade${g.pct<45?' low':''}">매도 ${g.g} · ${g.pct}%</span>`);
   if(R.lev>1)chips.push(`<span class="rs-chip lev">🎚️ ${R.lev}배</span>`);
   if(R.streak>=2)chips.push(`<span class="rs-chip streak">🔥 ${R.streak}연승</span>`);
   (R.buffs||[]).forEach(b=>chips.push(`<span class="rs-chip">${BUFFS[b].emo} ${BUFFS[b].name}</span>`));
-  const moved=R.rankBefore!==R.rankAfter;
-  const better=R.rankAfter<R.rankBefore;
-  const rankLine=`<div class="rs-rankline"><span>전국 ${R.rankAfter.toLocaleString()}위</span>
-    <span class="${better?'u':'d'}">${moved?`${better?'▲':'▼'} ${Math.abs(R.rankBefore-R.rankAfter).toLocaleString()}`:'변동 없음'}</span></div>`;
+  const moved=R.rankBefore!==R.rankAfter, better=R.rankAfter<R.rankBefore;
   const earnRow=(R.earned&&R.earned.length)?`<div class="strip-buff" style="margin-top:11px">
       <span class="e">${R.earned.map(b=>BUFFS[b].emo).join('')}</span>
       <div><div class="t">${R.streak}연승! 다음 판에 ${R.earned.map(b=>BUFFS[b].name).join(' + ')}이 걸려요</div>
         <div class="d">모아둘 수 없어요 — 바로 다음 한 판에만</div></div></div>`:'';
-  const gradeSub=g?`<div class="rs-sub">${R.mult.toFixed(2)}배에 팔았어요 · 이 판은 ${R.lo.toFixed(2)}x ~ ${R.hi.toFixed(2)}x 사이를 오갔어요</div>`
-                  :`<div class="rs-sub">${R.mult.toFixed(2)}배에 팔았어요 · 거의 안 움직인 장이었어요</div>`;
+  const sub=g?`${R.mult.toFixed(2)}배에 팔았어요 · 이 판은 ${R.lo.toFixed(2)}x ~ ${R.hi.toFixed(2)}x 사이를 오갔어요`
+             :`${R.mult.toFixed(2)}배에 팔았어요 · 거의 안 움직인 장이었어요`;
   const msgs=R.list.map(m=>`<div class="cm-msg"><span class="av">💬</span><span><b>${m.name}</b> ${m.text}
     <span class="rs-like">♥ ${m.likes.toLocaleString()}</span></span></div>`).join('');
-  el.innerHTML=`<div class="cm-head"><span class="cm-title">💬 거래 결과</span>${badge}</div>
+  return `<div class="cm-head"><span class="cm-title">💬 거래 결과</span>${badge}</div>
     <div class="rs-money ${up?'up':'down'}">${up?'+':''}${fmtWon(R.profit)}</div>
-    ${gradeSub}
+    <div class="rs-sub">${sub}</div>
     <div class="rs-chips">${chips.join('')}</div>
-    ${rankLine}
+    <div class="rs-rankline"><span>전국 ${R.rankAfter.toLocaleString()}위</span>
+      <span class="${better?'u':'d'}">${moved?`${better?'▲':'▼'} ${Math.abs(R.rankBefore-R.rankAfter).toLocaleString()}`:'변동 없음'}</span></div>
     ${earnRow}
-    <div class="cm-feed" style="margin-top:11px">${msgs}</div>`;
+    <div class="cm-feed" style="margin-top:11px">${msgs}</div>
+    <div class="rs-wallet">잔고 <b>${fmtWon(S.cash)}</b></div>`;
+}
+function showResultModal(R,after){
+  $('modalBox').innerHTML=`<div class="rs-box">${resultModalHTML(R)}</div>
+    <button class="ok" id="mOk" style="background:${R.profit>=0?'linear-gradient(135deg,#f04452,#ff6b78)':'linear-gradient(135deg,#3182F6,#4c8dff)'}">확인</button>`;
+  $('modal').classList.add('on');
+  $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');after&&after();};
 }
 
 /* ===== 배당 (화면 켜둔 동안에만 5초마다 소액 입금) ===== */
@@ -931,10 +970,10 @@ function showBankruptModal(){
       <div class="s"><div class="k">이번 판 최고 기록</div><div class="v">${fmtWon(S.peakCash)}</div></div>
       <div class="s"><div class="k">레거시 포인트</div><div class="v" style="color:var(--gold)">+${gain}pt</div></div></div>
     <div class="dc" style="font-size:11.5px;color:var(--gray3);margin-top:8px">파산 페널티로 30%가 깎였어요 (원래 ${full}pt)</div>
-    <button class="ok bankrupt" id="mOk">다시 시작</button>`;
+    <button class="ok bankrupt" id="mOk">🧬 레거시 강화하러 가기</button>`;
   $('modal').classList.add('on');
   sfx.bankrupt();
-  $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');endRun(gain);render();};
+  $('mOk').onclick=()=>{sfx.tap();awardLegacy(gain);showLegacyModal();};
 }
 /* 은퇴: 자발적으로 접으면 포인트를 100% 받는다. Lv.6부터 열린다. */
 const RETIRE_LEVEL=6;
@@ -946,17 +985,15 @@ function showRetireModal(){
     <div class="stat-grid">
       <div class="s"><div class="k">최고 기록</div><div class="v">${fmtWon(S.peakCash)}</div></div>
       <div class="s"><div class="k">받을 포인트</div><div class="v" style="color:var(--gold)">+${gain}pt</div></div></div>
-    <button class="ok" id="mOk">은퇴하고 새 인생</button>
+    <button class="ok" id="mOk">🧬 은퇴하고 레거시 강화</button>
     <button class="ok" id="mNo" style="margin-top:8px;background:var(--field);color:var(--gray2)">더 굴려볼래요</button>`;
   $('modal').classList.add('on');
-  $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');endRun(gain);sfx.win();render();};
+  $('mOk').onclick=()=>{sfx.tap();sfx.win();awardLegacy(gain);showLegacyModal();};
   $('mNo').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
 }
-function endRun(gain){
+function awardLegacy(gain){
   META.legacyPoints=(META.legacyPoints||0)+gain;
   saveMeta();
-  clearRun();
-  startRun();
 }
 
 /* ===== 메인 탭 ===== */
@@ -1005,7 +1042,6 @@ function startRound(){
   ensureToday(); S.today.rounds++;
   S.lastResult=null;
   sfx.buy();
-  endBetChat();
   saveRun(); render();
 }
 function sellRound(auto){
@@ -1032,7 +1068,6 @@ function sellRound(auto){
   const buffs=(R.buffs||[]).slice();
   S.cash+=payout; bumpPeak();
   sfx[profit>=0?'pay':'warn']();
-  toast(`${auto?'🎯 자동 익절! ':''}${mult>=1?'📈':'📉'} ${mult.toFixed(2)}x${lev>1?` ×${lev}`:''} 청산 · ${profit>=0?'+':''}${fmtWon(profit)}`);
   S.activeRound=null;
   /* 연승: 익절이면 +1, 아니면 0. 단계에 닿으면 다음 한 판에 걸릴 티켓을 준다 */
   const won=profit>0;
@@ -1050,9 +1085,12 @@ function sellRound(auto){
   S.lastResult={mult,profit,bet,lev,rankBefore,rankAfter:rankOf(),tier:rx.tier,list:rx.list,
     grade,lo,hi,streak:S.streak,earned,buffs};
   rollPending(); // 다음 라운드 패턴/신호를 새로 뽑는다(라운드가 끝날 때만)
-  saveRun();
-  if(checkBankrupt())return;
-  if(!checkLevelUp())render();
+  saveRun(); render();
+  showResultModal(S.lastResult,()=>{
+    S.lastResult=null;
+    if(checkBankrupt())return;
+    if(!checkLevelUp())render();
+  });
 }
 /* 부드러운 곡선(2차 베지어 보간) + x/y축을 라운드 시작 시점에 고정해서
    그래프가 항상 왼쪽 끝(0초)에서 자라나 보이게 한다 */
@@ -1119,9 +1157,11 @@ function renderTrade(){
   $('tradeBody').innerHTML=`
     ${signalRow}
     ${levRow}
+    <div class="wallet"><span class="k">💰 보유 현금</span>
+      <span><span class="v">${fmtWon(S.cash)}</span> <span class="m">최소 ${fmtWon(MIN_BET)}</span></span></div>
     <div class="bet-row"><button id="betMinus">−</button><div class="amt">${fmtWon(S.betAmount)}</div><button id="betPlus">+</button></div>
     <div class="bet-quicks"><button data-q="0.25">25%</button><button data-q="0.5">50%</button><button data-q="0.75">75%</button><button data-q="1">최대</button></div>
-    <div class="min-note">🪦 최소 베팅 <b>${fmtWon(MIN_BET)}</b> — 이 밑으로 떨어지면 파산이에요${room>0?` · 여유 ${fmtWon(room)}`:''}</div>
+    <div class="min-note">🪦 ${fmtWon(MIN_BET)} 밑으로 떨어지면 파산이에요${room>0?` — 여유 <b>${fmtWon(room)}</b>`:''}</div>
     ${autoRow}
     <button class="trade-go" id="tradeGo" ${canGo?'':'disabled'}>${canGo?`${fmtWon(S.betAmount)} × ${curLev}배로 15초 베팅`:'베팅금이 부족해요'}</button>
     <div class="trade-note">끝까지 들고만 있으면 손해예요 — 패턴을 보고 반응하세요!</div>`;
@@ -1173,6 +1213,7 @@ function buildRoundView(r,stock){
       <div class="round-count" id="rvCount"></div>
     </div>
     <div class="round-pnl up" id="rvPnl">+0원</div>
+    <div class="rv-wallet" id="rvWallet"></div>
     <div class="round-bar"><i id="rvBar"></i></div>
     <button class="sell-btn" id="sellBtn">지금 매도</button>
   </div>`;
@@ -1183,7 +1224,7 @@ function buildRoundView(r,stock){
     areaUp:g('rvAreaUp'), areaDn:g('rvAreaDn'), liq:g('rvLiq'), line:g('rvLine'),
     pkL:g('rvPkL'), pkD:g('rvPkD'), pkT:g('rvPkT'), pulse:g('rvPulse'), head:g('rvHead'),
     tHi:g('rvTHi'), tLo:g('rvTLo'), liqT:g('rvLiqT'), count:g('rvCount'),
-    pnl:g('rvPnl'), bar:g('rvBar')};
+    pnl:g('rvPnl'), bar:g('rvBar'), wallet:g('rvWallet')};
   /* viewBox 폭 = 실제 픽셀 폭으로 맞춰야 SVG 안의 글자가 가로로 늘어나지 않는다 */
   const fit=w=>{ w=Math.round(w); if(w<40||w===RV.cw)return;
     RV.cw=w; RV.svg.setAttribute('viewBox',`0 0 ${w} ${RV_H}`);
@@ -1307,6 +1348,7 @@ function renderRoundView(){
 
   RV.pnl.textContent=(profit>=0?'+':'')+fmtWon(profit);
   RV.pnl.className='round-pnl '+(profit>=0?'up':'down');
+  RV.wallet.innerHTML=`잔고 ${fmtWon(S.cash)} &nbsp;·&nbsp; 지금 팔면 <b>${fmtWon(S.cash+Math.max(0,r.bet+profit))}</b>`;
 
   const levTxt=lev>1?` · 🎚️${lev}배 · 청산 ${liq.toFixed(2)}x`:'';
   const autoTxt=r.autoTarget?` · 🎯${r.autoTarget}x 자동`:'';
@@ -1366,7 +1408,7 @@ function render(){
   renderHero();renderLevel();renderRankChip();renderStrip();
   switchMainTab(S.mainTab||'trade');
   renderTradeTabs();renderTrade();
-  renderShop();renderGrowth();renderUnlock();renderResultCard();
+  renderShop();renderGrowth();renderUnlock();
 }
 
 function showAwayModal(report){
@@ -1416,6 +1458,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)saveRun();}
 
 updateRankDrift(Date.now());
 render();
+if(META.pendingLegacy){ showLegacyModal(); }
 if(!checkBankrupt() && awayReport && awayReport.awaySec>=60) showAwayModal(awayReport);
 </script>
 </body>

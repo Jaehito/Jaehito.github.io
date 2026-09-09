@@ -872,8 +872,8 @@ function resultModalHTML(R){
       <span class="e">${R.earned.map(b=>BUFFS[b].emo).join('')}</span>
       <div><div class="t">${R.streak}연승! 다음 판에 ${R.earned.map(b=>BUFFS[b].name).join(' + ')}이 걸려요</div>
         <div class="d">모아둘 수 없어요 — 바로 다음 한 판에만</div></div></div>`:'';
-  const sub=g?`${R.mult.toFixed(2)}배에 팔았어요 · 이 판은 ${R.lo.toFixed(2)}x ~ ${R.hi.toFixed(2)}x 사이를 오갔어요`
-             :`${R.mult.toFixed(2)}배에 팔았어요 · 거의 안 움직인 장이었어요`;
+  const sub=g?`${R.mult.toFixed(2)}배에 팔았어요`
+             :`${R.mult.toFixed(2)}배에 팔았어요 · 거의 안 움직인 장이라 등급은 없어요`;
   const msgs=R.list.map(m=>`<div class="cm-msg"><span class="av">💬</span><span><b>${m.name}</b> ${m.text}
     <span class="rs-like">♥ ${m.likes.toLocaleString()}</span></span></div>`).join('');
   return `<div class="cm-head"><span class="cm-title">💬 거래 결과</span>${badge}</div>

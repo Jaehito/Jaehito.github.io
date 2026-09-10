@@ -1,0 +1,10 @@
+{
+  "name": "money-road-tools",
+  "private": true,
+  "description": "머니로드 밸런스 시뮬레이션 · 회귀 테스트 · 배포 도구",
+  "scripts": {
+    "check": "./check.sh",
+    "test": "for f in test/phase*.js; do echo \"── $f\"; node \"$f\" || exit 1; done"
+  },
+  "dependencies": { "playwright-core": "^1.62.1" }
+}

@@ -1,0 +1,104 @@
+# 머니로드 도구
+
+`money-road/index.html` 하나가 게임 전부다. 번들러도 빌드 단계도 없고, GitHub Pages가
+그 파일을 그대로 서빙한다. 그래서 도구도 전부 이 파일 하나를 대상으로 돈다.
+
+## 준비
+
+```bash
+cd money-road/tools
+npm install            # playwright-core만 받는다
+```
+
+브라우저는 `lib/browser.js`가 `PW_CHROME` → `/opt/pw-browsers/chromium-*` →
+playwright 기본 탐색 순으로 찾는다. 이미 chromium이 있으면 `playwright install` 하지 말 것.
+
+## 바로 쓰는 것
+
+```bash
+./check.sh                      # <script> 블록 문법 검사 — 커밋 전 항상 먼저
+npm test                        # 회귀 테스트 전체
+node test/phase17.js            # 하나만
+node sim/gate.js                # 밸런스 시뮬 (수십 초 걸리는 것도 있다)
+node shot.js /tmp/a.png "S.cash=140000;S.daysLeft=1;setBet(70000);render()"
+```
+
+`check.sh`가 제일 중요하다. 단일 HTML이라 오타 하나로 게임 전체가 죽는데,
+브라우저를 열기 전까지는 아무도 안 알려준다.
+
+## 밸런스 근거
+
+수치를 바꾸기 전에 해당 시뮬을 먼저 돌린다. 아래는 지금 상수들이 왜 그 값인지의 기록이다.
+**시뮬을 다시 돌리면 숫자가 조금씩 달라진다** — 난수 시드를 고정하지 않았고, 결론이
+바뀌지 않을 만큼의 표본(각 500~800회)만 돌리기 때문이다.
+
+| 시뮬 | 무엇을 증명했나 |
+|---|---|
+| `sim/gate.js` | **관문(상환 기한)이 유일하게 먹힌 난이도 장치.** 패턴을 하나도 안 건드리고 클리어 99% → 22%. 성공 런 22분 / 실패 런 9분으로 길이도 균형이 잡힌다. `GATES` 일수표의 출처. |
+| `sim/stake.js` | **베팅 규칙으로는 난이도를 못 만든다.** 자산 70%를 매 판 강제로 걸게 해도 클리어 88%. 판당 기댓값이 복리를 못 이긴다. |
+| `sim/ev.js` | 판당 기댓값 = 1배에서 1.23, **3배에서 1.68**. 위 두 결론의 뿌리. `PACE_OK`/`PACE_WARN` 임계값도 여기서 나왔다. |
+| `sim/carry.js` | 이월 무제한이면 클리어 19% → 40%로 뛴다. → `CARRY_MAX=5`. |
+| `sim/interest.js` | **기각된 대안.** 이자 12%는 클리어 62%지만 성공 런 77분 / 실패 런 33분으로 너무 늘어진다. 관문이 이겼다. |
+| `sim/crash.js` | **기각된 대안.** 폭락 이벤트로는 파산률이 안 오른다. 손절이 항상 먹혀서 한 판 손실에 상한이 잡힌다. 큰 손실을 만들 수 있는 건 청산뿐. |
+| `sim/signal.js`, `sim/signal2.js` | 신호의 값어치는 수익이 아니라 **사고 감소**. 5배에서 전액 손실률 신호없음 43% → 기본 15% → 정보력 최대 4.6%. |
+| `sim/info.js` | 정보력 55%→85%는 도달률을 97%→98%로 거의 안 바꾸고 **속도만** 41판→29판으로 줄인다. 값이 속도값에 비해 너무 쌌다 → 상한 78%, 가격 상향. |
+| `sim/debt.js`, `sim/ruin.js` | 1회차 3배 초보 파산률 76% → 빚청산1(2배) 17% → 청산2(1배) 0%. 같은 3배라도 손절을 배우면 76%→2%. → `DEBT_LEVS=[3,2,1]`. |
+| `sim/grade.js`, `sim/grade2.js` | 매도 등급을 "고점 대비"로 잡으면 하락장에서 **전원 D**가 나온다(매도 시점이 곧 그 순간의 최저점이라). 최저~최고 범위로 바꿔야 상승·하락장 구분 없이 실력순으로 갈린다. |
+| `sim/run.js` | 전체 런 통계 — 위 변경들의 종합 확인. |
+
+`sim/_harness.js`(원래 `sim_progress.js`)가 공용 패턴 생성기다. 다른 시뮬이 이 파일의
+앞부분을 `eval`해서 쓴다 — **게임의 `PATTERNS`/`buildMultiPhase`를 손으로 옮겨 적은
+사본**이라, 게임 쪽 패턴을 고치면 여기도 같이 고쳐야 결과가 유효하다.
+
+## 회귀 테스트
+
+`test/phaseNN.js`는 그 단계에서 바꾼 것만 확인한다. 전 기능 커버리지가 아니다.
+
+- `phase15` — 티켓(연승 보상), 매도 등급, 레거시
+- `phase16` — 상환 기한 도입, 배당주 삭제, 사건 기반 댓글
+- `phase17` — 기한 연출/UI (필요 수익률, 경고 3단계, 첫 진입 안내, 장 마감 줄)
+
+**기능을 의도적으로 없앤 뒤 옛 테스트가 깨지는 건 회귀가 아니다.** 그때는 테스트를 고친다.
+테스트가 레벨업/결과 모달에 막혀 멈추는 경우가 많으니, 라운드를 여러 번 돌릴 때는
+`S.level=8; S.peakCash=6e10`을 박아두고 라운드 사이에 `$('mOk').click()`을 넣는다.
+
+## 배포
+
+```bash
+./check.sh && npm test                  # 통과해야 함
+git commit && git push -u origin <branch>
+git checkout master && git merge --ff-only <branch> && git push origin master
+```
+
+Pages는 `master`를 직접 서빙한다(빌드 액션 없음). 자동 커밋도 없다 — 전부 수동이다.
+
+### Claude Artifact 미러
+
+```bash
+python3 build-artifact.py /tmp/artifact.html
+```
+
+`<!doctype>/<html>/<head>/<body>`를 빼고 `<title>+<style>+본문`만 남긴다(Artifact가
+그 골격을 자기가 감싸므로). Artifact CSP는 fonts.googleapis.com 외 스타일시트를 막아서
+Pretendard(jsdelivr) 링크도 같이 제거된다 — **Pages판과 Artifact판의 본문 폰트가 다른 건
+버그가 아니라 이것 때문이다.**
+
+기존 아티팩트를 갱신할 때는 반드시 먼저 읽고(`action:"read"`) 그 위에 얹는다.
+
+### 한글 픽셀 폰트
+
+```bash
+pip install fonttools brotli
+curl -sO https://registry.npmjs.org/galmuri/-/galmuri-2.40.3.tgz && tar xzf galmuri-2.40.3.tgz
+python3 subset-font.py demo/pixelround.html package/dist/Galmuri11.woff2 package/dist/Galmuri11-Bold.woff2
+```
+
+Google Fonts의 픽셀 폰트에는 **한글 글리프가 없다.** 그래서 한글 픽셀 폰트는 파일에
+직접 박는 수밖에 없는데, 서브셋하면 부담이 없다: 원본 505KB → 실제 쓰는 301자만 8KB
+(Bold 포함 15KB). jsDelivr는 이 환경 네트워크 정책에서 막히므로 npm 레지스트리에서 받는다.
+Galmuri는 OFL-1.1이라 임베딩이 허용되며, **저작권 표기를 남겨야 한다.**
+
+## demo/
+
+`demo/pixelround.html` — 라운드 화면 픽셀아트 버전. 게임의 경로 생성기와 손익 공식을
+그대로 복사해서 실제로 돌아간다. 아직 채택 여부 미정이고, 게임 본체와 연결되어 있지 않다.

@@ -139,6 +139,13 @@
   .trade-go{width:100%; border:none; border-radius:14px; padding:14px; font-size:15.5px; font-weight:900; color:#fff; cursor:pointer;
     background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 8px 20px rgba(49,130,246,.3);}
   .trade-go:disabled{background:var(--line); color:var(--gray3); box-shadow:none; cursor:default;}
+  /* 공매도 — 시작 버튼을 좌우로 쪼갠다. 색은 손익 규칙 그대로 상승=빨강 / 하락=파랑. */
+  .split-row{display:flex; gap:8px;}
+  .split-row .trade-go{flex:1; padding:12px 8px;}
+  .trade-go small{display:block; font-size:10.5px; font-weight:800; opacity:.85; margin-top:2px;}
+  .trade-go.go-long{background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
+  .trade-go.go-short{background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 8px 20px rgba(49,130,246,.3);}
+  .rs-chip.short{background:var(--blue-weak); color:var(--blue);}
   .trade-note{font-size:11.5px; color:var(--gray3); font-weight:600; text-align:center; margin-top:9px; line-height:1.5;}
 
   /* 진행중인 라운드 */
@@ -557,8 +564,15 @@ function rollPending(){
   S.pending={patId:pat.id, sig};
 }
 function ensurePending(){ if(!S.pending||!S.pending.patId)rollPending(); }
-/* 레버리지 청산선: 배율 L에서 (mult-1)*L = -1 이 되는 지점 = 1-1/L */
-function liqMultOf(lev){return lev>1?1-1/lev:0;}
+/* 레버리지 청산선 — 손실이 베팅금 전액이 되는 가격.
+   롱: (mult-1)*L = -1  →  mult = 1 - 1/L   (아래쪽, 1배면 0에 수렴하므로 청산 없음)
+   숏: (1-mult)*L = -1  →  mult = 1 + 1/L   (위쪽, 1배도 2배에서 청산된다)
+   숏이 비대칭으로 위험한 건 이 때문이다. 가격은 아래로 0까지지만 위로는 상한이 없어서
+   spike 패턴(최대 3.5배)이면 1배 숏도 전액 손실이 난다. */
+function liqMultOf(lev,dir){
+  if((dir||1)<0)return 1+1/lev;          // 숏은 배율 1배에서도 청산선이 있다
+  return lev>1?1-1/lev:0;
+}
 
 /* ===== 상환 기한 =====
    시드머니가 대출이므로 채권자가 상환 일정을 준다. 라운드 한 판 = 하루 장(거래일).
@@ -693,8 +707,10 @@ function xpOfPeak(peak){return Math.max(1,Math.floor(20*Math.log10(Math.max(peak
 const EARLY_XP_PER_DAY=2;   // 관문을 하루 일찍 갚을 때마다 붙는 XP
 
 const META_UNLOCKS=[
-  {lv:2, need:40, id:'autosell', emo:'🎯', name:'자동 익절',
+  {lv:2, need:40,  id:'autosell', emo:'🎯', name:'자동 익절',
    ds:'목표 배율에 닿으면 알아서 팔아줘요'},
+  {lv:3, need:120, id:'short',    emo:'🐻', name:'공매도',
+   ds:'하락에도 걸 수 있어요 · 대신 오르면 청산이 더 빨라요'},
 ];
 function metaLv(){ let lv=1; for(const u of META_UNLOCKS) if((META.xp||0)>=u.need)lv=u.lv; return lv; }
 function metaHas(id){ const u=META_UNLOCKS.find(x=>x.id===id); return !!u&&(META.xp||0)>=u.need; }
@@ -726,10 +742,11 @@ function roundHas(b){ return !!(S.activeRound&&S.activeRound.buffs&&S.activeRoun
 const GRADE_CUT=[[0.90,'S','완벽한 타이밍'],[0.70,'A','잘 팔았어요'],[0.45,'B','나쁘지 않아요'],
                  [0.20,'C','조금 아쉬워요'],[-1,'D','너무 늦었어요']];
 const GRADE_MIN_RANGE=0.04;   /* 이보다 덜 움직인 판은 등급이 노이즈라 매기지 않는다 */
-function gradeOf(mult,lo,hi){
+function gradeOf(mult,lo,hi,dir){
   const rng=hi-lo;
   if(rng<GRADE_MIN_RANGE)return null;
-  const e=Math.max(0,Math.min(1,(mult-lo)/rng));
+  /* 롱은 높이 팔수록, 숏은 낮게 덮을수록 잘한 것이다 */
+  const e=Math.max(0,Math.min(1,((dir||1)<0?hi-mult:mult-lo)/rng));
   const g=GRADE_CUT.find(c=>e>=c[0]);
   return {pct:Math.round(e*100), g:g[1], txt:g[2]};
 }
@@ -1096,6 +1113,7 @@ function resultModalHTML(R){
     :R.tier==='disaster'?`<span class="rs-badge cold">💀 오늘의 참사</span>`:'';
   const chips=[];
   if(g)chips.push(`<span class="rs-chip grade${g.pct<45?' low':''}">매도 ${g.g} · ${g.pct}%</span>`);
+  if((R.dir||1)<0)chips.push(`<span class="rs-chip short">📉 숏</span>`);
   if(R.lev>1)chips.push(`<span class="rs-chip lev">🎚️ ${R.lev}배</span>`);
   if(R.streak>=2)chips.push(`<span class="rs-chip streak">🔥 ${R.streak}연승</span>`);
   (R.buffs||[]).forEach(b=>chips.push(`<span class="rs-chip">${BUFFS[b].emo} ${BUFFS[b].name}</span>`));
@@ -1104,8 +1122,9 @@ function resultModalHTML(R){
       <span class="e">${R.earned.map(b=>BUFFS[b].emo).join('')}</span>
       <div><div class="t">${R.streak}연승! 다음 판에 ${R.earned.map(b=>BUFFS[b].name).join(' + ')}이 걸려요</div>
         <div class="d">모아둘 수 없어요 — 바로 다음 한 판에만</div></div></div>`:'';
-  const sub=g?`${R.mult.toFixed(2)}배에 팔았어요`
-             :`${R.mult.toFixed(2)}배에 팔았어요 · 거의 안 움직인 장이라 등급은 없어요`;
+  const verb=(R.dir||1)<0?'덮었어요':'팔았어요';
+  const sub=g?`${R.mult.toFixed(2)}배에 ${verb}`
+             :`${R.mult.toFixed(2)}배에 ${verb} · 거의 안 움직인 장이라 등급은 없어요`;
   const msgs=R.list.map(m=>`<div class="cm-msg"><span class="av">💬</span><span><b>${m.name}</b> ${m.text}
     <span class="rs-like">♥ ${m.likes.toLocaleString()}</span></span></div>`).join('');
   return `<div class="cm-head"><span class="cm-title">💬 거래 결과</span>${badge}</div>
@@ -1325,12 +1344,14 @@ function currentTickIdx(){
   const elapsed=Date.now()-S.activeRound.startedAt;
   return Math.min(S.activeRound.path.length-1,Math.floor(elapsed/ROUND_TICK_MS));
 }
+function roundDir(){return (S.activeRound&&S.activeRound.dir)||1;}
 function setBet(n){
   const hi=Math.floor(S.cash);
   S.betAmount=Math.max(Math.min(MIN_BET,hi),Math.min(hi,Math.round(n)));
   renderTrade();
 }
-function startRound(){
+/* dir: +1 롱(상승에 베팅) · -1 숏(하락에 베팅). 공매도를 안 열었으면 언제나 +1이다. */
+function startRound(dir){
   if(S.activeRound)return;
   const stock=TRADE_STOCKS.find(s=>s.id===S.selectedStock);
   const bet=S.betAmount;
@@ -1342,9 +1363,10 @@ function startRound(){
   const rankBefore=rankOf(); // 베팅금 차감 전 순위 — 결과 카드에서 변화를 보여주기 위해
   S.cash-=bet;
   S.activeRound={stockId:stock.id,bet,path,patternId,patternEmo,leverage,rankBefore,
+    dir:(metaHas('short')&&dir<0)?-1:1,
     autoTarget:metaHas('autosell')?(S.betAutoTarget||0):0,
     startedAt:Date.now(), yMin:0.96, yMax:1.04, boundsIdx:0, dispYMin:0.96, dispYMax:1.04,
-    peak:1, peakIdx:0, low:1,
+    peak:1, peakIdx:0, low:1, lowIdx:0,
     buffs:(S.buffs||[]).slice()};
   S.buffs=[];              // 티켓은 이 한 판에만 — 남겨두지 않는다
   ensureToday(); S.today.rounds++;
@@ -1358,7 +1380,8 @@ function sellRound(auto){
   const mult=S.activeRound.path[idx];
   const bet=S.activeRound.bet;
   const lev=S.activeRound.leverage||1;
-  let rawProfit=Math.round(bet*(mult-1)*lev);
+  const dir=roundDir();
+  let rawProfit=Math.round(bet*(mult-1)*lev*dir);   // 숏이면 가격이 내려야 이익
   if(rawProfit>0&&roundHas('boost'))rawProfit=Math.round(rawProfit*1.5);   // ⚡ 이익만 1.5배
   let profit=applyStoploss(rawProfit);
   let payout=Math.max(0,bet+profit);
@@ -1372,7 +1395,7 @@ function sellRound(auto){
   const R=S.activeRound;
   let lo=R.path[0], hi=R.path[0];
   for(let i=0;i<R.path.length;i++){ if(R.path[i]<lo)lo=R.path[i]; if(R.path[i]>hi)hi=R.path[i]; }
-  const grade=gradeOf(mult,lo,hi);
+  const grade=gradeOf(mult,lo,hi,dir);
   const buffs=(R.buffs||[]).slice();
   S.cash+=payout; bumpPeak();
   sfx[profit>=0?'pay':'warn']();
@@ -1390,7 +1413,7 @@ function sellRound(auto){
   if(profit>T.bestProfit)T.bestProfit=profit;
   if(S.streak>T.bestStreak)T.bestStreak=S.streak;
   if(grade&&grade.g==='S')T.sCount++;
-  const res={mult,profit,bet,lev,rankBefore,rankAfter:rankOf(),
+  const res={mult,profit,bet,lev,dir,rankBefore,rankAfter:rankOf(),
     grade,lo,hi,streak:S.streak,prevStreak,earned,buffs,daysLeft:S.daysLeft};
   const rx=buildReactions(res);
   res.tier=rx.tier; res.list=rx.list;
@@ -1464,10 +1487,15 @@ function renderTrade(){
   const liq=liqMultOf(curLev);
   /* 청산선은 배율마다 다른 값이라 버튼 안에 적는 게 맞다.
      라벨 + 버튼 + 경고 세 줄(79px)이 한 줄로 줄어든다. */
+  const canShort=metaHas('short');
   const levRow=`<div class="auto-row lev-row">${levOptions.map(m=>{
-      const l=liqMultOf(m);
+      const lL=liqMultOf(m,1), lS=liqMultOf(m,-1);
+      /* 공매도를 열면 청산선이 방향마다 다르다. 두 값을 같이 적어야 배율을 고를 때
+         "숏은 1배도 2배에서 죽는다"가 보인다. */
+      const txt=canShort?`청산 ${lL>0?lL.toFixed(2):'—'}·${lS.toFixed(2)}`
+                        :(lL>0?`청산 ${lL.toFixed(2)}x`:'청산 없음');
       return `<button data-lev="${m}" class="${curLev===m?'sel':''}">${m}배
-        <small>${l>0?`청산 ${l.toFixed(2)}x`:'청산 없음'}</small></button>`;
+        <small>${txt}</small></button>`;
     }).join('')}</div>`;
   ensurePending();
   /* 🔎 정보 확신권이 걸려 있으면 신호를 참값으로 보여준다 */
@@ -1493,7 +1521,7 @@ function renderTrade(){
     ${autoPanel}
     ${buffLine}
     ${paceLine}
-    <button class="trade-go ${pr&&pr.cls==='p-bad'?'danger':''}" id="tradeGo" ${canGo?'':'disabled'}>${canGo?`${fmtWon(S.betAmount)} × ${curLev}배로 시작`:'베팅금이 부족해요'}</button>
+    ${goRowHTML(canGo,canShort,curLev,pr)}
     ${(S.today.rounds<3)?'<div class="trade-note">끝까지 들고만 있으면 손해예요 — 패턴을 보고 반응하세요!</div>':''}`;
   const step=Math.max(MIN_BET,Math.round(S.cash*0.05));
   $('betMinus').onclick=()=>{sfx.tap();setBet(S.betAmount-step);};
@@ -1504,7 +1532,19 @@ function renderTrade(){
   if(metaHas('autosell')){
     $('tradeBody').querySelectorAll('.auto-row button[data-t]').forEach(b=>b.onclick=()=>{sfx.tap();S.betAutoTarget=parseFloat(b.dataset.t);saveRun();renderTrade();});
   }
-  $('tradeGo').onclick=()=>startRound();
+  $('tradeGo').onclick=()=>startRound(1);
+  if($('tradeShort'))$('tradeShort').onclick=()=>startRound(-1);
+}
+/* 공매도를 열면 시작 버튼을 좌우로 쪼갠다. 방향 토글을 따로 두면 블록이 하나 늘지만,
+   버튼을 쪼개면 방향 선택과 시작이 한 번의 탭으로 끝난다. 안 열었으면 지금 그대로 하나다. */
+function goRowHTML(canGo,canShort,lev,pr){
+  if(!canGo)return `<button class="trade-go" id="tradeGo" disabled>베팅금이 부족해요</button>`;
+  const amt=`${fmtWon(S.betAmount)} × ${lev}배`;
+  if(!canShort)return `<button class="trade-go ${pr&&pr.cls==='p-bad'?'danger':''}" id="tradeGo">${amt}로 시작</button>`;
+  return `<div class="split-row">
+    <button class="trade-go go-long" id="tradeGo">📈 상승<small>${amt}</small></button>
+    <button class="trade-go go-short" id="tradeShort">📉 하락<small>${amt}</small></button>
+  </div>`;
 }
 /* 라운드 뷰는 "한 번 만들고 좌표만 갱신"한다.
    예전에는 50ms마다 tradeBody.innerHTML을 통째로 다시 썼는데, 그러면
@@ -1546,7 +1586,7 @@ function buildRoundView(r,stock){
     <div class="round-pnl up" id="rvPnl">+0원</div>
     <div class="rv-wallet" id="rvWallet"></div>
     <div class="round-bar"><i id="rvBar"></i></div>
-    <button class="sell-btn" id="sellBtn">지금 매도</button>
+    <button class="sell-btn" id="sellBtn">${(r.dir||1)<0?'지금 덮기':'지금 매도'}</button>
   </div>`;
   const g=id=>$(id);
   RV={round:r, lev, cw:320, lastCnt:-1, lastMult:1,
@@ -1583,13 +1623,14 @@ function renderRoundView(){
      만들어서, 예전 구간은 순간이동하지 않고 부드럽게만 자리를 조정하도록 한다 */
   if(typeof r.yMin!=='number'){r.yMin=0.96;r.yMax=1.04;r.boundsIdx=0;}
   if(typeof r.peak!=='number'){r.peak=1;r.peakIdx=0;} /* 예전 세이브에서 이어붙은 라운드 대비 */
-  if(typeof r.low!=='number')r.low=1;
+  if(typeof r.low!=='number'){r.low=1;r.lowIdx=0;}
+  if(typeof r.lowIdx!=='number')r.lowIdx=0;
   if(idx>r.boundsIdx){
     for(let i=r.boundsIdx+1;i<=idx;i++){
       if(r.path[i]<r.yMin)r.yMin=r.path[i];
       if(r.path[i]>r.yMax)r.yMax=r.path[i];
       if(r.path[i]>r.peak){r.peak=r.path[i];r.peakIdx=i;}
-      if(r.path[i]<r.low)r.low=r.path[i];
+      if(r.path[i]<r.low){r.low=r.path[i];r.lowIdx=i;}
     }
     r.boundsIdx=idx;
   }
@@ -1608,8 +1649,8 @@ function renderRoundView(){
   for(let i=0;i<=idx;i++)pts.push([xOf(i),yOf(r.path[i])]);
   const d=smoothPathD(pts);
   const col=dir==='up'?'#f04452':dir==='down'?'#3182F6':'#8b95a1';
-  const lev=r.leverage||1;
-  const profit=Math.round(r.bet*(mult-1)*lev);
+  const lev=r.leverage||1, sdir=r.dir||1;
+  const profit=Math.round(r.bet*(mult-1)*lev*sdir);
 
   RV.line.setAttribute('d',d);
   RV.line.setAttribute('stroke',col);
@@ -1621,36 +1662,52 @@ function renderRoundView(){
   const first=pts[0], last=pts[pts.length-1];
   const areaD=d+` L${last[0].toFixed(1)} ${baseY.toFixed(1)} L${first[0].toFixed(1)} ${baseY.toFixed(1)} Z`;
   RV.areaUp.setAttribute('d',areaD); RV.areaDn.setAttribute('d',areaD);
+  /* 면적 색은 "내 손익"이다. 롱은 진입선 위가 이익(빨강)이지만 숏은 아래가 이익이라
+     두 클립의 색을 맞바꾼다. 선 색은 그대로 가격 방향을 가리킨다. */
+  RV.areaUp.setAttribute('fill',sdir>0?'#f04452':'#3182F6');
+  RV.areaDn.setAttribute('fill',sdir>0?'#3182F6':'#f04452');
   RV.rectUp.setAttribute('height',baseY.toFixed(1));
   RV.rectDn.setAttribute('y',baseY.toFixed(1)); RV.rectDn.setAttribute('height',(H-baseY).toFixed(1));
 
-  /* 레버리지를 걸었으면 청산선(이 아래로 가면 전액 손실) + 가까워질수록 짙어지는 경고 영역 */
-  const liq=liqMultOf(lev);
-  const liqY=liq>0?yOf(liq):null;
+  /* 청산선 + 가까워질수록 짙어지는 경고 영역.
+     롱은 선 아래가 위험 구간이고 숏은 선 위가 위험 구간이라 방향마다 반대로 칠한다. */
+  const liq=liqMultOf(lev,sdir);
+  const hasLiq=sdir<0||lev>1;
+  const liqY=hasLiq?yOf(liq):null;
   const liqOn=(liqY!==null&&liqY>padY&&liqY<H-padY);
   RV.liq.setAttribute('opacity',liqOn?'.75':'0');
   if(liqOn){ RV.liq.setAttribute('y1',liqY.toFixed(1)); RV.liq.setAttribute('y2',liqY.toFixed(1)); }
   let zoneOp=0;
-  if(lev>1){ const head=(mult-liq)/Math.max(0.02,1-liq); zoneOp=Math.max(0,Math.min(.42,(1-head)*.55)); }
-  const zy=liqOn?liqY:H;
-  RV.zone.setAttribute('y',zy.toFixed(1));
-  RV.zone.setAttribute('height',Math.max(0,H-zy).toFixed(1));
+  if(hasLiq){
+    const gap=Math.max(0.02,Math.abs(liq-1));
+    const head=(sdir>0?mult-liq:liq-mult)/gap;
+    zoneOp=Math.max(0,Math.min(.42,(1-head)*.55));
+  }
+  /* 위험 구간은 청산선 바깥쪽 전부다 — 롱은 선 아래, 숏은 선 위.
+     청산선이 화면 밖으로 나가도 맞아야 하므로 경계를 0~H로 자른다:
+     선이 화면 위로 나간 숏은 "아직 멀다"(높이 0), 아래로 나간 숏은 "이미 지났다"(높이 H). */
+  const edge=Math.max(0,Math.min(H, liqY===null?(sdir>0?H:0):liqY));
+  if(sdir>0){ RV.zone.setAttribute('y',edge.toFixed(1)); RV.zone.setAttribute('height',(H-edge).toFixed(1)); }
+  else      { RV.zone.setAttribute('y','0');             RV.zone.setAttribute('height',edge.toFixed(1)); }
   RV.zone.setAttribute('opacity',zoneOp.toFixed(3));
-  const liqWarn=lev>1&&zoneOp>0.08;
+  const liqWarn=hasLiq&&zoneOp>0.08;
   RV.liqT.setAttribute('opacity',liqWarn?'1':'0');
   if(liqWarn){
+    const dead=sdir>0?mult<=liq:mult>=liq;
     RV.liqT.setAttribute('x',W-6);
-    RV.liqT.setAttribute('y',(liqOn?Math.min(H-5,liqY+12):H-6).toFixed(1));
-    RV.liqT.textContent=mult<=liq?'⚠️ 전액 손실 구간':`청산까지 ${(mult-liq).toFixed(2)}`;
+    RV.liqT.setAttribute('y',(liqOn?(sdir>0?Math.min(H-5,liqY+12):Math.max(11,liqY-6)):H-6).toFixed(1));
+    RV.liqT.textContent=dead?'⚠️ 전액 손실 구간':`청산까지 ${Math.abs(mult-liq).toFixed(2)}`;
   }
 
-  /* 최고점 마커 — "아까 얼마까지 갔었는지"가 매도 타이밍 게임의 학습이자 후회 훅 */
-  const pkOn=r.peakIdx>0&&r.peak>1.005;
+  /* 극점 마커 — "아까 얼마까지 갔었는지"가 매도 타이밍 게임의 학습이자 후회 훅이다.
+     롱은 최고점이 그 자리지만 숏은 최저점이라, 방향에 따라 보는 쪽을 바꾼다. */
+  const mk=sdir>0?{v:r.peak,i:r.peakIdx,lab:'최고'}:{v:r.low,i:r.lowIdx,lab:'최저'};
+  const pkOn=mk.i>0&&Math.abs(mk.v-1)>0.005;
   RV.pkD.setAttribute('opacity',pkOn?'1':'0');
   RV.pkL.setAttribute('opacity',pkOn?'.5':'0');
   RV.pkT.setAttribute('opacity',pkOn?'1':'0');
   if(pkOn){
-    const px=xOf(r.peakIdx), py=clampY(yOf(r.peak));
+    const px=xOf(mk.i), py=clampY(yOf(mk.v));
     RV.pkD.setAttribute('cx',px.toFixed(1)); RV.pkD.setAttribute('cy',py.toFixed(1));
     RV.pkL.setAttribute('x1',px.toFixed(1)); RV.pkL.setAttribute('x2',px.toFixed(1));
     RV.pkL.setAttribute('y1',py.toFixed(1)); RV.pkL.setAttribute('y2',(H-2).toFixed(1));
@@ -1658,7 +1715,7 @@ function renderRoundView(){
     RV.pkT.setAttribute('x',(rightish?Math.min(W-6,px-6):px+6).toFixed(1));
     RV.pkT.setAttribute('text-anchor',rightish?'end':'start');
     RV.pkT.setAttribute('y',Math.max(11,py-7).toFixed(1));
-    RV.pkT.textContent=`최고 ${r.peak.toFixed(2)}x`;
+    RV.pkT.textContent=`${mk.lab} ${mk.v.toFixed(2)}x`;
   }
 
   /* 현재가 지점 — 눈이 여기를 보게 만든다 */
@@ -1681,10 +1738,11 @@ function renderRoundView(){
   RV.pnl.className='round-pnl '+(profit>=0?'up':'down');
   RV.wallet.innerHTML=`지금 팔면 잔고 <b>${fmtWon(S.cash+Math.max(0,r.bet+profit))}</b>`;
 
-  const levTxt=lev>1?` · 🎚️${lev}배 · 청산 ${liq.toFixed(2)}x`:'';
-  const autoTxt=r.autoTarget?` · 🎯${r.autoTarget}x 자동`:'';
+  const dirTxt=sdir<0?' · 📉 숏':'';
+  const levTxt=hasLiq?` · 🎚️${lev}배 · 청산 ${liq.toFixed(2)}x`:(lev>1?` · 🎚️${lev}배`:'');
+  const autoTxt=r.autoTarget?` · 🎯${(sdir>0?r.autoTarget:1/r.autoTarget).toFixed(2)}x 자동`:'';
   const buffTxt=(r.buffs&&r.buffs.length)?' · '+r.buffs.map(b=>BUFFS[b].emo).join(''):'';
-  RV.t1.textContent=`${stock.emo} ${stock.name}${levTxt}${autoTxt}${buffTxt}`;
+  RV.t1.textContent=`${stock.emo} ${stock.name}${dirTxt}${levTxt}${autoTxt}${buffTxt}`;
   RV.t2.textContent=`${remain.toFixed(1)}초`;
 
   /* 마지막 3초 — 강제 매도 직전의 압박 */
@@ -1783,7 +1841,10 @@ setInterval(()=>{
     const idx=currentTickIdx();
     const mult=S.activeRound.path[idx];
     if(idx>=S.activeRound.path.length-1){ sellRound(false); return; }
-    if(S.activeRound.autoTarget && mult>=S.activeRound.autoTarget){ sellRound(true); return; }
+    /* 자동 익절 목표는 가격 배율이다. 숏은 그 역수까지 내려오면 같은 값어치가 된다
+       — 1.5x 목표면 숏은 0.67x. 둘 다 실제로 도달 가능한 값이라야 한다. */
+    const at=S.activeRound.autoTarget, ad=S.activeRound.dir||1;
+    if(at && (ad>0 ? mult>=at : mult<=1/at)){ sellRound(true); return; }
     if(S.mainTab==='trade')renderRoundView();
   }else{
     checkBankrupt();

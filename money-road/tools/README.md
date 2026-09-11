@@ -18,7 +18,7 @@ playwright 기본 탐색 순으로 찾는다. 이미 chromium이 있으면 `play
 ```bash
 ./check.sh                      # <script> 블록 문법 검사 — 커밋 전 항상 먼저
 npm test                        # 회귀 테스트 전체
-node test/phase20.js            # 하나만
+node test/phase21.js            # 하나만
 node sim/tier.js                # 밸런스 시뮬 (수십 초~몇 분 걸리는 것도 있다)
 node shot.js /tmp/a.png "S.cash=140000;S.daysLeft=1;setBet(70000);render()"
 ```
@@ -62,6 +62,7 @@ node shot.js /tmp/a.png "S.cash=140000;S.daysLeft=1;setBet(70000);render()"
 - `phase18` — 장 마감 줄 축소(한 줄), 완제하면 바로 정산, 이월 삭제 → 조기 상환 보너스
 - `phase19` — 레거시 구매 트리 삭제 → 트레이더 경험치(메타 레벨), 자동 익절이 메타 해금으로 이동
 - `phase20` — 난이도 선택(승천): 사다리 값, 가중치 재계산 누적 방지, 완제로만 해금, XP 배율
+- `phase21` — 공매도: 손익 부호 대칭, 방향별 청산선, 매도 등급 반전, 자동 익절 역수, 경고 영역 경계
 
 **기능을 의도적으로 없앤 뒤 옛 테스트가 깨지는 건 회귀가 아니다.** 그때는 테스트를 고친다.
 테스트가 레벨업/결과 모달에 막혀 멈추는 경우가 많으니, 라운드를 여러 번 돌릴 때는

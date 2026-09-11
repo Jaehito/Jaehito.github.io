@@ -1,0 +1,926 @@
+<title>마감이 보이는 상단바</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
+
+<!-- 아래 첫 <style>은 money-road/index.html 의 <style> 블록을 그대로 복사한 것이다.
+     목업을 실제 게임과 같은 픽셀로 그리기 위한 사본이므로 여기서 고치지 말 것 —
+     게임 쪽 스타일이 바뀌면 이 블록도 다시 복사해야 화면이 거짓말을 안 한다.
+     두 번째 <style>이 이 문서에만 쓰는 크롬이고, 첫 블록의 body/#app 규칙을 덮는다. -->
+<style>
+
+  :root{
+    --blue:#3182F6; --blue-weak:#e8f2ff; --blue-press:#1b64da;
+    --red:#f04452; --red-weak:#fdecee; --green:#00c471; --gold:#ffb020;
+    --ink:#191f28; --gray:#4e5968; --gray2:#8b95a1; --gray3:#b0b8c1;
+    --line:#f2f4f6; --bg:#f2f4f6; --card:#ffffff; --field:#f9fafb;
+    --radius:20px; --shadow:0 4px 20px rgba(0,0,0,.06);
+    --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; line-height:1.4; letter-spacing:-.02em; overflow-x:hidden;
+    overscroll-behavior-y:contain;}
+  html{overscroll-behavior-y:contain;}
+  #app{max-width:460px; margin:0 auto; min-height:100vh; position:relative; padding-bottom:calc(24px + var(--safe-b));}
+
+  .topbar{position:sticky; top:0; z-index:20; background:var(--bg); display:flex; align-items:flex-start;
+    justify-content:space-between; gap:10px; padding:12px 20px 8px;
+    box-shadow:0 6px 12px -8px rgba(0,0,0,.12);}
+  .topbar .brand{font-size:18px; font-weight:800;} .topbar .brand span{color:var(--blue);}
+  .top-right{display:flex; flex-direction:column; align-items:flex-end; gap:6px;}
+  .top-right-row{display:flex; align-items:center; gap:8px;}
+  .rank-chip{font-size:11.5px; font-weight:800; color:var(--blue); background:var(--blue-weak); padding:5px 10px; border-radius:999px; white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .tier-chip{font-size:11.5px; font-weight:800; color:#8a5a00; background:#fff9ec;
+    padding:6px 10px; border-radius:999px; white-space:nowrap;}
+  /* 난이도 선택 카드 */
+  .tier-list{display:flex; flex-direction:column; gap:7px; margin-top:15px; text-align:left;}
+  .diff-card{display:block; width:100%; border:2px solid var(--line); border-radius:15px;
+    padding:11px 13px; background:var(--card); text-align:left; cursor:pointer; font-family:inherit;}
+  .diff-card.sel{border-color:var(--blue); background:var(--blue-weak);}
+  .diff-card.lock{opacity:.5; cursor:default;}
+  .diff-top{display:flex; align-items:baseline; gap:8px;}
+  .diff-nm{font-size:14px; font-weight:900; color:var(--ink);}
+  .diff-clear{font-size:10.5px; font-weight:800; color:var(--green);}
+  .diff-xp{margin-left:auto; font-size:11.5px; font-weight:900; color:var(--blue);
+    font-variant-numeric:tabular-nums; flex-shrink:0;}
+  .diff-de{font-size:11.5px; font-weight:700; color:var(--gray); margin-top:4px; line-height:1.4;}
+  .diff-de.none{color:var(--gray3);}
+  .diff-card.sel .diff-de{color:#2a6ac4;}
+  .lv-chip{font-size:13px; font-weight:800; color:var(--gray); background:var(--card); padding:7px 12px; border-radius:999px; box-shadow:var(--shadow);}
+  .icon-btn{border:none; background:var(--card); color:var(--gray); width:36px; height:36px; border-radius:12px; font-size:15px; box-shadow:var(--shadow); display:grid; place-items:center; cursor:pointer;}
+
+  /* 레벨 진행바 */
+  .level-strip{margin:2px 20px 0; padding:0 2px;}
+  .lv-row{display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:5px;}
+  .lv-name{font-size:12.5px; font-weight:800; color:var(--gray); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .lv-name small{font-weight:700; color:var(--gray3); font-size:11px; margin-left:4px;}
+  .lv-pct{font-size:12.5px; font-weight:800; color:var(--green); flex-shrink:0;}
+  .lv-bar{height:5px; background:var(--line); border-radius:999px; overflow:hidden;}
+  .lv-bar>i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,var(--green),#00e5a0); transition:width .3s;}
+  .lv-name b{color:var(--ink); font-weight:900;}
+  .dday{font-size:13px; font-weight:900; color:var(--gray2); font-variant-numeric:tabular-nums; flex-shrink:0;}
+  .repay-sub{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:5px;
+    font-size:10.5px; font-weight:700; color:var(--gray3);}
+  .extend{border:none; background:var(--red-weak); color:var(--red); font-size:10.5px; font-weight:900;
+    border-radius:8px; padding:4px 9px; cursor:pointer; white-space:nowrap;}
+  /* 기한 경고 3단계 — D 숫자만 작아지면 "갑자기 마감"으로 느껴진다. 색과 문구가 같이 움직여야 다가오는 게 보인다. */
+  .dday.p-warn{color:var(--gold);}
+  .dday.p-bad{color:var(--red);}
+  .dday.last{color:var(--red); animation:ddayPulse 1.5s ease-in-out infinite;}
+  @keyframes ddayPulse{0%,100%{opacity:1} 50%{opacity:.4}}
+  .repay-sub b{font-weight:900; color:var(--gray2);}
+  .repay-sub.p-warn b{color:var(--gold);}
+  .repay-sub.p-bad b{color:var(--red);}
+  /* 진행바도 같이 물든다 — 색이 한 곳에서만 변하면 경고로 안 읽힌다 */
+  .lv-bar.p-warn>i{background:linear-gradient(90deg,#f0a500,var(--gold));}
+  .lv-bar.p-bad>i{background:linear-gradient(90deg,#d32f3c,var(--red));}
+  /* 시작 버튼 위 한 줄 — 평소엔 안 뜨고, 페이스가 위험할 때만 나온다 */
+  .pace-line{font-size:11.5px; font-weight:800; text-align:center; padding:8px; border-radius:11px; margin-bottom:9px;}
+  .pace-line.p-warn{background:#fff8e8; color:#b57800;}
+  .pace-line.p-bad{background:var(--red-weak); color:var(--red);}
+  .trade-go.danger{background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
+  /* 결과 팝업 맨 아래 장 마감 줄 */
+  .rs-close{margin-top:12px; padding:10px 12px; border-radius:12px; background:var(--field); border:1px solid var(--line);}
+  .cl-top{display:flex; justify-content:space-between; align-items:center; gap:8px;
+    font-size:11.5px; font-weight:800; color:var(--gray2);}
+  .cl-top.one{justify-content:center;}
+  .cl-dd{font-variant-numeric:tabular-nums; color:var(--gray); flex-shrink:0;}
+  .cl-dd b{font-size:14px;}
+  .rs-close.p-warn{background:#fff8e8; border-color:#ffe3ad;}
+  .rs-close.p-warn .cl-dd{color:#b57800;}
+  .rs-close.p-bad{background:var(--red-weak); border-color:#fbd2d6;}
+  .rs-close.p-bad .cl-dd{color:var(--red);}
+  .rs-close.p-done{background:#e7f9f1; border-color:#b8ecd6;}
+  .rs-close.p-done .cl-dd{color:var(--green);}
+  .intro-li{display:flex; gap:9px; align-items:flex-start; text-align:left; font-size:12.5px;
+    font-weight:700; color:var(--gray); line-height:1.55; margin-top:9px;}
+  .intro-li .e{flex-shrink:0; font-size:14px; line-height:1.4;}
+  @media (prefers-reduced-motion:reduce){ .dday.last{animation:none;} }
+
+  /* 잔고는 sticky 상단바에 둔다 — 히어로 카드는 스크롤하면 사라져서 정작 베팅할 때 안 보였고,
+     지갑 줄·파산선 안내까지 합쳐 같은 숫자가 화면에 세 번 나왔다. */
+  .tb-left{min-width:0;}
+  .cash-top{font-size:23px; font-weight:900; letter-spacing:-.04em; margin-top:1px;
+    font-variant-numeric:tabular-nums; white-space:nowrap;}
+
+  /* 메인 탭 스위처 */
+  .main-tabs{display:flex; gap:6px; margin:14px 20px 0; background:var(--card); border-radius:15px; padding:5px; box-shadow:var(--shadow);}
+  .main-tab{flex:1; text-align:center; padding:11px; border-radius:11px; font-size:14px; font-weight:800; color:var(--gray2); background:transparent; border:none; cursor:pointer;}
+  .main-tab.on{background:var(--ink); color:#fff;}
+
+  /* 단타 패널 */
+  .trade-panel{margin:12px 20px 0; background:var(--card); border-radius:20px; padding:14px 16px 16px; box-shadow:var(--shadow);}
+  .tp-head{display:flex; justify-content:flex-start; align-items:center; margin-bottom:9px;}
+  .tp-limit{font-size:11.5px; font-weight:700; color:var(--gray2); background:var(--field); padding:4px 9px; border-radius:999px;}
+  .stock-tabs{display:grid; gap:7px; margin-bottom:11px;}
+  .stock-tab{flex:1; border:2px solid var(--line); background:var(--card); border-radius:14px; padding:9px 8px; cursor:pointer; text-align:center;}
+  .stock-tab.sel{border-color:var(--blue); background:var(--blue-weak);}
+  .stock-tab.locked{opacity:.45; cursor:default;}
+  .stock-tab.mini{flex:0 0 auto; padding:9px 11px;}
+  .stock-tab.mini .n{font-size:10.5px; color:var(--gray2);}
+  .stock-tab .e{font-size:19px;}
+  .stock-tab .n{font-size:12px; font-weight:800; margin-top:2px;}
+  .stock-tab .v{font-size:10px; font-weight:700; color:var(--gray2); margin-top:1px;}
+
+  .bet-row{display:flex; align-items:center; gap:8px; background:var(--field); border-radius:14px; padding:8px 10px; margin-bottom:9px;}
+  .bet-row button{width:38px; height:38px; border:none; background:var(--card); border-radius:11px; font-size:18px; font-weight:800; color:var(--ink); box-shadow:var(--shadow); cursor:pointer;}
+  .bet-row .amt{flex:1; text-align:center; font-size:17px; font-weight:900; font-variant-numeric:tabular-nums;}
+  .bet-quicks{display:flex; gap:6px; margin-bottom:9px;}
+  .bet-quicks button{flex:1; border:none; background:var(--field); color:var(--gray); font-weight:800; font-size:12px; padding:8px 0; border-radius:10px; cursor:pointer;}
+  .bet-quicks button:active{background:var(--blue-weak); color:var(--blue);}
+  .auto-row{display:flex; gap:6px; margin-bottom:11px;}
+  .auto-row button{flex:1; border:2px solid var(--line); background:var(--card); color:var(--gray); font-weight:800; font-size:11.5px; padding:8px 0; border-radius:10px; cursor:pointer;}
+  .auto-row button.sel{border-color:var(--blue); background:var(--blue-weak); color:var(--blue);}
+  .lev-row button{padding:7px 0 6px; line-height:1.15;}
+  .lev-row button small{display:block; font-size:9.5px; font-weight:700; color:var(--gray3); margin-top:2px;}
+  .lev-row button.sel small{color:var(--blue); opacity:.8;}
+  .auto-label{font-size:11px; font-weight:700; color:var(--gray3); margin-bottom:6px;}
+  .trade-go{width:100%; border:none; border-radius:14px; padding:14px; font-size:15.5px; font-weight:900; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 8px 20px rgba(49,130,246,.3);}
+  .trade-go:disabled{background:var(--line); color:var(--gray3); box-shadow:none; cursor:default;}
+  /* 공매도 — 시작 버튼을 좌우로 쪼갠다. 색은 손익 규칙 그대로 상승=빨강 / 하락=파랑. */
+  .split-row{display:flex; gap:8px;}
+  .split-row .trade-go{flex:1; padding:12px 8px;}
+  .trade-go small{display:block; font-size:10.5px; font-weight:800; opacity:.85; margin-top:2px;}
+  .trade-go.go-long{background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
+  .trade-go.go-short{background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 8px 20px rgba(49,130,246,.3);}
+  .rs-chip.short{background:var(--blue-weak); color:var(--blue);}
+  .rs-chip.split{background:var(--field); color:var(--gray);}
+  .trade-note{font-size:11.5px; color:var(--gray3); font-weight:600; text-align:center; margin-top:9px; line-height:1.5;}
+
+  /* 진행중인 라운드 */
+  .round-view{text-align:center;}
+  .round-timer{font-size:11.5px; font-weight:800; color:var(--gray2); font-variant-numeric:tabular-nums;
+    display:flex; justify-content:space-between; gap:8px;}
+  .round-timer .rt-r{transition:color .2s;}
+  .round-timer .rt-r.warn{color:var(--red);}
+  .round-mult{font-size:40px; font-weight:900; letter-spacing:-.03em; margin:4px 0; font-variant-numeric:tabular-nums;
+    transition:transform .12s cubic-bezier(.2,1.6,.4,1), color .18s;}
+  .round-mult.up{color:var(--red);} .round-mult.down{color:var(--blue);} .round-mult.flat{color:var(--gray2);}
+  .round-chartbox{position:relative; margin:4px 0 10px; border-radius:12px;}
+  .round-chart{width:100%; height:150px; display:block; background:var(--field); border-radius:12px;}
+  .round-view.tense .round-chartbox{animation:rvEdge .5s ease-in-out infinite alternate;}
+  @keyframes rvEdge{ from{box-shadow:inset 0 0 0 0 rgba(240,68,82,0);} to{box-shadow:inset 0 0 0 2px var(--red);} }
+  .round-count{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:56px; font-weight:900; color:var(--red); opacity:0; pointer-events:none;
+    font-variant-numeric:tabular-nums;}
+  .round-count.on{animation:rvCnt .95s ease-out;}
+  @keyframes rvCnt{ 0%{opacity:.5; transform:scale(.7);} 70%{opacity:.16;} 100%{opacity:0; transform:scale(1.4);} }
+  .rv-txt{stroke:var(--field); stroke-width:2.5px; paint-order:stroke fill; stroke-linejoin:round;}
+  .rv-pulse{transform-box:fill-box; transform-origin:center; animation:rvPulse 1.15s ease-out infinite;}
+  @keyframes rvPulse{ 0%{transform:scale(1); opacity:.5;} 100%{transform:scale(3.4); opacity:0;} }
+  @media(prefers-reduced-motion:reduce){
+    .rv-pulse,.round-view.tense .round-chartbox,.round-count.on{animation:none;}
+    .round-mult{transition:none;}
+  }
+  .round-pnl{font-size:13px; font-weight:800; margin-bottom:8px;}
+  .round-pnl.up{color:var(--red);} .round-pnl.down{color:var(--blue);}
+  .round-bar{height:3px; background:var(--line); border-radius:2px; margin-bottom:12px; overflow:hidden;}
+  .round-bar i{display:block; height:100%; width:0%; background:var(--gray3);}
+  .round-view.tense .round-bar i{background:var(--red);}
+  .sell-btn{width:100%; border:none; border-radius:14px; padding:13px; font-size:16px; font-weight:900; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
+  /* ✂️ 분할 매도 — 매도 버튼을 좌우로 쪼갠다. 절반 쪽은 "덜 센 선택"으로 읽히게 톤을 낮춘다. */
+  /* 📰 장중 뉴스 — 상단 줄을 3초간 빌려 쓴다. 그래프를 가리지 않고 블록도 안 는다.
+     한 줄을 넘기면 레이아웃이 흔들리므로 넘치는 건 자른다. */
+  .round-timer .rt-l{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .rt-news{font-weight:900; animation:newsIn .3s cubic-bezier(.2,1.2,.4,1);}
+  .rt-news.up{color:var(--red);} .rt-news.down{color:var(--blue);}
+  @keyframes newsIn{from{opacity:0; transform:translateY(-4px);}to{opacity:1; transform:none;}}
+  @media(prefers-reduced-motion:reduce){ .rt-news{animation:none;} }
+  .rs-chip.news.hit{background:#e9f9f0; color:#00a862;}
+  .rs-chip.news.miss{background:var(--field); color:var(--gray2);}
+  /* 💧 물타기 — 매도 버튼 위 한 줄. 판당 한 번이라 쓰고 나면 사라진다. */
+  .water{display:flex; align-items:center; gap:8px; background:#eef6ff; border:1.5px solid #3182F633;
+    border-radius:12px; padding:9px 11px; margin-bottom:9px; font-size:12px; font-weight:800;
+    color:var(--blue); cursor:pointer;}
+  .water b{font-weight:900;}
+  .water .r{margin-left:auto; font-size:10.5px; font-weight:700; color:var(--gray2);}
+  .water.off{background:var(--field); border-color:var(--line); color:var(--gray3); cursor:default;}
+  .water.off .r{color:var(--gray3);}
+  .rs-chip.water{background:#eef6ff; color:var(--blue);}
+  .sell-row{display:flex; gap:8px;}
+  .sell-row .sell-btn{flex:1;}
+  .sell-btn small{display:block; font-size:11.5px; font-weight:800; opacity:.85; margin-top:2px;
+    font-variant-numeric:tabular-nums;}
+  .sell-btn.sell-half{background:var(--field); color:var(--gray); box-shadow:none;
+    border:2px solid var(--line);}
+
+  /* 연승/오늘의 기록 스트립 */
+  .strip{margin:9px 20px 0; background:var(--card); border-radius:16px; padding:10px 14px;
+    box-shadow:var(--shadow); cursor:pointer;}
+  .strip-row{display:flex; align-items:center; gap:10px; font-size:12px; font-weight:800; color:var(--gray);}
+  .strip-row .fire{color:var(--red); font-weight:900;}
+  .strip-row .cv{margin-left:auto; color:var(--gray3); font-weight:900; font-size:11px;}
+  .strip-buff{display:flex; align-items:center; gap:8px; background:#fff9ec; border:2px solid #ffb02040;
+    border-radius:12px; padding:8px 11px; margin-top:9px;}
+  .strip-buff .e{font-size:17px;}
+  .strip-buff .t{font-size:11.5px; font-weight:900; color:#8a5a00;}
+  .strip-buff .d{font-size:10.5px; font-weight:700; color:var(--gray2); margin-top:1px;}
+  .rec-grid{display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:10px;}
+  .rec{background:var(--field); border-radius:11px; padding:8px 10px;}
+  .rec .k{font-size:10px; font-weight:700; color:var(--gray2);}
+  .rec .v{font-size:14px; font-weight:900; margin-top:1px; font-variant-numeric:tabular-nums;}
+  .main-tab.locked{opacity:.35;}
+
+  .section-title{font-size:13.5px; font-weight:800; color:var(--gray2); margin:18px 20px 8px;}
+
+  .biz{display:flex; align-items:center; gap:12px; background:var(--card); border-radius:16px; padding:12px 14px; margin:0 20px 8px; box-shadow:var(--shadow);}
+  .biz .logo{width:42px; height:42px; border-radius:13px; background:var(--field); display:grid; place-items:center; font-size:21px; flex-shrink:0;}
+  .biz .mid{flex:1; min-width:0;}
+  .biz .nm{font-size:14.5px; font-weight:800; display:flex; align-items:center; gap:6px;}
+  .biz .cnt{font-size:11px; font-weight:800; color:var(--blue); background:var(--blue-weak); padding:1px 7px; border-radius:999px;}
+  .biz .ds{font-size:12px; color:var(--gray2); font-weight:650; margin-top:2px;}
+  .biz-buy{flex-shrink:0; border:none; border-radius:13px; padding:11px 14px; font-size:13px; font-weight:800; cursor:pointer; text-align:right; min-width:92px;}
+  .biz-buy.can{background:var(--ink); color:#fff;}
+  .biz-buy.cant{background:var(--field); color:var(--gray3);}
+  .biz-buy .p{display:block; font-size:13.5px; font-weight:900;}
+  .biz-buy .l{display:block; font-size:10.5px; font-weight:700; opacity:.75; margin-top:1px;}
+
+  /* 장세 신호 */
+  .signal{display:flex; align-items:center; gap:10px; border-radius:14px; padding:9px 12px; margin-bottom:10px; border:2px solid transparent;}
+  .signal.strong{background:#e9f9f0; border-color:#00c47133;}
+  .signal.mid{background:#fff6e5; border-color:#ffb02033;}
+  .signal.weak{background:var(--red-weak); border-color:#f0445233;}
+  .signal .sg-left{display:flex; align-items:center; gap:5px; flex-shrink:0;}
+  .signal .sg-emo{font-size:16px;}
+  .signal .sg-name{font-size:13.5px; font-weight:900;}
+  .signal.strong .sg-name{color:#00a862;} .signal.mid .sg-name{color:#c98600;} .signal.weak .sg-name{color:var(--red);}
+  .signal .sg-mid{min-width:0;}
+  .signal .sg-ds{font-size:11.5px; font-weight:700; color:var(--gray);}
+  .signal .sg-acc{font-size:10.5px; font-weight:700; color:var(--gray3); margin-top:1px;}
+  .liq-note{font-size:11px; font-weight:700; color:var(--gray2); background:var(--field); border-radius:10px; padding:7px 10px; margin-bottom:11px;}
+  .liq-note b{color:var(--red); font-weight:900;}
+
+  /* 거래 결과 카드 */
+  .rs-badge{font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px;}
+  .rs-badge.hot{background:var(--red-weak); color:var(--red);}
+  .rs-badge.cold{background:var(--field); color:var(--gray2);}
+  .rs-sum{font-size:19px; font-weight:900; font-variant-numeric:tabular-nums;}
+  .rs-sum.up{color:var(--red);} .rs-sum.down{color:var(--blue);}
+  .rs-rank{font-size:11.5px; font-weight:700; color:var(--gray2); margin-top:3px; font-variant-numeric:tabular-nums;}
+  .rs-rank b{color:var(--ink); font-weight:800;}
+  .rs-rank .up{color:var(--green); font-weight:800;} .rs-rank .down{color:var(--red); font-weight:800;}
+  .rs-like{color:var(--gray3); font-weight:800; font-size:11px; margin-left:5px; white-space:nowrap;}
+  /* 거래 결과 — 번 돈이 주인공, 나머지는 칩으로 분리(쩜으로 이어붙이지 않는다) */
+  .rs-money{font-size:28px; font-weight:900; letter-spacing:-.04em; font-variant-numeric:tabular-nums;
+    line-height:1.15; margin-top:2px;}
+  .rs-money.up{color:var(--red);} .rs-money.down{color:var(--blue);}
+  .rs-sub{font-size:12.5px; font-weight:700; color:var(--gray2); margin-top:2px;}
+  .rs-chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:11px;}
+  .rs-chip{font-size:11px; font-weight:800; border-radius:9px; padding:5px 9px;
+    background:var(--field); color:var(--gray);}
+  .rs-chip.grade{background:#e9f9f0; color:#00a862;}
+  .rs-chip.grade.low{background:var(--blue-weak); color:var(--blue);}
+  .rs-chip.lev{background:var(--blue-weak); color:var(--blue);}
+  .rs-chip.streak{background:#fff9ec; color:#8a5a00;}
+  .rs-rankline{margin-top:10px; padding-top:10px; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; font-size:12px; font-weight:800; color:var(--gray);
+    font-variant-numeric:tabular-nums;}
+  .rs-rankline .u{color:var(--green);} .rs-rankline .d{color:var(--red);}
+  .rs-box{text-align:left; max-height:56vh; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .rs-wallet{margin-top:12px; padding-top:10px; border-top:1px solid var(--line);
+    font-size:12px; font-weight:700; color:var(--gray2); font-variant-numeric:tabular-nums;}
+  .rs-wallet b{color:var(--ink); font-weight:900;}
+  /* 최소 베팅/빚 안내 */
+  .min-note{font-size:11px; font-weight:700; color:var(--gray2); background:var(--field);
+    border-radius:10px; padding:7px 10px; margin-bottom:9px;}
+  .min-note b{color:var(--ink); font-weight:900;}
+  .opt-row{display:flex; gap:6px; margin-bottom:9px;}
+  .opt{flex:1; border:none; background:var(--field); border-radius:10px; padding:8px 10px;
+    font-size:11px; font-weight:800; color:var(--gray2); text-align:left; cursor:pointer;
+    display:flex; align-items:center; gap:5px;}
+  .opt b{color:var(--blue); font-weight:900; margin-left:auto;}
+  .opt.open{background:var(--blue-weak);}
+  .opt.room{flex:0 0 auto; cursor:default; font-variant-numeric:tabular-nums;}
+  .buff-line{display:flex; align-items:center; gap:7px; background:#fff9ec; border:1.5px solid #ffb02040;
+    border-radius:10px; padding:7px 10px; margin-bottom:9px; font-size:11px; font-weight:800;
+    color:#8a5a00;}
+  .rv-wallet{font-size:11px; font-weight:700; color:var(--gray3); margin-bottom:8px;
+    font-variant-numeric:tabular-nums;}
+  .rv-wallet b{color:var(--gray); font-weight:800;}
+  .debt-note{font-size:11px; font-weight:700; color:#8a5a00; background:#fff9ec;
+    border-radius:10px; padding:7px 10px; margin-bottom:9px;}
+  /* 판이 끝난 뒤 경험치 정산 */
+  .xp-tbl{text-align:left; margin-top:15px; display:flex; flex-direction:column; gap:5px;
+    font-size:13px; font-weight:700; color:var(--gray);}
+  .xp-tbl>div{display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+    font-variant-numeric:tabular-nums;}
+  .xp-tbl b{font-weight:800; color:var(--ink); flex-shrink:0;}
+  .xp-tbl .pen, .xp-tbl .pen b{color:var(--red);}
+  .xp-tbl .sum{border-top:1px solid var(--line); padding-top:7px; margin-top:2px;
+    color:var(--ink); font-weight:900; font-size:15px;}
+  .xp-head{display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+    margin-top:17px; text-align:left; font-size:13.5px; font-weight:900;}
+  .xp-head small{font-size:11px; font-weight:700; color:var(--gray2); flex-shrink:0;}
+  .xp-bar{height:9px; background:var(--line); border-radius:999px; overflow:hidden; margin-top:6px;}
+  .xp-bar>i{display:block; height:100%; border-radius:999px;
+    background:linear-gradient(90deg,var(--blue),#6aa9ff); transition:width .5s ease-out;}
+  .unlock-pop{display:flex; align-items:center; gap:10px; background:var(--blue-weak);
+    border-radius:13px; padding:11px 13px; margin-top:10px; text-align:left;
+    animation:pop .35s cubic-bezier(.2,1.2,.4,1);}
+  .unlock-pop .e{font-size:22px; flex-shrink:0;}
+  .unlock-pop .t{display:block; font-size:12.5px; font-weight:900; color:var(--blue);}
+  .unlock-pop .d{display:block; font-size:11px; font-weight:700; color:var(--gray2); margin-top:1px;}
+  .retire-btn{display:block; width:calc(100% - 40px); margin:14px 20px 0; border:none; border-radius:15px;
+    padding:14px; font-size:14.5px; font-weight:900; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,#4e5968,#191f28);}
+
+  /* 해금 태그 */
+  .unlock-tag{flex-shrink:0; border-radius:13px; padding:10px 12px; font-size:11.5px; font-weight:800; text-align:center; min-width:92px;}
+  .unlock-tag.open{background:var(--green); color:#fff;}
+  .unlock-tag.closed{background:var(--field); color:var(--gray3);}
+
+  /* 거래 결과 오버레이 내부 */
+  .cm-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .cm-title{font-size:13.5px; font-weight:800;}
+  .cm-feed{display:flex; flex-direction:column; gap:7px; min-height:21px;}
+  .cm-msg{display:flex; align-items:flex-start; gap:7px; font-size:12px; font-weight:650; color:var(--gray); line-height:1.35; animation:cmIn .3s ease-out;}
+  .cm-msg .av{width:21px; height:21px; border-radius:7px; background:var(--field); display:grid; place-items:center; font-size:12px; flex-shrink:0;}
+  .cm-msg b{color:var(--ink); font-weight:800;}
+  @keyframes cmIn{from{opacity:0; transform:translateY(-4px);}to{opacity:1; transform:none;}}
+
+  /* 📋 패턴 도감 */
+  .dex-btn{margin-left:auto; flex-shrink:0; border:none; background:rgba(255,255,255,.75);
+    border-radius:9px; width:28px; height:28px; font-size:14px; cursor:pointer;
+    display:grid; place-items:center;}
+  .dex-note{font-size:11px; font-weight:700; color:var(--gray2); background:var(--field);
+    border-radius:10px; padding:8px 10px; margin:10px 0 4px; text-align:left; line-height:1.45;}
+  .dex-note b{color:var(--ink); font-weight:900;}
+  .scroller{max-height:52vh; overflow-y:auto; -webkit-overflow-scrolling:touch; text-align:left;}
+  .dex-sec{margin-top:12px;}
+  .dex-head{font-size:12.5px; font-weight:900; padding:6px 9px; border-radius:9px;}
+  .dex-head small{font-weight:700; font-size:10.5px; opacity:.75; margin-left:5px;}
+  .dex-head.strong{background:#e9f9f0; color:#00a862;}
+  .dex-head.mid{background:#fff6e5; color:#c98600;}
+  .dex-head.weak{background:var(--red-weak); color:var(--red);}
+  .dex-grid{display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:7px;}
+  .dex{background:var(--field); border-radius:12px; padding:8px 10px;}
+  .dex.unseen{opacity:.55;}
+  .dex.none{opacity:.35;}
+  .dex-top{display:flex; align-items:baseline; gap:6px;}
+  .dex-nm{font-size:12px; font-weight:900;}
+  .dex-pct{margin-left:auto; font-size:11px; font-weight:900; color:var(--gray2);
+    font-variant-numeric:tabular-nums;}
+  .dex svg{display:block; margin-top:4px;}
+  .dex-st{font-size:10px; font-weight:700; color:var(--gray2); margin-top:3px;
+    font-variant-numeric:tabular-nums;}
+
+  .hide{display:none !important;}
+  /* display를 정한 클래스(.water의 flex 등)가 UA의 [hidden]{display:none}을 이겨서
+     hidden을 걸어도 그대로 보인다. 한 줄로 막아둔다. */
+  [hidden]{display:none !important;}
+
+  .modal{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:28px; background:rgba(0,0,0,.5);} .modal.on{display:flex;}
+  .modal .box{width:100%; max-width:360px; background:var(--card); border-radius:26px; padding:30px 24px 22px; text-align:center; animation:pop .3s cubic-bezier(.2,1.2,.4,1);}
+  @keyframes pop{from{transform:scale(.85);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .modal .emo{font-size:56px;}
+  .modal .tt{font-size:21px; font-weight:900; margin:12px 0 6px;} .modal .dc{font-size:14.5px; color:var(--gray); font-weight:600; line-height:1.5;}
+  .modal .ok{margin-top:18px; width:100%; border:none; color:#fff; font-size:16px; font-weight:800; padding:15px; border-radius:15px; cursor:pointer; background:linear-gradient(135deg,#3182F6,#4c8dff);}
+  .modal .ok.bankrupt{background:linear-gradient(135deg,#4e5968,#191f28);}
+  .stat-grid{display:flex; gap:10px; margin:16px 0 4px;} .stat-grid .s{flex:1; background:var(--field); border-radius:14px; padding:12px 6px;} .stat-grid .s .k{font-size:11px; color:var(--gray2); font-weight:700;} .stat-grid .s .v{font-size:15px; font-weight:800; margin-top:3px;}
+  .lv-gain{margin-top:9px; font-size:13.5px; font-weight:700; color:var(--gray); background:var(--field); border-radius:12px; padding:10px 12px; text-align:left;} .lv-gain b{color:var(--blue); font-weight:800;}
+  /* 조기 상환 보너스는 레벨 보상과 나란히 뜨므로 금색으로 갈라둔다 — 현금이 들어온 줄이다 */
+  .lv-gain.early{background:#fff9ec;} .lv-gain.early b{color:#8a5a00;}
+
+  .toast{position:fixed; left:50%; bottom:28px; translate:-50% 0; background:rgba(25,31,40,.92); color:#fff; font-size:13.5px; font-weight:700; padding:11px 18px; border-radius:14px; z-index:70; opacity:0; transition:.25s; pointer-events:none; max-width:88%; text-align:center;} .toast.on{opacity:1;}
+</style>
+
+<style>
+
+/* ================= 목업 전용 크롬 (게임 CSS 아님) ================= */
+:root{
+  --wb-bg:#0f1216; --wb-ink:#e8ecf2; --wb-mut:#8b95a6; --wb-line:#242a33;
+  --wb-mark:#ffbc4d; --wb-mark-line:#a06c1a; --wb-mark-bg:#2b2114;
+  --wb-new:#4fd3a0; --wb-new-bg:#122b22;
+  --wb-del:#ff7a85; --wb-del-line:#a03a44;
+}
+body{background:var(--wb-bg); color:var(--wb-ink);
+  font-family:'Noto Sans KR',system-ui,-apple-system,sans-serif; line-height:1.6; letter-spacing:0;}
+.wrap{max-width:1300px; margin:0 auto; padding:0 16px; padding-block:0 72px;}
+.wrap *{user-select:auto;}
+
+.wb-head{border-bottom:1px solid var(--wb-line); padding-block:44px 26px; margin-bottom:34px;}
+.eyebrow{font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--wb-mut);}
+.wb-head h1{font-size:clamp(27px,5vw,40px); font-weight:900; letter-spacing:-.02em; margin:10px 0 0;
+  text-wrap:balance; line-height:1.15;}
+.wb-head .lede{font-size:15.5px; color:var(--wb-mut); max-width:64ch; margin:14px 0 0; font-weight:400;}
+.wb-head .lede b{color:var(--wb-ink); font-weight:700;}
+.legend{display:flex; flex-wrap:wrap; gap:10px 22px; margin-top:22px;
+  font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:12px; color:var(--wb-mut);}
+.legend span{display:flex; align-items:center; gap:8px;}
+.swatch{width:26px; height:14px; border-radius:4px; flex-shrink:0;}
+.swatch.chg{border:2px dashed var(--wb-mark-line); background:var(--wb-mark-bg);}
+.swatch.new{border:2px solid var(--wb-new); background:var(--wb-new-bg);}
+.swatch.del{border:2px solid var(--wb-del-line); background:#2b1418;}
+
+.spec{padding-block:34px; border-top:1px solid var(--wb-line);}
+.spec:first-of-type{border-top:none;}
+.spec-head{max-width:72ch;}
+.spec-head h2{font-size:23px; font-weight:800; letter-spacing:-.02em; margin:7px 0 0;}
+.spec-head p{font-size:14.5px; color:var(--wb-mut); margin:9px 0 0;}
+.spec-head p b{color:var(--wb-ink); font-weight:700;}
+
+.frames{display:flex; flex-wrap:wrap; gap:26px; margin-top:26px; align-items:flex-start;}
+figure.frame{margin:0; display:flex; flex-direction:column; gap:10px;}
+figure.frame figcaption{font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px;
+  font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--wb-mut);
+  display:flex; align-items:center; gap:9px; flex-wrap:wrap;}
+figure.frame figcaption em{font-style:normal; font-family:'Noto Sans KR',sans-serif; letter-spacing:0;
+  text-transform:none; font-size:12px; font-weight:400; color:var(--wb-mut); opacity:.85;}
+figure.frame.after figcaption{color:var(--wb-new);}
+figure.frame.bad figcaption{color:var(--wb-del);}
+
+/* 폰 프레임 — 게임은 라이트 전용이라 안쪽은 항상 라이트 */
+.phone{width:min(390px,92vw); background:var(--bg); color:var(--ink);
+  font-family:'Noto Sans KR',system-ui,sans-serif; line-height:1.4; letter-spacing:-.02em;
+  border-radius:26px; overflow:hidden; padding-bottom:18px;
+  border:1px solid var(--wb-line); box-shadow:0 18px 44px -20px rgba(10,20,40,.42);}
+.phone .topbar{box-shadow:none; position:static;}
+.phone.modal-only{padding:22px 16px; background:#8f96a3;}
+
+/* 스크롤된 상태를 그대로 그린다 — 고정 영역은 밖, 나머지는 잘린 상자 안 */
+.scrollbox{height:300px; overflow:hidden; position:relative;}
+.scrollbox>.inner{margin-top:-128px;}
+.scrollbox::after{content:''; position:absolute; inset:auto 0 0 0; height:34px;
+  background:linear-gradient(to bottom,transparent,var(--bg));}
+.pinbar{font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600; color:var(--wb-new);
+  letter-spacing:.08em; padding:3px 0 0; display:flex; align-items:center; gap:7px;}
+.pinbar.gone{color:var(--wb-del);}
+.pinbar i{display:block; width:14px; height:2px; border-radius:2px; background:currentColor;}
+
+/* 게임 CSS에 없는, 목업에만 필요한 조각 */
+.tb-left{min-width:0;}
+.cash-top{font-size:26px; font-weight:900; letter-spacing:-.03em; margin-top:2px;}
+.tp-limit{font-size:11.5px; font-weight:800; color:var(--gray2);}
+
+/* ===== 제안하는 새 요소: 상단바 상환 칩 ===== */
+.repay-chip{display:inline-flex; align-items:center; gap:5px; border:none; cursor:pointer;
+  font-family:inherit; font-size:12px; font-weight:900; letter-spacing:-.02em;
+  color:var(--gray); background:var(--card); padding:6px 11px; border-radius:999px;
+  box-shadow:var(--shadow); white-space:nowrap; font-variant-numeric:tabular-nums;}
+.repay-chip .goal{color:var(--ink);}
+.repay-chip .sep{color:var(--gray3); font-weight:700;}
+.repay-chip .dd{color:var(--gray2);}
+.repay-chip.p-warn .dd{color:var(--gold);}
+.repay-chip.p-bad .dd{color:var(--red);}
+.repay-chip.last{background:var(--red-weak); box-shadow:none;}
+.repay-chip.last .dd{color:var(--red); animation:ddayPulse 1.5s ease-in-out infinite;}
+
+/* 변경/신규/삭제 표시 */
+.mk{position:relative; outline:2px dashed var(--wb-mark-line); outline-offset:3px; border-radius:12px;}
+.mk.nw{outline:2px solid var(--wb-new);}
+.mk.rm{outline:2px solid var(--wb-del-line); border-radius:999px;}
+.mk.rm::before{content:''; position:absolute; inset:0; border-radius:inherit;
+  background:repeating-linear-gradient(135deg,rgba(240,68,82,.13) 0 6px,transparent 6px 12px);}
+.tag{position:absolute; top:-10px; left:-21px; z-index:3;
+  min-width:19px; height:19px; padding:0 5px; border-radius:999px;
+  background:var(--wb-mark); color:#fff; font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px; font-weight:600; display:grid; place-items:center; line-height:1;
+  box-shadow:0 0 0 2px var(--card), 0 2px 5px rgba(0,0,0,.2);}
+.mk.nw>.tag{background:var(--wb-new);}
+.mk.rm>.tag{background:var(--wb-del);}
+
+.notes{list-style:none; margin:24px 0 0; padding:0; display:grid; gap:9px; max-width:78ch;}
+.notes li{display:flex; gap:11px; align-items:flex-start; font-size:14px; color:var(--wb-mut);}
+.notes li b{color:var(--wb-ink); font-weight:700;}
+.notes .n{flex-shrink:0; min-width:19px; height:19px; padding:0 5px; border-radius:999px; margin-top:3px;
+  background:var(--wb-mark); color:#0f1216; font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px; font-weight:700; display:grid; place-items:center; line-height:1;}
+.notes .n.nw{background:var(--wb-new);}
+.notes .n.rm{background:var(--wb-del);}
+
+/* 수치 표 */
+.tbl{margin-top:24px; border:1px solid var(--wb-line); border-radius:14px; overflow:hidden;}
+.tbl table{width:100%; border-collapse:collapse; font-size:13.5px;}
+.tbl th,.tbl td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--wb-line);}
+.tbl th{font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--wb-mut); background:#141920;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl td{color:var(--wb-mut);} .tbl td:first-child{color:var(--wb-ink); font-weight:700;}
+.tbl td b{color:var(--wb-new); font-weight:800;}
+.tbl td i{font-style:normal; color:var(--wb-del);}
+.tbl .num{font-variant-numeric:tabular-nums; font-family:'IBM Plex Mono',monospace; font-size:12.5px;}
+
+.code{margin-top:20px; background:#141920; border:1px solid var(--wb-line); border-radius:12px;
+  padding:14px 16px; font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:12.5px;
+  color:var(--wb-mut); overflow-x:auto; line-height:1.75;}
+.code b{color:var(--wb-new); font-weight:600;}
+.code i{font-style:normal; color:var(--wb-del); text-decoration:line-through;}
+
+@media (max-width:820px){ .frames{gap:30px;} }
+
+/* 모달 본문 — 게임의 .emo/.tt/.dc/.ok는 .modal 아래로만 걸려 있어서
+   목업에서는 같은 값을 .mbox로 다시 정의한다(redesign.html과 같은 방식). */
+.mbox{width:100%; max-width:344px; background:var(--card); border-radius:26px;
+  padding:26px 22px 20px; text-align:center; color:var(--ink);
+  font-family:'Noto Sans KR',system-ui,sans-serif; letter-spacing:-.02em; line-height:1.4;}
+.mbox .emo{font-size:50px; line-height:1.1;}
+.mbox .tt{font-size:20px; font-weight:900; margin:10px 0 6px;}
+.mbox .dc{font-size:13.5px; color:var(--gray); font-weight:600; line-height:1.5;}
+.mbox .ok{margin-top:16px; width:100%; border:none; color:#fff; font-size:15.5px; font-weight:800;
+  padding:14px; border-radius:15px; cursor:pointer;
+  background:linear-gradient(135deg,#3182F6,#4c8dff);}
+.mbox .rs-box{max-height:none; overflow:visible;}
+</style>
+
+<div class="wrap">
+
+<header class="wb-head">
+  <div class="eyebrow">머니로드 · 상단바 개편 검토</div>
+  <h1>랭킹을 지우고 그 자리에 마감을 올린다</h1>
+  <p class="lede">지금은 스크롤을 조금만 내려도 <b>D-day와 상환금이 화면 밖으로 나갑니다.</b> 마감이 걸린 게임에서 마감이 안 보이는 셈입니다. 전국 순위 칩은 현금을 주지도 받지도 않는 순수 연출이라, 그 자리를 상환 정보에 내주는 게 낫다고 봅니다. 아래 폰 프레임은 게임의 실제 CSS로 그려서 색·간격·글자 크기가 지금 게임과 같습니다.</p>
+  <div class="legend">
+    <span><i class="swatch del"></i> 없어지는 자리</span>
+    <span><i class="swatch new"></i> 새로 생기는 자리</span>
+    <span><i class="swatch chg"></i> 고쳐 쓰는 자리</span>
+    <span>폰 프레임 = 390px</span>
+  </div>
+</header>
+
+<!-- ========== 01 ========== -->
+<section class="spec">
+  <div class="spec-head">
+    <div class="eyebrow">화면 01</div>
+    <h2>상단바 — 칩 하나를 바꿔 끼운다</h2>
+    <p>랭킹 칩이 있던 자리에 <b>상환 칩</b>이 들어갑니다. 상환금과 D-day가 위로 올라가므로 아래 상환 스트립에서는 그 줄을 뺍니다 — <b>중복이 없고, 스트립은 48px에서 28px로 줄어듭니다.</b></p>
+  </div>
+
+  <div class="frames">
+    <figure class="frame">
+      <figcaption>지금</figcaption>
+      <div class="phone">
+        <div class="topbar">
+          <div class="tb-left">
+            <div class="brand">머니<span>로드</span></div>
+            <div class="cash-top">12만원</div>
+          </div>
+          <div class="top-right">
+            <div class="rank-chip mk rm"><span class="tag">−</span>8,204,113위 (상위 63%)</div>
+            <div class="top-right-row">
+              <div class="lv-chip">Lv.1</div>
+              <button class="icon-btn">🔊</button>
+            </div>
+          </div>
+        </div>
+        <div class="level-strip">
+          <div class="lv-row mk"><span class="tag">↑</span><span class="lv-name">🔗 1차 상환금 <b>50만원</b></span><span class="dday">D-9</span></div>
+          <div class="lv-bar"><i style="width:24%"></i></div>
+          <div class="repay-sub"><span>9월 11일 (목) · 판당 <b>+17%</b> 필요</span></div>
+        </div>
+        <div class="main-tabs">
+          <button class="main-tab on">🎯 단타</button>
+          <button class="main-tab">🛒 상점</button>
+          <button class="main-tab">🔓 해금</button>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="frame after">
+      <figcaption>바뀜</figcaption>
+      <div class="phone">
+        <div class="topbar">
+          <div class="tb-left">
+            <div class="brand">머니<span>로드</span></div>
+            <div class="cash-top">12만원</div>
+          </div>
+          <div class="top-right">
+            <button class="repay-chip mk nw"><span class="tag">1</span>🔗 <span class="goal">50만원</span><span class="sep">·</span><span class="dd">D-9</span></button>
+            <div class="top-right-row">
+              <div class="lv-chip">Lv.1</div>
+              <button class="icon-btn">🔊</button>
+            </div>
+          </div>
+        </div>
+        <div class="level-strip">
+          <div class="lv-bar"><i style="width:24%"></i></div>
+          <div class="repay-sub mk"><span class="tag">2</span><span>1차 · 9월 11일 (목) · 판당 <b>+17%</b> 필요</span></div>
+        </div>
+        <div class="main-tabs">
+          <button class="main-tab on">🎯 단타</button>
+          <button class="main-tab">🛒 상점</button>
+          <button class="main-tab">🔓 해금</button>
+        </div>
+      </div>
+    </figure>
+  </div>
+
+  <ul class="notes">
+    <li><span class="n rm">−</span><span><b>전국 순위 칩을 삭제합니다.</b> 순위를 흉내내던 드리프트 시뮬레이션 약 45줄과 1초마다 도는 인터벌 하나가 같이 없어집니다. 아무 테스트도 랭킹을 보고 있지 않습니다.</span></li>
+    <li><span class="n nw">1</span><span><b>상환 칩이 그 자리를 씁니다.</b> 상단바는 이미 <code>position:sticky</code>라 추가 작업 없이 스크롤을 따라옵니다. 눌러서 인트로를 다시 열 수 있습니다(화면 05).</span></li>
+    <li><span class="n">2</span><span><b>스트립은 진행바와 설명줄만 남깁니다.</b> 위로 올라간 관문 이름(1차)은 설명줄 앞에 붙여 되살립니다.</span></li>
+  </ul>
+</section>
+
+<!-- ========== 02 ========== -->
+<section class="spec">
+  <div class="spec-head">
+    <div class="eyebrow">화면 02</div>
+    <h2>스크롤했을 때 — 지적하신 바로 그 지점</h2>
+    <p>390×740 폰에서 단타 화면의 스크롤 여지는 <b>128px</b>입니다. 그런데 상환 스트립이 y=88~136에 있어서, <b>베팅하러 내리면 그 128px 안에 통째로 묻힙니다.</b> 아래는 실제로 끝까지 내린 상태입니다.</p>
+  </div>
+
+  <div class="frames">
+    <figure class="frame bad">
+      <figcaption>지금 <em>· 끝까지 내림</em></figcaption>
+      <div class="phone">
+        <div class="topbar">
+          <div class="tb-left">
+            <div class="brand">머니<span>로드</span></div>
+            <div class="cash-top">12만원</div>
+          </div>
+          <div class="top-right">
+            <div class="rank-chip">8,204,113위 (상위 63%)</div>
+            <div class="top-right-row">
+              <div class="lv-chip">Lv.1</div>
+              <button class="icon-btn">🔊</button>
+            </div>
+          </div>
+        </div>
+        <div class="pinbar gone"><i></i> 여기까지만 고정 — D-day는 위로 밀려 사라짐</div>
+        <div class="scrollbox"><div class="inner">
+          <div class="level-strip">
+            <div class="lv-row"><span class="lv-name">🔗 1차 상환금 <b>50만원</b></span><span class="dday">D-9</span></div>
+            <div class="lv-bar"><i style="width:24%"></i></div>
+            <div class="repay-sub"><span>9월 11일 (목) · 판당 <b>+17%</b> 필요</span></div>
+          </div>
+          <div class="main-tabs">
+            <button class="main-tab on">🎯 단타</button>
+            <button class="main-tab">🛒 상점</button>
+            <button class="main-tab">🔓 해금</button>
+          </div>
+          <div class="trade-panel">
+            <div class="bet-row"><button>−</button><div class="amt">7만원</div><button>+</button></div>
+            <div class="bet-quicks"><button>25%</button><button>50%</button><button>75%</button><button>최대</button></div>
+            <div class="opt-row"><span class="opt room">🪦 여유 5만원</span></div>
+            <button class="trade-go">7만원 × 3배로 시작</button>
+            <div class="trade-note">끝까지 들고만 있으면 손해예요 — 패턴을 보고 반응하세요!</div>
+          </div>
+        </div></div>
+      </div>
+    </figure>
+
+    <figure class="frame after">
+      <figcaption>안 A <em>· 상단바 칩 (추천)</em></figcaption>
+      <div class="phone">
+        <div class="topbar">
+          <div class="tb-left">
+            <div class="brand">머니<span>로드</span></div>
+            <div class="cash-top">12만원</div>
+          </div>
+          <div class="top-right">
+            <button class="repay-chip"><span>🔗</span><span class="goal">50만원</span><span class="sep">·</span><span class="dd">D-9</span></button>
+            <div class="top-right-row">
+              <div class="lv-chip">Lv.1</div>
+              <button class="icon-btn">🔊</button>
+            </div>
+          </div>
+        </div>
+        <div class="pinbar"><i></i> 고정 78px — 상환금·D-day가 붙어 있음</div>
+        <div class="scrollbox"><div class="inner">
+          <div class="level-strip">
+            <div class="lv-bar"><i style="width:24%"></i></div>
+            <div class="repay-sub"><span>1차 · 9월 11일 (목) · 판당 <b>+17%</b> 필요</span></div>
+          </div>
+          <div class="main-tabs">
+            <button class="main-tab on">🎯 단타</button>
+            <button class="main-tab">🛒 상점</button>
+            <button class="main-tab">🔓 해금</button>
+          </div>
+          <div class="trade-panel">
+            <div class="bet-row"><button>−</button><div class="amt">7만원</div><button>+</button></div>
+            <div class="bet-quicks"><button>25%</button><button>50%</button><button>75%</button><button>최대</button></div>
+            <div class="opt-row"><span class="opt room">🪦 여유 5만원</span></div>
+            <button class="trade-go">7만원 × 3배로 시작</button>
+            <div class="trade-note">끝까지 들고만 있으면 손해예요 — 패턴을 보고 반응하세요!</div>
+          </div>
+        </div></div>
+      </div>
+    </figure>
+
+    <figure class="frame">
+      <figcaption>안 B <em>· 스트립 통째 고정</em></figcaption>
+      <div class="phone">
+        <div class="topbar">
+          <div class="tb-left">
+            <div class="brand">머니<span>로드</span></div>
+            <div class="cash-top">12만원</div>
+          </div>
+          <div class="top-right">
+            <div class="top-right-row">
+              <div class="lv-chip">Lv.1</div>
+              <button class="icon-btn">🔊</button>
+            </div>
+          </div>
+        </div>
+        <div class="level-strip">
+          <div class="lv-row"><span class="lv-name">🔗 1차 상환금 <b>50만원</b></span><span class="dday">D-9</span></div>
+          <div class="lv-bar"><i style="width:24%"></i></div>
+          <div class="repay-sub"><span>9월 11일 (목) · 판당 <b>+17%</b> 필요</span></div>
+        </div>
+        <div class="pinbar"><i></i> 고정 126px — 스크롤 여지 128px 중 38px을 더 먹음</div>
+        <div class="scrollbox" style="height:262px"><div class="inner" style="margin-top:-90px">
+          <div class="main-tabs">
+            <button class="main-tab on">🎯 단타</button>
+            <button class="main-tab">🛒 상점</button>
+            <button class="main-tab">🔓 해금</button>
+          </div>
+          <div class="trade-panel">
+            <div class="bet-row"><button>−</button><div class="amt">7만원</div><button>+</button></div>
+            <div class="bet-quicks"><button>25%</button><button>50%</button><button>75%</button><button>최대</button></div>
+            <div class="opt-row"><span class="opt room">🪦 여유 5만원</span></div>
+            <button class="trade-go">7만원 × 3배로 시작</button>
+            <div class="trade-note">끝까지 들고만 있으면 손해예요 — 패턴을 보고 반응하세요!</div>
+          </div>
+        </div></div>
+      </div>
+    </figure>
+  </div>
+
+  <div class="tbl">
+    <table>
+      <thead><tr><th>안</th><th>고정 영역</th><th>화면 전체 높이</th><th>중복</th><th>고치는 양</th></tr></thead>
+      <tbody>
+        <tr><td>지금</td><td class="num">88px</td><td class="num">868px</td><td>—</td><td>—</td></tr>
+        <tr><td>안 A · 상단바 칩</td><td class="num"><b>78px</b></td><td class="num"><b>848px</b> (−20)</td><td>없음</td><td>칩 신설 + 스트립 한 줄 삭제</td></tr>
+        <tr><td>안 B · 스트립 고정</td><td class="num"><i>126px</i> (+38)</td><td class="num">848px (−20)</td><td>없음</td><td>CSS 두 줄</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="notes">
+    <li><span class="n">?</span><span><b>안 B가 더 간단하지만 38px을 더 먹습니다.</b> 스크롤 여지가 128px뿐이라 그 중 30%가 고정 영역으로 넘어갑니다. 손이 닿는 베팅 버튼이 그만큼 아래로 밀립니다. 저는 <b>안 A</b>를 추천합니다.</span></li>
+  </ul>
+</section>
+
+<!-- ========== 03 ========== -->
+<section class="spec">
+  <div class="spec-head">
+    <div class="eyebrow">화면 03</div>
+    <h2>위험 3단계는 칩이 그대로 물려받는다</h2>
+    <p>지금 D-day는 여유·경고·위험 3단계로 색이 변하고, 마지막 거래일에는 깜빡입니다. <b>칩으로 옮겨도 같은 규칙을 씁니다</b> — 오히려 스크롤 중에도 보이니 경고가 제 일을 하게 됩니다.</p>
+  </div>
+
+  <div class="frames">
+    <figure class="frame">
+      <figcaption>여유 <em>· p-ok</em></figcaption>
+      <div class="phone" style="padding:14px 20px 16px">
+        <button class="repay-chip"><span>🔗</span><span class="goal">50만원</span><span class="sep">·</span><span class="dd">D-9</span></button>
+      </div>
+    </figure>
+    <figure class="frame">
+      <figcaption>경고 <em>· p-warn</em></figcaption>
+      <div class="phone" style="padding:14px 20px 16px">
+        <button class="repay-chip p-warn"><span>🔗</span><span class="goal">50만원</span><span class="sep">·</span><span class="dd">D-3</span></button>
+      </div>
+    </figure>
+    <figure class="frame">
+      <figcaption>위험 <em>· p-bad</em></figcaption>
+      <div class="phone" style="padding:14px 20px 16px">
+        <button class="repay-chip p-bad"><span>🔗</span><span class="goal">50만원</span><span class="sep">·</span><span class="dd">D-2</span></button>
+      </div>
+    </figure>
+    <figure class="frame">
+      <figcaption>마지막 거래일 <em>· 깜빡임</em></figcaption>
+      <div class="phone" style="padding:14px 20px 16px">
+        <button class="repay-chip last"><span>🔗</span><span class="goal">50만원</span><span class="sep">·</span><span class="dd">마지막날</span></button>
+      </div>
+    </figure>
+  </div>
+
+  <ul class="notes">
+    <li><span class="n">3</span><span>스트립에 있던 <b>기한 +3일 연장 버튼</b>은 그대로 설명줄 오른쪽에 남습니다 — 칩으로 올리면 상단바가 터집니다.</span></li>
+    <li><span class="n">4</span><span>금액이 커져도 칩은 안 넘칩니다. <code>fmtWon</code>이 <b>500억원</b>처럼 줄여주고, 관문 이름은 아래 설명줄에 있습니다.</span></li>
+  </ul>
+</section>
+
+<!-- ========== 04 ========== -->
+<section class="spec">
+  <div class="spec-head">
+    <div class="eyebrow">화면 04</div>
+    <h2>결과 팝업 — 순위 줄이 빠진다</h2>
+    <p>랭킹을 지우면 결과 팝업의 <b>전국 순위 줄</b>도 같이 없어집니다. 나머지는 그대로입니다.</p>
+  </div>
+
+  <div class="frames">
+    <figure class="frame">
+      <figcaption>지금</figcaption>
+      <div class="phone modal-only">
+        <div class="mbox">
+          <div class="rs-box">
+            <div class="cm-head"><span class="cm-title">💬 거래 결과</span></div>
+            <div class="rs-money up">+184,000원</div>
+            <div class="rs-sub">1.92배에 팔았어요</div>
+            <div class="rs-chips">
+              <span class="rs-chip grade">매도 A · 81%</span>
+              <span class="rs-chip lev">🎚️ 3배</span>
+            </div>
+            <div class="rs-rankline mk rm"><span class="tag">−</span><span>전국 402,118위</span><span class="u">▲ 1,204</span></div>
+            <div class="cm-feed" style="margin-top:11px">
+              <div class="cm-msg"><span class="av">💬</span><span><b>존버왕</b> 고점에서 칼같이 파네요 <span class="rs-like">♥ 312</span></span></div>
+            </div>
+            <div class="rs-wallet">잔고 <b>30만원</b></div>
+            <div class="rs-close p-ok"><div class="cl-top one"><span class="cl-dd">D-9 → <b>D-8</b></span></div></div>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="frame after">
+      <figcaption>바뀜</figcaption>
+      <div class="phone modal-only">
+        <div class="mbox">
+          <div class="rs-box">
+            <div class="cm-head"><span class="cm-title">💬 거래 결과</span></div>
+            <div class="rs-money up">+184,000원</div>
+            <div class="rs-sub">1.92배에 팔았어요</div>
+            <div class="rs-chips">
+              <span class="rs-chip grade">매도 A · 81%</span>
+              <span class="rs-chip lev">🎚️ 3배</span>
+            </div>
+            <div class="cm-feed" style="margin-top:11px">
+              <div class="cm-msg"><span class="av">💬</span><span><b>존버왕</b> 고점에서 칼같이 파네요 <span class="rs-like">♥ 312</span></span></div>
+            </div>
+            <div class="rs-wallet">잔고 <b>30만원</b></div>
+            <div class="rs-close p-ok"><div class="cl-top one"><span class="cl-dd">D-9 → <b>D-8</b></span></div></div>
+          </div>
+        </div>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<!-- ========== 05 ========== -->
+<section class="spec">
+  <div class="spec-head">
+    <div class="eyebrow">화면 05</div>
+    <h2>인트로 — 팝업은 멀쩡한데 손님만 못 봅니다</h2>
+    <p>저장소를 비우고 켜면 정상적으로 뜹니다. 문제는 <b>예전 저장의 "봤음" 표시를 그대로 물려받은 것</b>입니다. 게임이 통째로 바뀌었는데 그 표시만 살아남았습니다.</p>
+  </div>
+
+  <div class="code">
+    <i>if(typeof META.seenIntro!=='boolean')META.seenIntro=false;</i><br>
+    <i>META={ … seenIntro:!!o.seenIntro};   // v4에서 그대로 물려받음</i><br><br>
+    <b>const INTRO_V=2;                    // 규칙이 바뀌면 숫자만 올린다</b><br>
+    <b>if(META.introV!==INTRO_V) showIntroModal();</b>
+  </div>
+
+  <div class="frames">
+    <figure class="frame after">
+      <figcaption>첫 판 시작 전 <em>· 한 번</em></figcaption>
+      <div class="phone modal-only">
+        <div class="mbox">
+          <div class="emo">🔗</div>
+          <div class="tt">이 돈, 빌린 돈이에요</div>
+          <div class="dc">시드머니는 대출금이에요. 정해진 거래일 안에 상환금을 만들어 갚아야 해요.</div>
+          <div class="stat-grid">
+            <div class="s"><div class="k">1차 상환금</div><div class="v">50만원</div></div>
+            <div class="s"><div class="k">기한</div><div class="v">13거래일</div></div>
+          </div>
+          <div class="intro-li"><span class="e">📅</span><span>단타 <b>한 판이 끝날 때마다 하루</b>가 지나요.</span></div>
+          <div class="intro-li"><span class="e">🏦</span><span>기한 안에 못 갚으면 <b>반대매매</b>로 계좌가 청산돼요.</span></div>
+          <div class="intro-li"><span class="e">💰</span><span>일찍 갚으면 남은 거래일 하루당 상환금의 10%를 현금으로 받아요.</span></div>
+          <button class="ok">시작하기</button>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="frame after">
+      <figcaption>칩을 누르면 <em>· 언제든 다시</em></figcaption>
+      <div class="phone" style="padding:0 0 18px">
+        <div class="topbar">
+          <div class="tb-left">
+            <div class="brand">머니<span>로드</span></div>
+            <div class="cash-top">12만원</div>
+          </div>
+          <div class="top-right">
+            <button class="repay-chip mk nw"><span class="tag">👆</span><span>🔗</span><span class="goal">50만원</span><span class="sep">·</span><span class="dd">D-9</span></button>
+            <div class="top-right-row">
+              <div class="lv-chip">Lv.1</div>
+              <button class="icon-btn">🔊</button>
+            </div>
+          </div>
+        </div>
+        <div class="level-strip">
+          <div class="lv-bar"><i style="width:24%"></i></div>
+          <div class="repay-sub"><span>1차 · 9월 11일 (목) · 판당 <b>+17%</b> 필요</span></div>
+        </div>
+        <div style="padding:26px 20px 8px; text-align:center; font-size:12.5px; font-weight:700; color:var(--gray2); line-height:1.7">
+          지금은 팝업을 한 번 닫으면<br>규칙을 다시 볼 곳이 없습니다.<br>
+          <span style="color:var(--blue)">칩을 누르면 같은 안내가 다시 열립니다.</span>
+        </div>
+      </div>
+    </figure>
+  </div>
+
+  <ul class="notes">
+    <li><span class="n nw">5</span><span><b><code>seenIntro</code> 불리언을 <code>introV</code> 숫자로 바꿉니다.</b> 이미 v5로 넘어온 저장까지 포함해 전부 한 번 더 보게 됩니다 — 손님 폰도 포함입니다.</span></li>
+    <li><span class="n nw">6</span><span><b>칩을 눌러 다시 열 수 있습니다.</b> 블록은 안 늘고 칩은 이미 거기 있습니다.</span></li>
+    <li><span class="n">7</span><span>팝업 문구 자체는 안 건드립니다 — D-day 설명은 이미 충분합니다.</span></li>
+  </ul>
+</section>
+
+</div>

@@ -41,14 +41,14 @@ const { launch, GAME: url } = require('../lib/browser');
    });}));
  await p.close();
 
- console.log('\n=== 2. 완제 → 버튼 하나로 정산 + 레거시 화면 ===');
+ console.log('\n=== 2. 완제 → 버튼 하나로 정산 + 경험치 화면 ===');
  p=await fresh();
  L('완제 직전 상태', await p.evaluate(()=>{
    /* 마지막 관문만 남기고 목표를 채워 둔 뒤 한 판 끝내면 checkLevelUp이 완제로 넘긴다 */
    S.gate=GATES.length-1; S.level=7;
    S.cash=S.peakCash=GATES[GATES.length-1].goal;
    S.daysLeft=5;
-   return {gate:S.gate, gateDoneYet:gateDone(), 포인트:META.legacyPoints||0};}));
+   return {gate:S.gate, gateDoneYet:gateDone(), xp:META.xp||0};}));
 
  L('완제 모달', await p.evaluate(()=>{
    checkLevelUp();
@@ -60,15 +60,15 @@ const { launch, GAME: url } = require('../lib/browser');
        s.querySelector('.k').textContent+' '+s.querySelector('.v').textContent),
      gateDone:gateDone()};}));
 
- const expect = await p.evaluate(()=>legacyGain(S.peakCash));
+ const expect = await p.evaluate(()=>settleOf(0).total);
  await p.evaluate(()=>$('mOk').click());
  await p.waitForTimeout(150);
  L('버튼 누른 뒤', await p.evaluate(()=>({
    화면:$('modalBox').querySelector('.tt').textContent,
-   레거시목록:!!$('lgList'),
-   포인트:META.legacyPoints||0,
-   pendingLegacy:META.pendingLegacy})));
- console.log('기대 포인트(은퇴와 동일한 100%)', expect);
+   경험치표:!!document.querySelector('.xp-tbl'),
+   xp:META.xp||0,
+   pendingSettle:!!META.pendingSettle})));
+ console.log('기대 XP(은퇴와 동일한 100%)', expect);
  await p.close();
 
  console.log('\n=== 3. 조기 상환 보너스 — 이월을 대체한다 ===');

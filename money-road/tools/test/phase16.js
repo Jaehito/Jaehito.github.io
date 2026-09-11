@@ -18,7 +18,9 @@ const { launch, GAME: url } = require('../lib/browser');
  console.log('=== 1. 배당주 삭제 ===');
  let p=await fresh();
  L('', await p.evaluate(()=>({SHOP_IDS, 상점:[...document.querySelectorAll('#shopList .nm')].map(e=>e.textContent.replace(/\s+/g,' ').trim()),
-   배당함수:typeof window.payDividend, 레거시:LEGACY.map(x=>x.name)})));
+   배당함수:typeof window.payDividend,
+   /* 레거시 트리는 C단계에서 삭제됐다(phase19). 메타 해금 목록이 그 자리다. */
+   메타해금:META_UNLOCKS.map(x=>x.name)})));
  await p.close();
 
  console.log('\n=== 2. 상환 스트립 ===');

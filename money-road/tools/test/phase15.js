@@ -15,7 +15,10 @@ const { launch, GAME: url } = require('../lib/browser');
  console.log('=== A안: 블록 축소 ===');
  let p=await fresh();
  L('', await p.evaluate(()=>{
-   S.level=6;S.peakCash=1.2e9;S.cash=320000000;S.upg.autosell=true;S.upg.leverageLv=3;
+   /* 자동 익절은 C단계에서 판 안 업그레이드 → 메타 해금으로 옮겨갔다(phase19). 여기서는
+      화면 배치만 보므로 XP를 채워서 켠다. */
+   META.xp=999; saveMeta();
+   S.level=6;S.peakCash=1.2e9;S.cash=320000000;S.upg.leverageLv=3;
    S.themeUnlocked=true;S.buffs=['info'];S.betAutoTarget=1.5;setBet(32000000);render();
    return {히어로:!!document.querySelector('.hero'), 지갑줄:!!document.querySelector('.wallet'),
      레벨힌트:!!document.getElementById('lvHint'), 패널제목:!!document.querySelector('.tp-title'),

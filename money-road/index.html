@@ -31,6 +31,22 @@
   .top-right{display:flex; flex-direction:column; align-items:flex-end; gap:6px;}
   .top-right-row{display:flex; align-items:center; gap:8px;}
   .rank-chip{font-size:11.5px; font-weight:800; color:var(--blue); background:var(--blue-weak); padding:5px 10px; border-radius:999px; white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .tier-chip{font-size:11.5px; font-weight:800; color:#8a5a00; background:#fff9ec;
+    padding:6px 10px; border-radius:999px; white-space:nowrap;}
+  /* 난이도 선택 카드 */
+  .tier-list{display:flex; flex-direction:column; gap:7px; margin-top:15px; text-align:left;}
+  .diff-card{display:block; width:100%; border:2px solid var(--line); border-radius:15px;
+    padding:11px 13px; background:var(--card); text-align:left; cursor:pointer; font-family:inherit;}
+  .diff-card.sel{border-color:var(--blue); background:var(--blue-weak);}
+  .diff-card.lock{opacity:.5; cursor:default;}
+  .diff-top{display:flex; align-items:baseline; gap:8px;}
+  .diff-nm{font-size:14px; font-weight:900; color:var(--ink);}
+  .diff-clear{font-size:10.5px; font-weight:800; color:var(--green);}
+  .diff-xp{margin-left:auto; font-size:11.5px; font-weight:900; color:var(--blue);
+    font-variant-numeric:tabular-nums; flex-shrink:0;}
+  .diff-de{font-size:11.5px; font-weight:700; color:var(--gray); margin-top:4px; line-height:1.4;}
+  .diff-de.none{color:var(--gray3);}
+  .diff-card.sel .diff-de{color:#2a6ac4;}
   .lv-chip{font-size:13px; font-weight:800; color:var(--gray); background:var(--card); padding:7px 12px; border-radius:999px; box-shadow:var(--shadow);}
   .icon-btn{border:none; background:var(--card); color:var(--gray); width:36px; height:36px; border-radius:12px; font-size:15px; box-shadow:var(--shadow); display:grid; place-items:center; cursor:pointer;}
 
@@ -319,6 +335,7 @@
     <div class="top-right">
       <div class="rank-chip" id="rankChip">-</div>
       <div class="top-right-row">
+        <div class="tier-chip hide" id="tierChip"></div>
         <div class="lv-chip" id="lvChip">Lv.1</div>
         <button class="icon-btn" id="muteBtn">🔊</button>
       </div>
@@ -497,20 +514,21 @@ const PATTERN_TIER={up:'strong',spike:'strong',delayup:'strong',
   v:'mid',w:'mid',m:'mid',invv:'mid',
   down:'weak',flat:'weak',delaydown:'weak'};
 /* 하락 가중치 — 상승/하락 패턴의 등장 비율을 옮겨 판당 기댓값을 조절하는 다이얼.
-   실측(각 800회, 관문+이월 5일 기준): +0%p 클리어 33% → +4%p 20% → +8%p 5%.
-   1회차는 +4%p로 시작한다(클리어 20% · 성공 런 29분 · 실패 런 9분).
-   나중에 회차 난이도를 붙이면 이 값을 회차마다 올리면 된다. */
-const DOWN_SHIFT=0.04;
-(function shiftPatternWeights(){
-  const HALF=0.29;   // strong 합 = weak 합 = 0.29
-  PATTERNS.forEach(p=>{
-    const t=PATTERN_TIER[p.id];
-    if(t==='weak')p.weight+=DOWN_SHIFT*(p.weight/HALF);
-    else if(t==='strong')p.weight-=DOWN_SHIFT*(p.weight/HALF);
+   예전에는 고정 상수(DOWN_SHIFT=0.04) 하나였다. 이제 난이도 단계가 정하므로
+   판을 시작할 때마다 다시 계산한다. 원본 비율은 BASE_WEIGHTS에 남겨둬야
+   단계를 바꿀 때 이전 단계의 보정 위에 또 보정하는 일이 안 생긴다. */
+const BASE_WEIGHTS=PATTERNS.map(p=>p.weight);
+function applyTierWeights(){
+  const d=tierOf().down, HALF=0.29;   // strong 합 = weak 합 = 0.29
+  PATTERNS.forEach((p,i)=>{
+    const t=PATTERN_TIER[p.id], w0=BASE_WEIGHTS[i];
+    p.weight = t==='weak' ? w0+d*(w0/HALF)
+             : t==='strong' ? w0-d*(w0/HALF)
+             : w0;
   });
   const tot=PATTERNS.reduce((a,p)=>a+p.weight,0);
   PATTERNS.forEach(p=>p.weight/=tot);
-})();
+}
 const SIGNAL_TIERS=['strong','mid','weak'];
 const SIGNAL_INFO={
   strong:{emo:'🟢',name:'강세',ds:'큰 고점이 나올 만한 장'},
@@ -583,7 +601,40 @@ const EXTEND_DAYS=3, EXTEND_COST_FRAC=0.25;   // 기한 연장: 자산의 25%로
      이월0 + 보너스 10%/일 + 일수 +1    클리어 19%   ← 채택. 현행과 같은 난이도
    그래서 GATES 일수를 전부 +1 했다(12→13, 14→15, 16→17). */
 const EARLY_BONUS_RATE=0.10;
+
+/* ===== 난이도 단계 =====
+   새 판을 시작할 때 고른다. 1단계만 열려 있고, 그 단계를 "완제"해야 다음이 열린다 —
+   파산으로는 안 열린다. 디메리트는 누적이고 선택 화면에 전부 펼쳐 둔다.
+
+   쓸 수 있는 축은 셋이었는데 하나는 버렸다. sim/tier.js 실측(각 500회):
+     최소 레버리지 1배 클리어 10% · 2배 23% · 3배 35% · 5배 41%
+   배율을 낮추면 파산은 사라지지만(1배 파산률 0%) 복리가 느려져 관문을 못 채운다
+   (1배 관문실패 90%). 즉 레버리지는 난이도가 아니라 속도 다이얼이라, 디메리트로
+   쓰면 방향이 뒤집힌다. 최소 배율은 MIN_LEVERAGE=3 고정으로 두고 빼버렸다.
+
+   남은 두 축은 단조롭다:
+     하락 가중  +0%p 33% · +2 28% · +4 19% · +6 13% · +8 7% · +12 1%
+     관문 일수  +2 27% · +0 21% · −2 11% · −4 7%
+   3단계가 지금까지의 난이도(하락 +4%p)와 같다. 기존 플레이를 사다리 한가운데 두면
+   위아래 양쪽으로 갈 곳이 남는다.
+
+   사다리 실측: 37% → 27% → 17% → 13% → 7% */
+const TIERS=[
+  {n:'개미',   emo:'🐜', down:0.00, dday:0,  xp:1.0, de:[]},
+  {n:'실전',   emo:'💼', down:0.02, dday:0,  xp:1.3, de:['📉 하락 패턴 +2%p']},
+  {n:'하락장', emo:'🐻', down:0.04, dday:0,  xp:1.6, de:['📉 하락 패턴 +4%p']},
+  {n:'촉박',   emo:'⏳', down:0.04, dday:-2, xp:2.0, de:['📉 하락 패턴 +4%p','🔗 관문 기한 −2거래일']},
+  {n:'벼랑',   emo:'🪂', down:0.06, dday:-2, xp:2.5, de:['📉 하락 패턴 +6%p','🔗 관문 기한 −2거래일']},
+];
+/* META.cleared = 완제한 단계의 수. 1단계를 완제하면 1이 되고 2단계가 열린다. */
+function maxTierIdx(){return Math.min(TIERS.length-1,(META.cleared||0));}
+function tierIdx(){return Math.min(TIERS.length-1,Math.max(0,(S&&S.tier)|0));}
+function tierOf(){return TIERS[tierIdx()];}
+
 function gateOf(){return GATES[Math.min(GATES.length-1,S.gate||0)];}
+/* 관문 기한은 난이도가 깎는다. 4일 밑으로는 안 내린다 — 한 관문을 세 판에 넘으라는 건
+   기한이 아니라 그냥 못 하는 판이 된다. */
+function gateDaysOf(i){return Math.max(4,GATES[Math.min(GATES.length-1,i)].days+tierOf().dday);}
 function gateDone(){return (S.gate||0)>=GATES.length;}
 /* 거래일 → 날짜. 주말은 건너뛴다(장이 안 서니까). */
 function dateOfDay(n){
@@ -650,9 +701,9 @@ function metaHas(id){ const u=META_UNLOCKS.find(x=>x.id===id); return !!u&&(META
 function nextUnlock(){ return META_UNLOCKS.find(u=>(META.xp||0)<u.need)||null; }
 /* 방금 끝난 판의 정산 내역. penalty는 파산/반대매매에만 붙는다. */
 function settleOf(penalty){
-  const base=xpOfPeak(S.peakCash), early=Math.max(0,S.earlyXp||0);
-  return {peak:S.peakCash, base, early, penalty,
-    total:Math.max(1,Math.round((base+early)*(1-penalty)))};
+  const base=xpOfPeak(S.peakCash), early=Math.max(0,S.earlyXp||0), t=tierOf();
+  return {peak:S.peakCash, base, early, penalty, mult:t.xp, tier:tierIdx(), tierName:t.n, tierEmo:t.emo,
+    total:Math.max(1,Math.round((base+early)*(1-penalty)*t.xp))};
 }
 
 /* ===== 티켓 (연승 보상) =====
@@ -704,23 +755,24 @@ function loadMeta(){
   try{const r=localStorage.getItem(META_KEY);
     if(r){META=JSON.parse(r);
       if(typeof META.xp!=='number')META.xp=0;
+      if(typeof META.cleared!=='number')META.cleared=0;
       if(typeof META.seenIntro!=='boolean')META.seenIntro=false;
       return;}
     /* v4까지의 레거시 포인트는 1pt = 1XP로 옮겨준다. 트리는 사라졌지만
        그때까지 쌓은 판들을 없던 일로 만들 이유는 없다. */
     const old=localStorage.getItem('moneyroad2_meta_v4');
     if(old){const o=JSON.parse(old)||{};
-      META={mute:!!o.mute, xp:Math.max(0,o.legacyPoints|0), pendingSettle:null, seenIntro:!!o.seenIntro};
+      META={mute:!!o.mute, xp:Math.max(0,o.legacyPoints|0), cleared:0, pendingSettle:null, seenIntro:!!o.seenIntro};
       saveMeta(); return;}
   }catch(e){}
-  META={mute:false, xp:0, pendingSettle:null, seenIntro:false};
+  META={mute:false, xp:0, cleared:0, pendingSettle:null, seenIntro:false};
 }
 function saveMeta(){try{localStorage.setItem(META_KEY,JSON.stringify(META));}catch(e){}}
 
 /* run state */
 let S=null;
 const START_CASH=100000;   // 시드머니는 늘 여기서 시작한다(레거시 "시드머니" 강화 삭제)
-function newState(){
+function newState(tier){
   const now=Date.now();
   const minLev=minLevOf();
   const s={cash:START_CASH, level:1, peakCash:START_CASH,
@@ -729,8 +781,10 @@ function newState(){
     selectedStock:'stable', betAmount:Math.min(START_CASH,MIN_BET*5), betAutoTarget:0, betLeverage:minLev,
     activeRound:null, pending:null, lastResult:null, mainTab:'trade', lastTick:now,
     streak:0, buffs:[], today:null, stripOpen:false, autoOpen:false,
-    gate:0, daysLeft:GATES[0].days, dayCount:0, earlyXp:0};
+    gate:0, dayCount:0, earlyXp:0,
+    tier:Math.min(TIERS.length-1,Math.max(0,tier|0))};
   S=s;
+  s.daysLeft=gateDaysOf(0);   // tier가 정해진 뒤라야 기한을 계산할 수 있다
   ensureToday();
   return s;
 }
@@ -777,19 +831,51 @@ function loadRun(){
     if(typeof S.streak!=='number')S.streak=0;
     if(!Array.isArray(S.buffs))S.buffs=[];
     if(typeof S.autoOpen!=='boolean')S.autoOpen=false;
-    if(typeof S.gate!=='number'){S.gate=0;S.daysLeft=GATES[0].days;S.dayCount=0;}
+    if(typeof S.tier!=='number')S.tier=0;
+    if(typeof S.gate!=='number'){S.gate=0;S.daysLeft=gateDaysOf(0);S.dayCount=0;}
     ensureToday();
     return true;}
   }catch(e){}
   return false;
 }
-function startRun(){S=newState();saveRun();}
+function startRunAt(tier){ clearRun(); S=newState(tier); applyTierWeights(); saveRun(); }
+function startRun(){ startRunAt(0); }
+
+/* ===== 난이도 선택 화면 =====
+   정산이 끝나고 새 판에 들어가기 직전에만 뜬다. 판이 시작되면 다시 볼 일이 없다.
+   잠긴 단계도 목록에 남겨서 "무엇이 기다리는지"는 보이게 하고, 디메리트는 접지 않는다 —
+   고르기 전에 무엇을 짊어지는지 알아야 선택이다. */
+let tierPick=0;
+function showTierModal(){ tierPick=maxTierIdx(); renderTierModal(); $('modal').classList.add('on'); }
+function renderTierModal(){
+  const maxI=maxTierIdx();
+  $('modalBox').innerHTML=`<div class="emo">🎚️</div><div class="tt">어디서 시작할까요?</div>
+    <div class="dc">높은 단계일수록 경험치를 더 받아요.</div>
+    <div class="tier-list">${TIERS.map((t,i)=>{
+      if(i>maxI)return `<div class="diff-card lock">
+        <div class="diff-top"><span class="diff-nm">🔒 ${i+1} · ${t.n}</span></div>
+        <div class="diff-de">${i}단계를 완제하면 열려요</div></div>`;
+      const cleared=(META.cleared||0)>i;
+      return `<button class="diff-card ${i===tierPick?'sel':''}" data-tier="${i}">
+        <div class="diff-top"><span class="diff-nm">${t.emo} ${i+1} · ${t.n}</span>
+          ${cleared?`<span class="diff-clear">✓ 완제</span>`:''}
+          <span class="diff-xp">XP ×${t.xp.toFixed(1)}</span></div>
+        <div class="diff-de${t.de.length?'':' none'}">${t.de.length?t.de.join(' · '):'디메리트 없음'}</div>
+      </button>`;
+    }).join('')}</div>
+    <button class="ok" id="mOk">${TIERS[tierPick].emo} ${tierPick+1}단계로 시작</button>`;
+  $('modalBox').querySelectorAll('.diff-card[data-tier]').forEach(b=>b.onclick=()=>{
+    sfx.tap(); tierPick=+b.dataset.tier; renderTierModal(); });
+  $('mOk').onclick=()=>{ sfx.tap(); $('modal').classList.remove('on');
+    startRunAt(tierPick); render(); };
+}
 
 /* boot */
 loadMeta();
 $('muteBtn').textContent=META.mute?'🔇':'🔊';
 let awayReport=null;
 if(loadRun()){ awayReport=catchUp(); } else { startRun(); }
+applyTierWeights();   // 이어하는 판이든 새 판이든, 그 판의 단계로 패턴 비율을 맞춘다
 saveRun();
 
 /* ===== 상점(유료 · 투자성) ===== */
@@ -852,6 +938,7 @@ function showSettleModal(st){
     <div class="xp-tbl">
       <div><span>최고 기록 ${fmtWon(st.peak)}</span><b>+${st.base}</b></div>
       ${st.early>0?`<div><span>⏱️ 관문을 일찍 갚아서</span><b>+${st.early}</b></div>`:''}
+      ${st.mult&&st.mult!==1?`<div><span>${st.tierEmo||''} ${(st.tier||0)+1}단계 · ${st.tierName||''}</span><b>×${st.mult.toFixed(1)}</b></div>`:''}
       ${penLabel?`<div class="pen"><span>${penLabel}</span><b>−${Math.round(st.penalty*100)}%</b></div>`:''}
       <div class="sum"><span>합계</span><span>+${st.total} XP</span></div>
     </div>
@@ -865,8 +952,10 @@ function showSettleModal(st){
   if(opened.length)sfx.win();
   $('mOk').onclick=()=>{
     sfx.tap(); META.pendingSettle=null; saveMeta();
+    /* 단계를 하나라도 깼으면 고를 것이 생긴다. 아직 1단계뿐이면 물어볼 이유가 없다. */
+    if(maxTierIdx()>0){ showTierModal(); return; }
     $('modal').classList.remove('on');
-    clearRun(); startRun(); render();
+    startRunAt(0); render();
   };
 }
 function renderGrowth(){
@@ -1069,13 +1158,15 @@ function checkLevelUp(){
   if(S.peakCash<g.goal)return false;
   const nl=LEVELS.find(l=>l.lv===S.level+1);
   S.gate++; S.level=nl?nl.lv:S.level+1;
+  /* 완제하면 그 단계를 깬 것으로 치고 다음 난이도가 열린다. 파산으로는 안 열린다. */
+  if(gateDone()&&(META.cleared||0)<tierIdx()+1){ META.cleared=tierIdx()+1; saveMeta(); }
   /* 기한보다 며칠 일찍 갚았나 → 그만큼 현금으로 받는다. 거래일은 이월되지 않고,
      다음 관문은 언제나 GATES에 적힌 일수로 새로 시작한다. */
   const early=Math.max(0,S.daysLeft);
   const bonus=Math.round(g.goal*EARLY_BONUS_RATE*early);
   if(bonus>0){ S.cash+=bonus; bumpPeak(); }
   S.earlyXp=(S.earlyXp||0)+early*EARLY_XP_PER_DAY;   // 판이 끝날 때 정산에 더해진다
-  if(!gateDone())S.daysLeft=GATES[S.gate].days;
+  if(!gateDone())S.daysLeft=gateDaysOf(S.gate);
   if(nl&&nl.reward&&nl.reward.f)nl.reward.f(S);
   saveRun(); render();
   showRepayModal(g,(nl&&nl.reward)?nl:null,early,bonus);
@@ -1136,6 +1227,11 @@ function extendDeadline(){
 }
 function renderLevel(){
   $('lvChip').textContent=`Lv.${S.level}`;
+  /* 난이도는 1단계에서 숨긴다 — 고를 것이 없던 사람에게는 있으나 마나 한 정보고,
+     탑바는 이미 잔고·순위·레벨로 꽉 차 있다. */
+  const tc=$('tierChip'), ti=tierIdx();
+  tc.classList.toggle('hide', ti===0);
+  if(ti>0)tc.textContent=`${tierOf().emo} ${ti+1}단계`;
   const el=$('repayStrip');
   if(gateDone()){
     el.innerHTML=`<div class="lv-row"><span class="lv-name">🏆 대출 완제 <small>최고 ${fmtWon(S.peakCash)}</small></span>
@@ -1665,7 +1761,7 @@ function showIntroModal(){
     <div class="dc">시드머니는 대출금이에요. 정해진 거래일 안에 상환금을 만들어 갚아야 해요.</div>
     <div class="stat-grid">
       <div class="s"><div class="k">1차 상환금</div><div class="v">${fmtWon(g.goal)}</div></div>
-      <div class="s"><div class="k">기한</div><div class="v">${g.days}거래일</div></div></div>
+      <div class="s"><div class="k">기한</div><div class="v">${gateDaysOf(0)}거래일</div></div></div>
     <div class="intro-li"><span class="e">📅</span><span>단타 <b>한 판이 끝날 때마다 하루</b>가 지나요.</span></div>
     <div class="intro-li"><span class="e">🏦</span><span>기한 안에 못 갚으면 <b>반대매매</b>로 계좌가 청산돼요.</span></div>
     <div class="intro-li"><span class="e">💰</span><span>일찍 갚으면 남은 거래일 하루당 상환금의 ${Math.round(EARLY_BONUS_RATE*100)}%를 현금으로 받아요.</span></div>

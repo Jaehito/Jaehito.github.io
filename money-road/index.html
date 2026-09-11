@@ -68,16 +68,15 @@
   .rs-close{margin-top:12px; padding:10px 12px; border-radius:12px; background:var(--field); border:1px solid var(--line);}
   .cl-top{display:flex; justify-content:space-between; align-items:center; gap:8px;
     font-size:11.5px; font-weight:800; color:var(--gray2);}
+  .cl-top.one{justify-content:center;}
   .cl-dd{font-variant-numeric:tabular-nums; color:var(--gray); flex-shrink:0;}
   .cl-dd b{font-size:14px;}
-  .cl-need{margin-top:5px; font-size:11.5px; font-weight:700; color:var(--gray3); line-height:1.5;}
-  .cl-need b{color:var(--gray);}
   .rs-close.p-warn{background:#fff8e8; border-color:#ffe3ad;}
-  .rs-close.p-warn .cl-dd, .rs-close.p-warn .cl-need b{color:#b57800;}
+  .rs-close.p-warn .cl-dd{color:#b57800;}
   .rs-close.p-bad{background:var(--red-weak); border-color:#fbd2d6;}
-  .rs-close.p-bad .cl-dd, .rs-close.p-bad .cl-need b{color:var(--red);}
+  .rs-close.p-bad .cl-dd{color:var(--red);}
   .rs-close.p-done{background:#e7f9f1; border-color:#b8ecd6;}
-  .rs-close.p-done .cl-dd, .rs-close.p-done .cl-need b{color:var(--green);}
+  .rs-close.p-done .cl-dd{color:var(--green);}
   .intro-li{display:flex; gap:9px; align-items:flex-start; text-align:left; font-size:12.5px;
     font-weight:700; color:var(--gray); line-height:1.55; margin-top:9px;}
   .intro-li .e{flex-shrink:0; font-size:14px; line-height:1.4;}
@@ -1013,23 +1012,21 @@ function resultModalHTML(R){
     <div class="rs-wallet">잔고 <b>${fmtWon(S.cash)}</b></div>
     ${closeRowHTML()}`;
 }
-/* 한 판이 끝나면 하루가 간다 — 그런데 지금까지는 팝업을 닫는 순간 D가 조용히 줄어서
-   처음 하는 사람은 마감이 갑자기 닥친 걸로 느낀다. 소모되는 하루를 여기서 보여준다.
+/* 한 판이 끝나면 하루가 간다 — 그런데 팝업을 닫는 순간 D가 조용히 줄면
+   처음 하는 사람은 마감이 갑자기 닥친 걸로 느낀다. 소모되는 하루만 여기서 보여준다.
+
+   날짜·목표까지 남은 금액·판당 필요 수익률은 일부러 뺐다. 셋 다 상단 상환 스트립과
+   시작 버튼 위 경고줄에 이미 같은 값이 있어서, 결과 팝업에 또 적으면 한 판 끝날 때마다
+   같은 숫자를 세 번 읽히는 꼴이 된다. 위험도는 문구 대신 배경색(.p-ok/.p-warn/.p-bad)이
+   전달한다 — 색은 이미 스트립·진행바와 같은 3단계라 따로 배울 것도 없다.
    endOfDay()는 이 팝업을 닫은 뒤에 돌기 때문에 여기 값은 아직 줄기 전이다. */
 function closeRowHTML(){
   if(gateDone())return '';
   const g=gateOf(), before=S.daysLeft, after=before-1;
-  const head=`📅 ${dateOfDay(S.dayCount)} 장 마감`;
-  if(S.peakCash>=g.goal)return `<div class="rs-close p-done">
-    <div class="cl-top"><span>${head}</span><span class="cl-dd"><b>상환 가능</b></span></div>
-    <div class="cl-need">${g.n} 상환금 <b>${fmtWon(g.goal)}</b>을 만들었어요</div></div>`;
-  if(after<=0)return `<div class="rs-close p-bad">
-    <div class="cl-top"><span>${head}</span><span class="cl-dd"><b>기한 만료</b></span></div>
-    <div class="cl-need">${g.n} 상환금 <b>${fmtWon(g.goal-S.cash)}</b>이 모자라요 — 반대매매</div></div>`;
-  const r=riskAt(S.cash,after);
-  return `<div class="rs-close ${r.cls}">
-    <div class="cl-top"><span>${head}</span><span class="cl-dd">D-${before} → <b>D-${after}</b></span></div>
-    <div class="cl-need">${fmtWon(g.goal)}까지 <b>${fmtWon(g.goal-S.cash)}</b> · 판당 <b>${r.txt}</b> 필요</div></div>`;
+  const row=(cls,inner)=>`<div class="rs-close ${cls}"><div class="cl-top one">${inner}</div></div>`;
+  if(S.peakCash>=g.goal)return row('p-done',`<span class="cl-dd"><b>${g.n} 상환 가능</b></span>`);
+  if(after<=0)return row('p-bad',`<span class="cl-dd"><b>기한 만료</b></span>`);
+  return row(riskAt(S.cash,after).cls,`<span class="cl-dd">D-${before} → <b>D-${after}</b></span>`);
 }
 function showResultModal(R,after){
   $('modalBox').innerHTML=`<div class="rs-box">${resultModalHTML(R)}</div>
@@ -1066,22 +1063,32 @@ function checkLevelUp(){
   }
   return true;
 }
+/* 완제(마지막 관문 통과)는 그 판의 끝이다. 예전에는 "계속 플레이" 버튼이 팝업만 닫아서,
+   더 넘을 관문도 받을 보상도 없는 판에 그대로 방치됐다(정산하려면 해금 탭에 들어가
+   은퇴를 따로 눌러야 했다). 이제 버튼 하나로 100% 정산하고 레거시 화면으로 넘어간다
+   — 은퇴와 같은 대우다. 기한 안에 다 갚은 사람을 은퇴보다 불리하게 둘 이유가 없다. */
 function showRepayModal(g,nl,carried){
   const done=gateDone();
   const r=nl&&nl.reward;
   const next=done?null:GATES[S.gate];
+  const gain=done?legacyGain(S.peakCash):0;
   $('modalBox').innerHTML=`<div class="emo">${done?'🏆':(r?r.emo:'🔗')}</div>
     <div class="tt">${done?'빚을 다 갚았어요':`${g.n} 상환 완료`}</div>
-    <div class="dc">${done?'대출을 완제했어요. 여기서 은퇴하면 최고 기록으로 정산돼요.'
+    <div class="dc">${done?'대출을 완제했어요. 최고 기록으로 정산할게요.'
       :`${fmtWon(g.goal)}을 갚았어요.${carried>0?` 남은 <b>${carried}거래일</b>이 이월돼요.`:''}`}</div>
     ${r?`<div class="lv-gain"><b>${r.t}</b> — ${r.bonusTxt||r.d}</div>`:''}
     ${next?`<div class="stat-grid">
       <div class="s"><div class="k">${next.n} 상환금</div><div class="v">${fmtWon(next.goal)}</div></div>
       <div class="s"><div class="k">기한</div><div class="v">${S.daysLeft}거래일</div></div></div>`:''}
-    <button class="ok" id="mOk">${done?'계속 플레이':'다음 회차로'}</button>`;
+    ${done?`<div class="stat-grid">
+      <div class="s"><div class="k">이번 판 최고 기록</div><div class="v">${fmtWon(S.peakCash)}</div></div>
+      <div class="s"><div class="k">레거시 포인트</div><div class="v" style="color:var(--gold)">+${gain}pt</div></div></div>`:''}
+    <button class="ok" id="mOk">${done?'🧬 레거시 강화하러 가기':'다음 회차로'}</button>`;
   $('modal').classList.add('on');
   sfx.win();
-  $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');render();checkLevelUp();};
+  $('mOk').onclick=done
+    ? ()=>{sfx.tap();awardLegacy(gain);showLegacyModal();}
+    : ()=>{sfx.tap();$('modal').classList.remove('on');render();checkLevelUp();};
 }
 /* 기한 내 미상환 — 반대매매로 런 종료 */
 function showDefaultModal(){

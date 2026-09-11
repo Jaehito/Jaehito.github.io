@@ -132,7 +132,7 @@ a{color:var(--go);}
     <div class="row s1"><span class="no">1</span><span class="txt"><b>공매도 토글</b> · 덮기 → 매도 <em>— 오발이 되돌릴 수 없음</em></span><span class="to">1단계</span></div>
     <div class="row s1"><span class="no">2</span><span class="txt"><b>관문 → 상환</b> <em>— 나머지가 다 금융 말인데 여기만 게임 용어</em></span><span class="to">1단계</span></div>
     <div class="row s1"><span class="no">4</span><span class="txt"><b>자동 익절 삭제</b> <em>— 유일한 행동을 대신해 주던 첫 해금</em></span><span class="to">1단계</span></div>
-    <div class="row s1"><span class="no">5</span><span class="txt"><b>뉴스</b> <em>— 글리프로 바꾸거나 삭제하거나</em></span><span class="to">1단계</span></div>
+    <div class="row s1"><span class="no">5</span><span class="txt"><b>뉴스 삭제</b> <em>— 안 읽히는 걸 고치느니 지운다</em></span><span class="to">1단계</span></div>
     <div class="row s1"><span class="no">UX</span><span class="txt"><b>남은 금액을 베팅 구역으로</b> · 여유 삭제</span><span class="to">1단계</span></div>
 
     <div class="row s2"><span class="no">6-1</span><span class="txt"><b>거래일이 너무 많다</b></span><span class="to">2단계</span></div>
@@ -140,7 +140,7 @@ a{color:var(--go);}
 
     <div class="row s3"><span class="no">3-2</span><span class="txt"><b>변동 큰 종목이 거의 대부분 이득</b></span><span class="to">3 · 4단계</span></div>
     <div class="row s3"><span class="no">3-1</span><span class="txt"><b>신호가 많으면 초록만 고른다</b> <em>— 종목별 신호는 보류</em></span><span class="to">4단계 이후</span></div>
-    <div class="row s3"><span class="no">6-3</span><span class="txt"><b>초반에 방향이 읽히면 쉬워진다</b> <em>— 부분 해결, 아래 참고</em></span><span class="to">3단계 · 미해결</span></div>
+    <div class="row s3"><span class="no">6-3</span><span class="txt"><b>초반에 방향이 읽히면 쉬워진다</b> <em>— 패턴 분포로 해결</em></span><span class="to">3단계</span></div>
     <div class="row s3"><span class="no">6-4</span><span class="txt"><b>런 내 레벨업에 새로운 맛이 없다</b></span><span class="to">5단계</span></div>
     <div class="row s3"><span class="no">6-5</span><span class="txt"><b>메타 해금이 너무 빠르다</b></span><span class="to">5단계</span></div>
   </div>
@@ -155,15 +155,15 @@ a{color:var(--go);}
     <!-- 1단계 -->
     <div class="stage now">
       <div class="st-head"><span class="st-n">1단계</span><span class="st-t">화면 정리</span>
-        <span class="badge wait">뉴스만 정하면 출발</span></div>
+        <span class="badge go">출발 가능</span></div>
       <div class="st-body">
         <ul>
           <li><b>방향 토글</b> — 자동 익절이 빠진 자리에 들어가고 시작 버튼이 다시 하나가 됩니다. 세로 블록 증가 0. 시작 버튼이 방향 색을 따라가되 문구에도 방향을 적습니다(이 게임은 기본 버튼도 파랑이라 색만으로는 구분이 안 됩니다).</li>
           <li><b>자동 익절 삭제</b> — 공매도(목표의 역수)·물타기(평단 기준)·분할 매도에 걸려 있던 손이 같이 풀립니다. 40 XP 해금 한 칸이 빕니다.</li>
           <li><b>덮기 → 매도</b>, <b>관문 → 상환</b>(화면에 나오는 곳 네 군데), <b>여유 → 목표까지 남은 금액</b>.</li>
+          <li><b>뉴스 삭제.</b> 안 읽히는 이유가 자리가 아니라 형태였고, 글리프로 고쳐볼 수도 있었지만 지우기로 했습니다. 클리어율을 21%→27%로 올리던 장치라 밸런스로도 이득입니다. 메타 해금 한 칸(420 XP)이 빕니다.</li>
           <li><b>밸런스를 전혀 안 건드립니다.</b> 그래서 제일 먼저입니다.</li>
         </ul>
-        <div class="ask"><span class="q">정할 것</span><span><b>뉴스 — 안 A(글리프 <span class="mono">📰▼</span>를 배율 옆에) 인가 안 B(삭제) 인가.</b> 안 읽히는 이유가 자리가 아니라 형태라서, 고쳐보고 나서 지우는 편이 되돌리기 쉽습니다. 다만 뉴스는 클리어율을 21%→27%로 올리므로 삭제는 밸런스로도 이득입니다.</span></div>
       </div>
     </div>
 
@@ -190,21 +190,22 @@ a{color:var(--go);}
 
     <!-- 3단계 -->
     <div class="stage">
-      <div class="st-head"><span class="st-n">3단계</span><span class="st-t">⛔ 거래정지</span>
-        <span class="badge wait">목업 완료 · 청산 여부 대기</span></div>
+      <div class="st-head"><span class="st-n">3단계</span><span class="st-t">패턴 분포 개편</span>
+        <span class="badge later">2단계 뒤 · 시뮬 완료</span></div>
       <div class="st-body">
         <ul>
-          <li><b>1초 안에 −20% 이상 떨어지면 0.6초간 매도 잠금.</b></li>
-          <li>청산선은 가격의 <b>수준</b>을 보고 트레일링 스톱은 거기 닿기 전에 도망칩니다. 정지는 <b>속도</b>를 보므로 도망칠 수 없습니다 — 빠르게 터는 플레이가 가장 크게 이득 보는 구간에만 자물쇠가 걸립니다.</li>
-          <li><b>체결 지연 대신 이걸 고른 이유</b>는 계약을 안 깨기 때문입니다. 지연은 "내 입력이 씹혔다"로 읽히고, 누른 가격이 이미 기준점이 되어 차액이 <b>못 번 돈이 아니라 빼앗긴 돈</b>으로 기억됩니다. 정지는 시장이 멈춘 것이고, 정지 전에 나갈 기회가 있었으므로 귀책이 플레이어에게 있습니다.</li>
-          <li><b>기본 종목은 판당 0.0회</b>라 갓 시작한 사람은 이 장치를 만나지도 않습니다.</li>
+          <li><b>강세 안에 손해로 끝나는 패턴이 있습니다.</b> <span class="mono">spike</span>(급등급락)는 강세 등급인데 끝값이 평균 <b>0.67</b>이고, 강세 가중치의 <b>34%</b>를 차지합니다. 3배에서 0.67은 청산입니다 — 강세 신호를 믿고 들고 있으면 셋 중 하나꼴로 죽습니다. 그래서 "강세여도 일단 빨리 털어라"가 학습됩니다.</li>
+          <li><b>고칠 것 셋</b> — <span class="mono">spike</span>를 보통 등급으로 내리고, 상승장 끝값을 <b>1.33 → 1.83</b>으로 올리고, 강세 패턴에 <b>초반 흔들기</b>를 넣습니다.</li>
+          <li><b>흔들기가 핵심입니다.</b> 지금 상승 패턴은 저점이 1.00이라 아예 마이너스로 내려가지 않습니다 — <b>쫄보가 벌을 받을 일이 없습니다.</b> 초반에 0.88~0.94까지 한 번 눌렀다 가면(3배 청산선 0.67보다 위라 죽지는 않습니다) 거기서 던지는 사람만 +83%를 놓칩니다.</li>
+          <li>숫자가 그대로 나옵니다. <b>쫄보 70% → 9%</b>, 기한실패 30% → 92%. 지적하신 "쫄아서 마이너스에 팔면 기한 때문에 클리어가 힘들어진다"가 정확히 그 모양입니다. 제대로 하는 플레이어(트레일링)는 17% → 24%로 오히려 조금 나아집니다.</li>
+          <li><b>6-3의 답이기도 합니다.</b> 정보를 가리는 게 아니라 <b>확신하지 않는 것을 비싸게</b> 만드는 쪽입니다.</li>
         </ul>
-        <div class="ev">                1초하락 하위1%   정지없음 → −20%정지   판당정지
-  📊 ETF           −15.1%        4% →  <b>3%</b>        0.0회
-  🏦 사성전자        −20.1%       14% → <b>16%</b>        0.0회
-  🎲 동전주         −28.8%       48% → <i>23%</i>        0.4회
-  🪙 코인          −65.6%       64% → <i>13%</i>        0.8회</div>
-        <div class="ask"><span class="q">정할 것</span><span><b>정지 중에 청산선에 닿으면 청산되는가.</b> 위 숫자는 "발동한다"로 계산했습니다. 여기가 이 장치의 이빨이자 제일 아픈 곳입니다 — 막으면 훨씬 순해지고 코인 13%도 다시 올라갑니다.</span></div>
+        <div class="ev">사성전자 · 3배 · 3단계 · 신호 적중률 55%          (sim/spread.js)
+                      트레일링   쫄보    보유   기한실패
+  지금                   17%    <i>70%</i>     0%     30%
+  강세 끝값만 올림           30%    <i>75%</i>     0%     25%   ← 오히려 쫄보가 좋아짐
+  <b>+ 초반 흔들기</b>            <b>24%</b>     <b>9%</b>     0%     <b>92%</b></div>
+        <div class="ask"><span class="q">한계</span><span><b>"확신하고 끝까지 보유"는 어떤 안에서도 성립하지 않습니다</b> — 클리어 0%, 파산 98~99%. 3배 청산선(0.67)이 있는 한 순수 보유는 수학적으로 불가능합니다. 이 단계가 만드는 정답은 "끝까지 들고 가기"가 아니라 <b>"얕은 눌림을 견디고 트레일링"</b>입니다.</span></div>
       </div>
     </div>
 
@@ -248,20 +249,20 @@ a{color:var(--go);}
 
 <section>
   <div class="eyebrow">6-3</div>
-  <h2>아직 답이 없는 것</h2>
-  <p>"초반에 방향이 읽히면 빠르게 털고 크게 먹는 게 통한다"는 지적입니다. <b>정지는 이 문제의 부분적인 답일 뿐입니다</b> — 기본 종목에서 판당 0.0회라는 건, 사성전자에서는 이 전략이 그대로 통한다는 뜻입니다.</p>
+  <h2>왜 패턴 분포가 답이었는가</h2>
+  <p>"초반에 방향이 읽히면 빠르게 털고 크게 먹는 게 통한다"는 지적입니다. 저는 <b>읽기 어렵게 만드는 쪽</b>으로 세 번 시도했고 세 번 다 빗나갔습니다. 플레이어의 우위는 정보가 아니라 <b>행동</b>에 있었습니다 — 언제든 공짜로 정확히 나갈 수 있다는 것.</p>
   <div class="tbl">
     <table>
       <thead><tr><th>시도</th><th>결과</th><th>판정</th></tr></thead>
       <tbody>
         <tr><td>패턴 머리 가리기</td><td>공통 머리 뒤에 갈림 — 읽는 시점만 미뤄질 뿐 읽고 나서 나가는 건 같음</td><td><i>기각</i></td></tr>
-        <tr><td>체결 지연 0.15초</td><td>클리어 33%→23%로 잘 듣지만, 누른 가격이 기준점이 되어 불쾌함이 남음</td><td><i>보류</i></td></tr>
-        <tr><td>지연 시세</td><td>차트만 0.2초 늦고 체결은 즉시 — 계약을 안 깨고, 판 뒤에 못 본 구간을 그려주면 복기가 됨</td><td>후보</td></tr>
-        <tr><td>거래정지</td><td>고변동 종목에서만 작동 (3단계)</td><td>부분 해결</td></tr>
+        <tr><td>체결 지연</td><td>난이도로는 강하지만 누른 가격이 기준점이 되어 차액이 "빼앗긴 돈"으로 기억됨</td><td><i>기각</i></td></tr>
+        <tr><td>거래정지</td><td>고변동 종목에서만 작동(기본 종목 판당 0.0회). 계약은 안 깨지만 6-3의 답은 아니었음</td><td><i>철회</i></td></tr>
+        <tr><td><b>패턴 분포 개편</b></td><td>읽기를 막는 대신 <b>확신하지 않는 것을 비싸게</b> 만듦 — 쫄보 70%→9%</td><td><b>채택</b></td></tr>
       </tbody>
     </table>
   </div>
-  <p style="margin-top:14px">2단계(거래일 조이기)가 전체 난이도를 올리므로, <b>그 뒤에도 여전히 쉬운지를 보고 결정하는 게 맞습니다.</b> 지금 손대면 무엇이 들었는지 구분할 수 없습니다.</p>
+  <p style="margin-top:14px">방향이 바뀐 지점은 여기였습니다. <b>"안 보이게 하자"가 아니라 "안 보고 던지면 손해나게 하자".</b> 상승장이 저점 1.00에서 시작해 한 번도 마이너스로 안 내려가는 한, 쫄보는 영원히 벌을 받지 않습니다.</p>
 </section>
 
 <section>
@@ -272,11 +273,19 @@ a{color:var(--go);}
   <div class="dead">
     <div class="d">
       <div class="dt">종목별 증거금 — 변동 큰 종목의 청산선을 가깝게</div>
-      <div class="dd">코인은 청산선 <span class="mono">0.85</span>에서도 클리어 43%. 트레일링 스톱이 청산선에 닿기 전에 빠져나가므로 <b>수준을 보는 장치는 전부 빗나갑니다.</b></div>
+      <div class="dd">코인은 청산선 <span class="mono">0.85</span>에서도 클리어 43%. 트레일링 스톱이 청산선에 닿기 전에 빠져나가므로 <b>수준을 보는 장치는 전부 빗나갑니다.</b> — <span class="mono">sim/deadends.js</span></div>
     </div>
     <div class="d">
       <div class="dt">종목별 베팅 상한 — 변동 큰 종목은 적게만 걸게</div>
-      <div class="dd">코인 클리어 <span class="mono">61% → 70%</span>로 <b>오히려 올라갔습니다.</b> 진폭이 크면 적게 걸어도 필요 수익률이 나오므로, 상한은 안티-켈리(과베팅)를 고쳐주는 선물이 됩니다.</div>
+      <div class="dd">코인 클리어 <span class="mono">78% → 83%</span>로 <b>오히려 올라갔습니다.</b> 진폭이 크면 적게 걸어도 필요 수익률이 나오므로, 상한은 안티-켈리(과베팅)를 고쳐주는 선물이 됩니다. — <span class="mono">sim/deadends.js</span></div>
+    </div>
+    <div class="d">
+      <div class="dt">체결 지연 · 거래정지</div>
+      <div class="dd">지연은 난이도로는 강하지만(사성전자 21%→8%) <b>계약을 깹니다</b> — 누른 가격이 기준점이 되어 차액이 "못 번 돈"이 아니라 "빼앗긴 돈"으로 기억됩니다. 거래정지는 그 문제는 없지만 <b>기본 종목에서 판당 0.0회</b>라 6-3의 답이 못 됩니다. 둘 다 철회.</div>
+    </div>
+    <div class="d">
+      <div class="dt">강세 끝값만 올리기</div>
+      <div class="dd">상승장을 +83%로 키우기만 하면 <b>쫄보가 70%→75%로 더 좋아집니다.</b> 상승 패턴의 저점이 1.00이라 마이너스로 안 내려가서, 쫄보가 손해 볼 기회 자체가 없기 때문입니다. <b>흔들기가 같이 들어가야 합니다.</b></div>
     </div>
     <div class="d">
       <div class="dt">최소 레버리지를 난이도 축으로</div>
@@ -307,14 +316,11 @@ a{color:var(--go);}
   <h2>정해주셔야 진행됩니다</h2>
   <div class="asks">
     <div class="askbig"><span class="n">1</span><span>
-      <div class="t">뉴스 — 안 A(글리프)인가 안 B(삭제)인가</div>
-      <div class="d">1단계를 막고 있는 유일한 결정입니다. 나머지 네 항목은 준비가 끝났습니다.</div></span></div>
+      <div class="t">1단계를 지금 시작할까요</div>
+      <div class="d">뉴스 삭제까지 정해져서 다섯 항목 전부 준비가 끝났습니다. 밸런스를 안 건드리므로 바로 구현·배포까지 갈 수 있습니다.</div></span></div>
     <div class="askbig"><span class="n">2</span><span>
-      <div class="t">거래정지 중에 청산선에 닿으면 청산되는가</div>
-      <div class="d">3단계용. 지금 숫자는 "발동한다" 기준이라, 막기로 하면 파라미터를 다시 잡아야 합니다.</div></span></div>
-    <div class="askbig"><span class="n">3</span><span>
-      <div class="t">시뮬 스크립트를 저장소에 넣을까</div>
-      <div class="d"><span class="mono">lag · margin · cap · stockev · vi</span> 다섯 개가 지금 임시 폴더에만 있습니다. <b>실패한 것들이야말로</b> 남아야 다음에 또 시도하지 않습니다.</div></span></div>
+      <div class="t">2단계 거래일 수를 어디까지 조일까요</div>
+      <div class="d">제안은 <span class="mono">103 → 61일</span>(이론 최소의 2.4배)이고, 뒤로 갈수록 줄이는 배치입니다. 더 과감하게 갈 수도 있습니다.</div></span></div>
   </div>
 </section>
 

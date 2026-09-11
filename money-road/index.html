@@ -182,6 +182,18 @@
   .sell-btn{width:100%; border:none; border-radius:14px; padding:13px; font-size:16px; font-weight:900; color:#fff; cursor:pointer;
     background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
   /* ✂️ 분할 매도 — 매도 버튼을 좌우로 쪼갠다. 절반 쪽은 "덜 센 선택"으로 읽히게 톤을 낮춘다. */
+  /* 📰 장중 뉴스 — 그래프 위에 겹친다. round-chartbox가 이미 relative라 블록이 안 는다. */
+  .news-pop{position:absolute; left:9px; right:9px; top:9px; z-index:2;
+    background:rgba(25,31,40,.93); color:#fff; border-radius:12px; padding:9px 11px;
+    display:flex; gap:8px; align-items:flex-start; text-align:left;
+    animation:newsIn .28s cubic-bezier(.2,1.2,.4,1);}
+  @keyframes newsIn{from{opacity:0; transform:translateY(-6px);}to{opacity:1; transform:none;}}
+  .news-pop .e{font-size:15px; flex-shrink:0;}
+  .news-pop .t{display:block; font-size:11.5px; font-weight:800; line-height:1.35;}
+  .news-pop .s{display:block; font-size:10px; font-weight:700; opacity:.55; margin-top:2px;}
+  .rs-chip.news.hit{background:#e9f9f0; color:#00a862;}
+  .rs-chip.news.miss{background:var(--field); color:var(--gray2);}
+  @media(prefers-reduced-motion:reduce){ .news-pop{animation:none;} }
   /* 💧 물타기 — 매도 버튼 위 한 줄. 판당 한 번이라 쓰고 나면 사라진다. */
   .water{display:flex; align-items:center; gap:8px; background:#eef6ff; border:1.5px solid #3182F633;
     border-radius:12px; padding:9px 11px; margin-bottom:9px; font-size:12px; font-weight:800;
@@ -526,6 +538,29 @@ function pickPattern(){
   for(const p of PATTERNS){acc+=p.weight; if(r<=acc)return p;}
   return PATTERNS[PATTERNS.length-1];
 }
+/* ===== 📰 장중 뉴스 =====
+   라운드 중간에 한 번 뜬다. 지금 시점의 가격과 최종가를 비교한 "진실"을 NEWS_ACC 확률로
+   말하고, 나머지는 반대로 말한다 — 그래서 정보가 아니라 판단 재료다.
+
+   적중률은 sim/news.js로 잡았다("하락 뉴스면 즉시 매도" 전략, 3단계 기준 각 500회):
+     뉴스 없음 21% · 50% 20% · 60% 22% · 70% 27% · 85% 30% · 100% 41%
+   60%는 동전던지기와 다를 게 없어 죽은 기능이 되고, 100%면 "뉴스 보고 팔면 끝"이라
+   패턴을 볼 이유가 사라진다. 70%는 눈에 띄게 이득이면서 10번에 3번은 틀린다. */
+const NEWS_ACC=0.70;
+const NEWS_TICKS=60;            // 3초 동안 떠 있다 — 놓치면 그만이다
+const NEWS_AT=[0.35,0.65];      // 라운드의 이 구간 어딘가에서 뜬다
+const NEWS_UP=['대규모 수주 임박','외국인 순매수 전환','실적 서프라이즈 전망',
+               '자사주 매입 검토','신제품 반응 폭발','증권가 목표가 상향'];
+const NEWS_DOWN=['유상증자 검토','대주주 지분 매각설','실적 하향 전망',
+                 '규제 심사 착수','공장 가동 중단','기관 매도 물량 출회'];
+function rollNews(path,stockName){
+  const [a,b]=NEWS_AT;
+  const idx=Math.floor(ROUND_TICKS*(a+Math.random()*(b-a)));
+  const truth=path[path.length-1]>=path[idx]?'up':'down';
+  const say=Math.random()<NEWS_ACC?truth:(truth==='up'?'down':'up');
+  const pool=say==='up'?NEWS_UP:NEWS_DOWN;
+  return {idx,say,truth,text:`${stockName} ${pool[Math.floor(Math.random()*pool.length)]}`};
+}
 function genRound(stock,patId){
   const pat=PATTERNS.find(p=>p.id===patId)||pickPattern();
   return {patternId:pat.id, patternEmo:pat.emo, path:pat.gen(stock)};
@@ -736,6 +771,8 @@ const META_UNLOCKS=[
    ds:'절반만 먼저 실현하고 나머지는 들고 갈 수 있어요'},
   {lv:5, need:320, id:'water',    emo:'💧', name:'물타기',
    ds:'손실 중일 때 한 번 더 얹어 평단을 낮출 수 있어요'},
+  {lv:6, need:420, id:'news',     emo:'📰', name:'장중 뉴스',
+   ds:'라운드 중에 소식이 떠요 · 10번에 3번은 틀린 소식이에요'},
 ];
 function metaLv(){ let lv=1; for(const u of META_UNLOCKS) if((META.xp||0)>=u.need)lv=u.lv; return lv; }
 function metaHas(id){ const u=META_UNLOCKS.find(x=>x.id===id); return !!u&&(META.xp||0)>=u.need; }
@@ -1138,6 +1175,8 @@ function resultModalHTML(R){
     :R.tier==='disaster'?`<span class="rs-badge cold">💀 오늘의 참사</span>`:'';
   const chips=[];
   if(g)chips.push(`<span class="rs-chip grade${g.pct<45?' low':''}">매도 ${g.g} · ${g.pct}%</span>`);
+  /* 뉴스가 맞았는지는 판이 끝나야 안다. 사후에 알려줘야 "다음엔 얼마나 믿을까"를 배운다. */
+  if(R.news)chips.push(`<span class="rs-chip news ${R.news.say===R.news.truth?'hit':'miss'}">📰 뉴스 ${R.news.say===R.news.truth?'적중':'빗나감'}</span>`);
   if(R.watered)chips.push(`<span class="rs-chip water">💧 평단 ${R.entry.toFixed(2)}x</span>`);
   if(R.half)chips.push(`<span class="rs-chip split">✂️ 분할</span>`);
   if((R.dir||1)<0)chips.push(`<span class="rs-chip short">📉 숏</span>`);
@@ -1393,6 +1432,7 @@ function startRound(dir){
   S.activeRound={stockId:stock.id,bet,path,patternId,patternEmo,leverage,rankBefore,
     dir:(metaHas('short')&&dir<0)?-1:1,
     entry:1, bet0:bet, watered:false,   // entry = 평균 단가. 물타기로만 움직인다
+    news:metaHas('news')?rollNews(path,stock.name):null,
     autoTarget:metaHas('autosell')?(S.betAutoTarget||0):0,
     startedAt:Date.now(), yMin:0.96, yMax:1.04, boundsIdx:0, dispYMin:0.96, dispYMax:1.04,
     peak:1, peakIdx:0, low:1, lowIdx:0,
@@ -1502,6 +1542,7 @@ function sellRound(auto){
   if(S.streak>T.bestStreak)T.bestStreak=S.streak;
   if(grade&&grade.g==='S')T.sCount++;
   const res={mult,effMult,half,entry:R.entry||1,watered:!!R.watered,
+    news:R.news?{say:R.news.say,truth:R.news.truth,text:R.news.text}:null,
     profit:totalProfit,bet:totalBet,lev,dir,rankBefore,rankAfter:rankOf(),
     grade,lo,hi,streak:S.streak,prevStreak,earned,buffs,daysLeft:S.daysLeft};
   const rx=buildReactions(res);
@@ -1671,6 +1712,11 @@ function buildRoundView(r,stock){
         <text id="rvLiqT" class="rv-txt" text-anchor="end" font-size="10" font-weight="800" fill="#f04452" opacity="0"/>
       </svg>
       <div class="round-count" id="rvCount"></div>
+      <div class="news-pop" id="rvNews" hidden>
+        <span class="e" id="rvNewsEmo">📰</span>
+        <span><span class="t" id="rvNewsText"></span>
+        <span class="s">확인되지 않은 소식이에요</span></span>
+      </div>
     </div>
     <div class="round-pnl up" id="rvPnl">+0원</div>
     <div class="rv-wallet" id="rvWallet"></div>
@@ -1691,7 +1737,8 @@ function buildRoundView(r,stock){
     tHi:g('rvTHi'), tLo:g('rvTLo'), liqT:g('rvLiqT'), count:g('rvCount'),
     pnl:g('rvPnl'), bar:g('rvBar'), wallet:g('rvWallet'),
     halfBtn:g('sellHalf'), halfAmt:g('rvHalfAmt'), sellLab:g('rvSellLab'), fullAmt:g('rvFullAmt'),
-    water:g('rvWater'), waterAmt:g('rvWaterAmt'), waterNote:g('rvWaterNote')};
+    water:g('rvWater'), waterAmt:g('rvWaterAmt'), waterNote:g('rvWaterNote'),
+    news:g('rvNews'), newsEmo:g('rvNewsEmo'), newsText:g('rvNewsText')};
   /* viewBox 폭 = 실제 픽셀 폭으로 맞춰야 SVG 안의 글자가 가로로 늘어나지 않는다 */
   const fit=w=>{ w=Math.round(w); if(w<40||w===RV.cw)return;
     RV.cw=w; RV.svg.setAttribute('viewBox',`0 0 ${w} ${RV_H}`);
@@ -1846,6 +1893,14 @@ function renderRoundView(){
         ? `💧 평단 <b>${entry.toFixed(2)}x</b> · 투입 ${fmtWon(r.bet)}`
         : `지금 팔면 잔고 <b>${fmtWon(S.cash+Math.max(0,r.bet+profit))}</b>`);
   /* 분할 매도는 판당 한 번. 쓰고 나면 버튼이 하나로 돌아간다. */
+  /* 📰 장중 뉴스 — 뜨는 순간부터 3초만. 놓치면 그만이고, 그게 이 기능의 긴장이다. */
+  const nw=r.news;
+  const newsOn=!!nw&&idx>=nw.idx&&idx<nw.idx+NEWS_TICKS;
+  RV.news.hidden=!newsOn;
+  if(newsOn&&RV.newsText.textContent!==nw.text){
+    RV.newsText.textContent=nw.text;
+    RV.newsEmo.textContent=nw.say==='up'?'📈':'📉';
+  }
   /* 💧 물타기 줄 — 해금했고 아직 안 썼으면 보인다. 조건이 안 맞으면 왜 못 누르는지 적어둔다. */
   const waterOn=metaHas('water')&&!r.watered;
   RV.water.hidden=!waterOn;

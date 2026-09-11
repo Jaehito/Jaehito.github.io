@@ -3,9 +3,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
 
-<!-- 아래 <style>은 money-road/index.html 의 <style> 블록을 그대로 복사한 것이다.
-     목업을 실제 게임과 같은 픽셀로 그리기 위한 것이므로 손으로 고치지 말고,
-     게임 쪽이 바뀌면 tools/build-redesign.py 로 다시 뽑는다. -->
+<!-- 아래 첫 <style>은 money-road/index.html 의 <style> 블록을 그대로 복사한 것이다.
+     목업을 실제 게임과 같은 픽셀로 그리기 위한 사본이므로 여기서 고치지 말 것 —
+     게임 쪽 스타일이 바뀌면 이 블록도 다시 복사해야 화면이 거짓말을 안 한다.
+     두 번째 <style>이 이 문서에만 쓰는 크롬이고, 첫 블록의 body/#app 규칙을 덮는다. -->
 <style>
 
   :root{
@@ -335,7 +336,7 @@ body{
   font-family:'Noto Sans KR',system-ui,-apple-system,sans-serif;
   line-height:1.6; letter-spacing:0;
 }
-.wrap{max-width:1180px; margin:0 auto; padding:0 16px; padding-block:0 72px;}
+.wrap{max-width:1300px; margin:0 auto; padding:0 16px; padding-block:0 72px;}
 .wrap *{user-select:auto;}
 
 /* ---- 머리말 ---- */
@@ -386,11 +387,13 @@ figure.frame.after figcaption{color:var(--wb-new);}
 /* 변경/신규 표시 */
 .mk{position:relative; outline:2px dashed var(--wb-mark-line); outline-offset:3px; border-radius:12px;}
 .mk.nw{outline:2px solid var(--wb-new);}
-.tag{position:absolute; top:-9px; right:-9px; z-index:3;
-  min-width:20px; height:20px; padding:0 5px; border-radius:999px;
+/* 배지는 왼쪽 위 바깥에 — 오른쪽 위에 두면 표의 값(+180 같은)을 가린다.
+   폰 프레임 안의 블록은 전부 패딩 16~22px짜리 컨테이너의 자식이라 왼쪽 −10px은 빈 자리다. */
+.tag{position:absolute; top:-10px; left:-21px; z-index:3;
+  min-width:19px; height:19px; padding:0 5px; border-radius:999px;
   background:var(--wb-mark); color:#fff; font-family:'IBM Plex Mono',monospace;
-  font-size:11px; font-weight:600; display:grid; place-items:center; line-height:1;
-  box-shadow:0 2px 6px rgba(0,0,0,.25);}
+  font-size:10.5px; font-weight:600; display:grid; place-items:center; line-height:1;
+  box-shadow:0 0 0 2px var(--card), 0 2px 5px rgba(0,0,0,.2);}
 .mk.nw>.tag{background:var(--wb-new);}
 
 /* ---- 주석 목록 ---- */
@@ -527,6 +530,32 @@ figure.frame.after figcaption{color:var(--wb-new);}
 .mbox .lv-gain b{color:var(--blue); font-weight:800;}
 .mbox .scroller{max-height:none; text-align:left;}
 
+/* 종목 선택 — 안A 2줄 그리드 */
+.stock-tabs.grid{display:grid; grid-template-columns:repeat(3,1fr); gap:7px;}
+
+/* 종목 선택 — 안B 한 줄 셀렉터 + 시트 */
+.stock-sel{display:flex; align-items:center; gap:9px; background:var(--field); border-radius:14px;
+  padding:9px 12px; margin-bottom:11px; cursor:pointer; text-align:left;}
+.stock-sel .e{font-size:19px; flex-shrink:0;}
+.stock-sel .nm{font-size:13px; font-weight:900;}
+.stock-sel .ds{font-size:10.5px; font-weight:700; color:var(--gray2); margin-top:1px;}
+.stock-sel .ch{margin-left:auto; font-size:11px; font-weight:800; color:var(--gray3); flex-shrink:0;}
+.sheet{display:grid; gap:6px; text-align:left;}
+.sheet-row{display:flex; align-items:center; gap:10px; background:var(--field); border-radius:13px;
+  padding:9px 11px; border:2px solid transparent;}
+.sheet-row.sel{border-color:var(--blue); background:var(--blue-weak);}
+.sheet-row.lock{opacity:.5;}
+.sheet-row .e{font-size:18px; flex-shrink:0;}
+.sheet-row .nm{font-size:12.5px; font-weight:900;}
+.sheet-row .ds{font-size:10.5px; font-weight:700; color:var(--gray2); margin-top:1px;}
+.sheet-row .tg{margin-left:auto; font-size:10.5px; font-weight:800; color:var(--gray3); flex-shrink:0;}
+
+/* 두 안 비교 — 채택/보류 표시 */
+figure.frame.pick figcaption{color:var(--wb-new);}
+figure.frame.hold figcaption{color:var(--wb-mut);}
+.verdict{font-family:'Noto Sans KR',sans-serif; font-size:12.5px; font-weight:400; letter-spacing:0;
+  text-transform:none; padding:2px 9px; border-radius:999px; border:1px solid currentColor;}
+
 </style>
 
 <div class="wrap">
@@ -638,7 +667,7 @@ figure.frame.after figcaption{color:var(--wb-new);}
         <div class="trade-panel">
           <div class="tp-head mk"><span class="tag">1</span>
             <span class="tp-limit">🎲 동전주 · 급등 아니면 급락 — 🎚️ 1~5배</span></div>
-          <div class="stock-tabs scroll mk"><span class="tag">2</span>
+          <div class="stock-tabs grid mk"><span class="tag">2</span>
             <button class="stock-tab"><div class="e">🏦</div><div class="n">사성전자</div><div class="v">변동 보통</div></button>
             <button class="stock-tab"><div class="e">🚀</div><div class="n">네코프로</div><div class="v">변동 큼</div></button>
             <button class="stock-tab"><div class="e">🔥</div><div class="n">유메이드</div><div class="v">변동 최대</div></button>
@@ -677,10 +706,115 @@ figure.frame.after figcaption{color:var(--wb-new);}
 
   <ol class="notes">
     <li><span class="n">1</span><span><b>종목 성격을 기존 줄에 합칩니다.</b> 지금 <code>tp-limit</code>은 레버리지 범위만 적습니다. 종목이 6개가 되면 이름만으론 성격을 모르니, 새 줄을 만들지 않고 이 줄 앞쪽에 붙입니다.</span></li>
-    <li><span class="n">2</span><span><b>종목 탭은 가로 스크롤 + 스냅.</b> 6개는 390px에 안 들어갑니다. 잠긴 종목은 뒤쪽에 해금 조건과 함께 둡니다. <code>.stock-tab.mini</code>·<code>.locked</code> 클래스가 CSS에 이미 있습니다.</span></li>
+    <li><span class="n">2</span><span><b>종목 탭은 3×2 그리드로 접습니다.</b> 가로 스크롤은 안 씁니다 — ETF·동전주가 들어오면 신호를 보고 종목을 고르게 돼서 <b>매 판 바꾸는 값</b>이 되는데, 그걸 매번 옆으로 굴려 찾게 할 수는 없습니다. 6개가 한눈에 보이고 탭 한 번에 끝납니다. 대신 높이가 <b>+69px</b> 늘어납니다 — 아래 화면 03에 다른 안과 같이 놓고 비교합니다.</span></li>
     <li><span class="n">3</span><span><b>도감은 신호 카드에서 엽니다.</b> 메인 탭을 4개로 늘리지 않습니다. "이 신호가 무슨 뜻이지?" 하는 자리가 도감이 있어야 할 곳입니다.</span></li>
     <li class="nw"><span class="n">4</span><span><b>공매도는 시작 버튼을 좌우로 쪼갭니다.</b> 방향 토글을 따로 두면 블록이 하나 늘지만, 버튼을 쪼개면 방향 선택과 시작이 한 번의 탭으로 끝납니다. 미해금이면 지금처럼 버튼 하나라 <b>첫 판 화면은 안 바뀝니다.</b></span></li>
   </ol>
+</section>
+<!-- ========== 01-B 종목 선택 두 가지 안 ========== -->
+<section class="spec">
+  <div class="spec-head">
+    <div class="eyebrow">화면 01-B · 골라주세요</div>
+    <h2>종목이 6개가 되면 어떻게 고르나</h2>
+    <p>가로 스크롤은 뺐습니다. 종목은 <b>매 판 바꾸는 값</b>이라 — ETF는 신호가 100% 맞고 동전주는 패턴이 편중되니, 신호를 보고 종목을 고르는 플레이가 생깁니다 — 매번 옆으로 굴려서 찾게 하면 못 씁니다. 남은 두 안입니다.</p>
+  </div>
+
+  <div class="frames">
+    <figure class="frame pick">
+      <figcaption>안 A · 3×2 그리드 <span class="verdict">추천</span></figcaption>
+      <div class="phone">
+        <div class="trade-panel" style="margin-top:16px">
+          <div class="tp-head"><span class="tp-limit">🎲 동전주 · 급등 아니면 급락 — 🎚️ 1~5배</span></div>
+          <div class="stock-tabs grid">
+            <button class="stock-tab"><div class="e">🏦</div><div class="n">사성전자</div><div class="v">변동 보통</div></button>
+            <button class="stock-tab"><div class="e">🚀</div><div class="n">네코프로</div><div class="v">변동 큼</div></button>
+            <button class="stock-tab"><div class="e">🔥</div><div class="n">유메이드</div><div class="v">변동 최대</div></button>
+            <button class="stock-tab sel"><div class="e">🎲</div><div class="n">동전주</div><div class="v">패턴 편중</div></button>
+            <button class="stock-tab"><div class="e">📊</div><div class="n">ETF</div><div class="v">신호 100%</div></button>
+            <button class="stock-tab locked"><div class="e">🔒</div><div class="n">코인</div><div class="v">메타 Lv.7</div></button>
+          </div>
+          <div class="signal weak">
+            <div class="sg-left"><span class="sg-emo">🔴</span><span class="sg-name">약세</span></div>
+            <div class="sg-mid">
+              <div class="sg-ds">고점 없이 흘러내리기 쉬운 장</div>
+              <div class="sg-acc">이 신호가 맞을 확률 70%</div>
+            </div>
+            <button class="dex-btn">📋</button>
+          </div>
+          <div class="auto-row lev-row">
+            <button>1배<small>청산 없음</small></button>
+            <button>2배<small>청산 0.50x</small></button>
+            <button class="sel">3배<small>청산 0.67x</small></button>
+            <button>5배<small>청산 0.80x</small></button>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="frame hold">
+      <figcaption>안 B · 한 줄 + 시트 <span class="verdict">보류</span></figcaption>
+      <div class="phone">
+        <div class="trade-panel" style="margin-top:16px">
+          <div class="tp-head"><span class="tp-limit">🎚️ 레버리지 1~5배</span></div>
+          <div class="stock-sel">
+            <span class="e">🎲</span>
+            <span><span class="nm">동전주</span><br><span class="ds">급등 아니면 급락 · 패턴 편중</span></span>
+            <span class="ch">바꾸기 ∨</span>
+          </div>
+          <div class="signal weak">
+            <div class="sg-left"><span class="sg-emo">🔴</span><span class="sg-name">약세</span></div>
+            <div class="sg-mid">
+              <div class="sg-ds">고점 없이 흘러내리기 쉬운 장</div>
+              <div class="sg-acc">이 신호가 맞을 확률 70%</div>
+            </div>
+            <button class="dex-btn">📋</button>
+          </div>
+          <div class="auto-row lev-row">
+            <button>1배<small>청산 없음</small></button>
+            <button>2배<small>청산 0.50x</small></button>
+            <button class="sel">3배<small>청산 0.67x</small></button>
+            <button>5배<small>청산 0.80x</small></button>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="frame hold">
+      <figcaption>안 B · 시트를 연 상태</figcaption>
+      <div class="phone modal-only">
+        <div class="mbox">
+          <div class="cm-head"><span class="cm-title">🎯 종목 고르기</span></div>
+          <div class="sheet">
+            <div class="sheet-row"><span class="e">🏦</span><span><span class="nm">사성전자</span><br><span class="ds">변동이 가장 작아요 · 신호대로 잘 움직여요</span></span></div>
+            <div class="sheet-row"><span class="e">🚀</span><span><span class="nm">네코프로</span><br><span class="ds">변동 1.6배 · 고점도 저점도 깊어요</span></span></div>
+            <div class="sheet-row"><span class="e">🔥</span><span><span class="nm">유메이드</span><br><span class="ds">변동 2.3배 · 청산이 가까워요</span></span></div>
+            <div class="sheet-row sel"><span class="e">🎲</span><span><span class="nm">동전주</span><br><span class="ds">급등·급락 패턴이 2배 자주 나와요</span></span></div>
+            <div class="sheet-row"><span class="e">📊</span><span><span class="nm">ETF</span><br><span class="ds">신호가 항상 맞아요 · 대신 진폭 절반</span></span></div>
+            <div class="sheet-row lock"><span class="e">🔒</span><span><span class="nm">코인</span><br><span class="ds">라운드 20초 · 변동 극단</span></span><span class="tg">메타 Lv.7</span></div>
+          </div>
+          <button class="ok">동전주로 하기</button>
+        </div>
+      </div>
+    </figure>
+  </div>
+
+  <div class="tally">
+    <div class="tally-wrap">
+      <table>
+        <caption>두 안 비교</caption>
+        <thead><tr><th>항목</th><th>안 A · 그리드</th><th>안 B · 시트</th></tr></thead>
+        <tbody>
+          <tr><td>종목 바꾸는 데 드는 탭</td><td class="ok">1번</td><td>2번</td></tr>
+          <tr><td>상시 화면 높이 (지금 62px에서)</td><td>+69px</td><td class="ok">−10px</td></tr>
+          <tr><td>6개를 한눈에 비교</td><td class="ok">됨</td><td>시트를 열어야 함</td></tr>
+          <tr><td>종목 설명에 쓸 수 있는 글자</td><td>5자 남짓</td><td class="ok">한 줄 통째로</td></tr>
+          <tr><td>종목이 더 늘어나면</td><td>3×3까지가 한계</td><td class="ok">안 깨짐</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="foot"><b>안 A를 추천합니다.</b> 종목을 매 판 바꾼다면 탭 1번과 2번의 차이가 누적으로 가장 크게 옵니다. 높이 +69px은 지금 749px 화면의 9%인데, 화면 03에서 거래 결과 팝업이 한 줄 줄고 시작 버튼이 좌우로 합쳐지니 체감 손해는 그보다 작습니다. <b>다만 종목을 앞으로 9개, 12개까지 늘릴 생각이라면 지금 안 B로 가는 게 맞습니다</b> — 그때 가서 바꾸면 이미 익힌 조작을 뺏는 일이 됩니다.</p>
 </section>
 <!-- ========== 02 라운드 중 ========== -->
 <section class="spec">
@@ -883,7 +1017,7 @@ figure.frame.after figcaption{color:var(--wb-new);}
   <div class="spec-head">
     <div class="eyebrow">화면 05 · 신규</div>
     <h2>새 판 시작 — 난이도 선택</h2>
-    <p>1단계만 열려 있고, <b>그 단계를 완제해야</b> 다음이 열립니다. 파산으로는 안 열립니다. 디메리트는 접지 않고 항상 펼쳐 둡니다 — 고르기 전에 무엇을 짊어지는지 알아야 선택입니다.</p>
+    <p>1단계만 열려 있고, <b>그 단계를 완제해야</b> 다음이 열립니다. 파산으로는 안 열립니다. 디메리트는 접지 않고 항상 펼쳐 둡니다 — 고르기 전에 무엇을 짊어지는지 알아야 선택입니다. <b>메타 레벨과 해금 현황도 여기서만 보여주고</b>, 판이 시작되면 화면에서 사라집니다.</p>
   </div>
 
   <div class="frames">
@@ -893,8 +1027,12 @@ figure.frame.after figcaption{color:var(--wb-new);}
         <div class="mbox">
           <div class="emo">🎚️</div>
           <div class="tt">어디서 시작할까요?</div>
-          <div class="dc">높은 단계일수록 경험치를 더 받아요.</div>
-          <div class="scroller" style="margin-top:16px">
+          <div class="mk nw" style="margin-top:16px;text-align:left"><span class="tag">12</span>
+            <div class="meta-lv"><span>🧬 트레이더 Lv.6</span><small>다음 해금까지 220 XP</small></div>
+            <div class="xp-bar"><i style="width:82%"></i></div>
+            <div class="dex-st" style="margin-top:2px">열린 것 🎯 ✂️ 🐻 💧 📰 📊 🎲 · 남은 것 🔒 🪙 📋</div>
+          </div>
+          <div class="scroller" style="margin-top:14px">
             <div class="diff-card">
               <div class="diff-top"><span class="diff-nm">1 · 개미</span><span class="diff-clear">✓ 클리어</span></div>
               <div class="diff-de none">디메리트 없음 · XP ×1.0</div>
@@ -921,31 +1059,28 @@ figure.frame.after figcaption{color:var(--wb-new);}
       </div>
     </figure>
 
-    <figure class="frame after">
-      <figcaption>해금 탭 <em>· 2단으로</em></figcaption>
+    <figure class="frame">
+      <figcaption>해금 탭 <em>· 손대지 않습니다</em></figcaption>
       <div class="phone">
         <div class="main-tabs" style="margin-top:16px">
           <button class="main-tab">🎯 단타</button>
           <button class="main-tab">🛒 상점</button>
           <button class="main-tab on">🔓 해금</button>
         </div>
-        <div class="section-title">🧬 트레이더 <small style="font-weight:600;color:var(--gray3)">· 판을 거듭하면 영구히 열려요</small></div>
-        <div class="meta-head mk nw"><span class="tag">12</span>
-          <div class="meta-lv"><span>Lv.6</span><small>다음 해금까지 220 XP</small></div>
-          <div class="xp-bar"><i style="width:82%"></i></div>
-        </div>
-        <div class="biz"><div class="logo">🐻</div><div class="mid"><div class="nm">공매도<span class="cnt">Lv.6</span></div><div class="ds">하락에 걸 수 있어요</div></div><span class="unlock-tag open">✓ 해금됨</span></div>
-        <div class="biz"><div class="logo">✂️</div><div class="mid"><div class="nm">분할 매도<span class="cnt">Lv.5</span></div><div class="ds">절반만 익절하고 나머지는 홀드</div></div><span class="unlock-tag open">✓ 해금됨</span></div>
-        <div class="biz"><div class="logo">🔒</div><div class="mid"><div class="nm">코인<span class="cnt">Lv.7</span></div><div class="ds">라운드 20초 · 변동 극단</div></div><span class="unlock-tag closed">Lv.7 도달 시</span></div>
-        <div class="section-title">🏆 이번 판 <small style="font-weight:600;color:var(--gray3)">· 관문을 넘으면 열려요</small></div>
+        <div class="section-title">🏆 해금 <small style="font-weight:600;color:var(--gray3)">· 레벨을 올리면 무료로 열려요</small></div>
+        <div class="biz"><div class="logo">🚗</div><div class="mid"><div class="nm">첫 차<span class="cnt">Lv.2</span></div><div class="ds">현금 +20만원</div></div><span class="unlock-tag open">✓ 해금됨</span></div>
         <div class="biz"><div class="logo">🚀</div><div class="mid"><div class="nm">네코프로 해금<span class="cnt">Lv.3</span></div><div class="ds">🚀 네코프로 거래 해금</div></div><span class="unlock-tag open">✓ 해금됨</span></div>
+        <div class="biz"><div class="logo">💍</div><div class="mid"><div class="nm">결혼<span class="cnt">Lv.4</span></div><div class="ds">축의금 +50만원</div></div><span class="unlock-tag open">✓ 해금됨</span></div>
         <div class="biz"><div class="logo">🔒</div><div class="mid"><div class="nm">유메이드 해금<span class="cnt">Lv.5</span></div><div class="ds">🔥 유메이드 거래 해금</div></div><span class="unlock-tag closed">Lv.5 도달 시</span></div>
+        <div class="biz"><div class="logo">🔒</div><div class="mid"><div class="nm">내 집 마련<span class="cnt">Lv.6</span></div><div class="ds">🎚️ 레버리지 1단계 무료 강화</div></div><span class="unlock-tag closed">Lv.6 도달 시</span></div>
+        <div class="trade-note" style="margin:14px 20px 0">🏖️ 은퇴는 Lv.6 부터 열려요</div>
       </div>
     </figure>
   </div>
 
   <ol class="notes">
-    <li class="nw"><span class="n">12</span><span><b>메타 레벨은 탑바에 안 넣습니다.</b> 거기 <code>Lv.4</code> 칩은 판 안 레벨이라 나란히 두면 Lv이 두 개가 됩니다. 게다가 메타 레벨은 판 도중 변하지 않으니 상시 표시할 이유가 없습니다. 🔓해금 탭을 <b>위=영구 / 아래=이번 판</b> 2단으로 나누면 탭 이름도 역할도 그대로입니다.</span></li>
+    <li class="nw"><span class="n">12</span><span><b>메타 정보는 판 경계에서만 보입니다.</b> 판이 시작되면 메타 레벨도 해금 목록도 화면에서 사라지고, 다음에 죽거나 완제할 때 정산 화면에서 다시 만납니다. 🔓해금 탭은 <b>지금 그대로</b>입니다 — 이번 판 로드맵만 담고, 자동 익절만 빠집니다.</span></li>
+    <li><span class="n">13</span><span><b>탑바의 <code>Lv.4</code> 칩도 그대로 판 안 레벨입니다.</b> 메타 레벨을 나란히 두면 Lv이 두 개가 되는데, 애초에 판 도중 변하지 않는 값이라 상시 표시할 이유가 없습니다.</span></li>
   </ol>
 </section>
 <!-- ========== 06 패턴 도감 ========== -->
@@ -1004,9 +1139,9 @@ figure.frame.after figcaption{color:var(--wb-new);}
       <figcaption>왜 이게 필요한가</figcaption>
       <div style="width:min(390px,92vw)">
         <ol class="notes" style="grid-template-columns:1fr; margin-top:0">
-          <li class="nw"><span class="n">13</span><span><b>죽어 있던 콘텐츠를 살립니다.</b> 하락 계열 패턴이 10종 중 4종이고 <code>DOWN_SHIFT</code>로 비중까지 올려뒀는데, 플레이어에게는 지금 전부 그냥 손실입니다. 대응이 "빨리 팔기" 하나뿐이죠. <b>공매도가 열리면 🔴약세 신호가 처음으로 기회가 되고</b>, 도감은 그 기회를 읽는 법을 가르칩니다.</span></li>
-          <li class="nw"><span class="n">14</span><span><b>쉬워지지 않습니다.</b> 도감은 이미 지나간 판의 통계일 뿐이고, 다음 판에 무엇이 나올지는 알려주지 않습니다. 신호의 적중률(55~78%)은 그대로입니다.</span></li>
-          <li><span class="n">15</span><span><b>새 데이터가 거의 안 듭니다.</b> <code>PATTERNS</code>·<code>PATTERN_TIER</code>가 이미 있고, 판별은 라운드가 끝날 때 <code>patternId</code>를 세기만 하면 됩니다.</span></li>
+          <li class="nw"><span class="n">14</span><span><b>죽어 있던 콘텐츠를 살립니다.</b> 하락 계열 패턴이 10종 중 4종이고 <code>DOWN_SHIFT</code>로 비중까지 올려뒀는데, 플레이어에게는 지금 전부 그냥 손실입니다. 대응이 "빨리 팔기" 하나뿐이죠. <b>공매도가 열리면 🔴약세 신호가 처음으로 기회가 되고</b>, 도감은 그 기회를 읽는 법을 가르칩니다.</span></li>
+          <li class="nw"><span class="n">15</span><span><b>쉬워지지 않습니다.</b> 도감은 이미 지나간 판의 통계일 뿐이고, 다음 판에 무엇이 나올지는 알려주지 않습니다. 신호의 적중률(55~78%)은 그대로입니다.</span></li>
+          <li><span class="n">16</span><span><b>새 데이터가 거의 안 듭니다.</b> <code>PATTERNS</code>·<code>PATTERN_TIER</code>가 이미 있고, 판별은 라운드가 끝날 때 <code>patternId</code>를 세기만 하면 됩니다.</span></li>
         </ol>
       </div>
     </figure>
@@ -1024,22 +1159,23 @@ figure.frame.after figcaption{color:var(--wb-new);}
   <div class="tally">
     <div class="tally-wrap">
       <table>
-        <caption>단타 화면 세로 블록 수</caption>
-        <thead><tr><th>화면</th><th>지금</th><th>바뀜</th><th>차이</th></tr></thead>
+        <caption>단타 화면 세로 블록과 높이</caption>
+        <thead><tr><th>화면</th><th>지금 블록</th><th>바뀜 블록</th><th>높이 변화</th></tr></thead>
         <tbody>
           <tr><td>베팅 화면 · 첫 판</td><td>11</td><td>11</td><td class="ok">±0</td></tr>
-          <tr><td>베팅 화면 · 해금 전부</td><td>11</td><td>11</td><td class="ok">±0</td></tr>
-          <tr><td>라운드 중 · 물타기 안 쓴 상태</td><td>7</td><td>8</td><td>+1</td></tr>
+          <tr><td>베팅 화면 · 해금 전부</td><td>11</td><td>11</td><td>+69px <small>(종목 2줄)</small></td></tr>
+          <tr><td>라운드 중 · 물타기 안 쓴 상태</td><td>7</td><td>8</td><td>+48px</td></tr>
           <tr><td>라운드 중 · 물타기 쓴 뒤</td><td>7</td><td>7</td><td class="ok">±0</td></tr>
-          <tr><td>거래 결과 팝업</td><td>8</td><td>7</td><td class="ok">−1</td></tr>
+          <tr><td>거래 결과 팝업</td><td>8</td><td>7</td><td class="ok">−22px</td></tr>
           <tr><td>정산 · 난이도 선택 · 도감</td><td>—</td><td>모달</td><td class="ok">±0</td></tr>
-          <tr><td>합계 (상시 화면)</td><td>26</td><td>26</td><td class="ok">±0</td></tr>
+          <tr><td>합계 (상시 화면)</td><td>26</td><td>26</td><td>+95px</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
-  <p class="foot"><b>지키려는 선.</b> 기능 9개를 넣으면서 상시 화면 블록은 그대로 26개입니다. 늘어나는 건 라운드 중 물타기 한 줄뿐이고, 그건 해금한 사람이 그 판에 안 썼을 때만 보입니다. <b>처음 시작하는 사람이 보는 화면은 지금과 완전히 같습니다</b> — 종목 하나, 시작 버튼 하나, 매도 버튼 하나.</p>
+  <p class="foot"><b>지키려는 선.</b> 기능 9개를 넣으면서 상시 화면 블록은 26개 그대로입니다. 높이는 749px에서 약 844px로 <b>13% 늘어납니다</b> — 늘어나는 건 사실상 종목 2줄(+69px)과 라운드 중 물타기 한 줄(+48px)뿐이고, 거래 결과 팝업이 22px 줄어 일부를 돌려받습니다. 종목을 안 늘리고 안 B(시트)로 가면 <b>749px보다 오히려 짧아집니다.</b><br><br><b>처음 시작하는 사람이 보는 화면은 지금과 완전히 같습니다</b> — 종목 한 줄, 시작 버튼 하나, 매도 버튼 하나. 늘어난 높이는 전부 해금을 열어 온 사람만 봅니다.</p>
+
 </section>
 
 </div>

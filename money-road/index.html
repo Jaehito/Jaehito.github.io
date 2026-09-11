@@ -502,19 +502,30 @@ const TRADE_STOCKS=[
    patW:{spike:3, up:0.4, delayup:1.5,
          delaydown:3, down:0.6, flat:0.2,
          v:1.5, invv:1.5, w:0.5, m:0.5}},
+  /* 🪙 유일하게 시간축이 다른 종목 — 20초다(다른 종목은 15초).
+     한 판 = 하루라는 규칙은 그대로라, 코인은 "같은 하루를 더 오래 지켜보는" 종목이다.
+     대신 진폭이 가장 크다. 실제 시간을 더 쓰고 게임 안의 진도를 더 빼는 맞교환이다. */
+  {id:'coin',   emo:'🪙', name:'코인',      ds:'20초 · 변동 극단', pMult:2.6, noiseMult:3.0,
+   ticks:400, open:()=>metaHas('coin'), lock:'🧬 해금'},
 ];
 function stockOpen(st){return !st.open||st.open();}
+/* 라운드 길이는 종목마다 다를 수 있다. ROUND_TICKS는 기본값(15초)이고, 종목이 ticks로
+   덮어쓴다 — 코인만 20초다. 틱 간격(50ms)은 어느 종목이나 같다. */
 const ROUND_TICKS=300, ROUND_TICK_MS=50; // 15초를 0.05초 단위로 나눠서 더 부드럽고 잦게 움직이게
-const NOISE_SCALE=Math.sqrt(30/ROUND_TICKS); // 기존 30틱 기준으로 검증한 노이즈 강도를 촘촘한 해상도에 맞게 보정
+function ticksOf(st){return (st&&st.ticks)||ROUND_TICKS;}
+/* 기존 30틱 기준으로 검증한 노이즈 강도를 촘촘한 해상도에 맞게 보정.
+   틱이 늘면 한 틱당 노이즈를 줄여야 전체 흔들림이 같은 크기로 유지된다. */
+function noiseScale(T){return Math.sqrt(30/T);}
 
 function dev(base,mult){return Math.max(0.05,1+(base-1)*mult);}
 /* 여러 구간(keypoint)을 사인 이징으로 잇는 범용 경로 생성기 — 구간을 몇 개, 어떤 값으로
    두느냐에 따라 상승/하락/V자는 물론 이중 바닥(W)·이중 고점(M)·지연 반응까지 전부 표현 가능 */
-function buildMultiPhase(keypoints,noiseAmt){
+function buildMultiPhase(keypoints,noiseAmt,T){
+  T=T||ROUND_TICKS;
   const kps=[[0,1],...keypoints];
   const path=[1]; let noise=0;
-  for(let i=1;i<=ROUND_TICKS;i++){
-    const frac=i/ROUND_TICKS;
+  for(let i=1;i<=T;i++){
+    const frac=i/T;
     let seg=kps.length-2;
     for(let k=0;k<kps.length-1;k++){ if(frac<=kps[k+1][0]){seg=k;break;} }
     const [f0,v0]=kps[seg],[f1,v1]=kps[seg+1];
@@ -526,11 +537,12 @@ function buildMultiPhase(keypoints,noiseAmt){
   }
   return path;
 }
-function buildFlat(noiseAmt,driftAmt){
+function buildFlat(noiseAmt,driftAmt,T){
+  T=T||ROUND_TICKS;
   const path=[1]; let noise=0; const drift=(Math.random()-0.5)*driftAmt;
-  for(let i=1;i<=ROUND_TICKS;i++){
+  for(let i=1;i<=T;i++){
     noise+=noiseAmt*randn(); noise*=0.8;
-    path.push(Math.max(0.05,1+drift*(i/ROUND_TICKS)+noise));
+    path.push(Math.max(0.05,1+drift*(i/T)+noise));
   }
   return path;
 }
@@ -538,42 +550,42 @@ function buildFlat(noiseAmt,driftAmt){
    패턴마다 요구하는 대응이 전부 달라서(즉시매도/버티기/중간에익절/초반무시 등),
    "일단 홀드"나 "일단 반응만 보고 팔기" 같은 단일 정답이 통하지 않는다. */
 const PATTERNS=[
-  {id:'up',emo:'📈',name:'상승',spark:'M2 20 L20 17 L38 12 L54 6 L70 4',weight:.12,gen:st=>{
+  {id:'up',emo:'📈',name:'상승',spark:'M2 20 L20 17 L38 12 L54 6 L70 4',weight:.12,gen:(st,T)=>{
     const peakFrac=0.55+Math.random()*0.20, peakV=dev(1.4+Math.random()*0.7,st.pMult), endV=dev(1.15+Math.random()*0.35,st.pMult);
-    return buildMultiPhase([[peakFrac,peakV],[1,endV]],0.012*NOISE_SCALE*st.noiseMult);
+    return buildMultiPhase([[peakFrac,peakV],[1,endV]],0.012*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'down',emo:'📉',name:'하락',spark:'M2 4 L20 8 L38 14 L54 19 L70 20',weight:.15,gen:st=>{
+  {id:'down',emo:'📉',name:'하락',spark:'M2 4 L20 8 L38 14 L54 19 L70 20',weight:.15,gen:(st,T)=>{
     const bottomFrac=0.5+Math.random()*0.25, botV=dev(0.4+Math.random()*0.3,st.pMult), endV=1+(botV-1)*(0.9+Math.random()*0.15);
-    return buildMultiPhase([[bottomFrac,botV],[1,endV]],0.01*NOISE_SCALE*st.noiseMult);
+    return buildMultiPhase([[bottomFrac,botV],[1,endV]],0.01*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'v',emo:'✅',name:'V자 반등',spark:'M2 8 L18 20 L34 17 L52 9 L70 4',weight:.12,gen:st=>{
+  {id:'v',emo:'✅',name:'V자 반등',spark:'M2 8 L18 20 L34 17 L52 9 L70 4',weight:.12,gen:(st,T)=>{
     const bottomFrac=0.22+Math.random()*0.16, botV=dev(0.5+Math.random()*0.25,st.pMult), endV=dev(1.05+Math.random()*0.45,st.pMult);
-    return buildMultiPhase([[bottomFrac,botV],[1,endV]],0.014*NOISE_SCALE*st.noiseMult);
+    return buildMultiPhase([[bottomFrac,botV],[1,endV]],0.014*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'spike',emo:'🎢',name:'급등급락',spark:'M2 16 L14 3 L26 8 L44 15 L70 20',weight:.10,gen:st=>{
+  {id:'spike',emo:'🎢',name:'급등급락',spark:'M2 16 L14 3 L26 8 L44 15 L70 20',weight:.10,gen:(st,T)=>{
     const peakFrac=0.08+Math.random()*0.17, peakV=dev(1.8+Math.random()*1.7,st.pMult), endV=dev(0.5+Math.random()*0.35,st.pMult);
-    return buildMultiPhase([[peakFrac,peakV],[1,endV]],0.02*NOISE_SCALE*st.noiseMult);
+    return buildMultiPhase([[peakFrac,peakV],[1,endV]],0.02*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'flat',emo:'➖',name:'횡보',spark:'M2 12 L20 11 L38 13 L54 11 L70 12',weight:.08,gen:st=>buildFlat(0.01*NOISE_SCALE*st.noiseMult,0.15*st.pMult)},
-  {id:'invv',emo:'⛰️',name:'고점 후 하락',spark:'M2 18 L20 9 L36 4 L54 12 L70 19',weight:.10,gen:st=>{
+  {id:'flat',emo:'➖',name:'횡보',spark:'M2 12 L20 11 L38 13 L54 11 L70 12',weight:.08,gen:(st,T)=>buildFlat(0.01*noiseScale(T)*st.noiseMult,0.15*st.pMult,T)},
+  {id:'invv',emo:'⛰️',name:'고점 후 하락',spark:'M2 18 L20 9 L36 4 L54 12 L70 19',weight:.10,gen:(st,T)=>{
     const peakFrac=0.4+Math.random()*0.2, peakV=dev(1.4+Math.random()*0.7,st.pMult), endV=dev(0.55+Math.random()*0.3,st.pMult);
-    return buildMultiPhase([[peakFrac,peakV],[1,endV]],0.014*NOISE_SCALE*st.noiseMult);
+    return buildMultiPhase([[peakFrac,peakV],[1,endV]],0.014*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'w',emo:'🌊',name:'이중 바닥',spark:'M2 10 L14 19 L28 11 L42 20 L56 12 L70 13',weight:.10,gen:st=>{
+  {id:'w',emo:'🌊',name:'이중 바닥',spark:'M2 10 L14 19 L28 11 L42 20 L56 12 L70 13',weight:.10,gen:(st,T)=>{
     const d1=dev(0.5+Math.random()*0.25,st.pMult), b1=dev(1.15+Math.random()*0.25,st.pMult), d2=dev(0.55+Math.random()*0.25,st.pMult), endV=dev(0.95+Math.random()*0.2,st.pMult);
-    return buildMultiPhase([[0.22,d1],[0.5,b1],[0.75,d2],[1,endV]],0.013*NOISE_SCALE*st.noiseMult);
+    return buildMultiPhase([[0.22,d1],[0.5,b1],[0.75,d2],[1,endV]],0.013*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'m',emo:'🐫',name:'이중 고점',spark:'M2 14 L14 5 L28 13 L42 7 L56 16 L70 20',weight:.10,gen:st=>{
+  {id:'m',emo:'🐫',name:'이중 고점',spark:'M2 14 L14 5 L28 13 L42 7 L56 16 L70 20',weight:.10,gen:(st,T)=>{
     const p1=dev(1.35+Math.random()*0.35,st.pMult), d1=dev(0.75+Math.random()*0.2,st.pMult), p2=dev(1.05+Math.random()*0.2,st.pMult), endV=dev(0.65+Math.random()*0.2,st.pMult);
-    return buildMultiPhase([[0.22,p1],[0.5,d1],[0.75,p2],[1,endV]],0.013*NOISE_SCALE*st.noiseMult);
+    return buildMultiPhase([[0.22,p1],[0.5,d1],[0.75,p2],[1,endV]],0.013*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'delayup',emo:'⏫',name:'지연 상승',spark:'M2 13 L24 12 L40 13 L54 8 L70 3',weight:.07,gen:st=>{
+  {id:'delayup',emo:'⏫',name:'지연 상승',spark:'M2 13 L24 12 L40 13 L54 8 L70 3',weight:.07,gen:(st,T)=>{
     const flatV=dev(0.98+Math.random()*0.08,1), endV=dev(1.6+Math.random()*0.5,st.pMult);
-    return buildMultiPhase([[0.55,flatV],[1,endV]],0.008*NOISE_SCALE*st.noiseMult);
+    return buildMultiPhase([[0.55,flatV],[1,endV]],0.008*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'delaydown',emo:'⏬',name:'지연 하락',spark:'M2 11 L24 12 L40 11 L54 16 L70 21',weight:.06,gen:st=>{
+  {id:'delaydown',emo:'⏬',name:'지연 하락',spark:'M2 11 L24 12 L40 11 L54 16 L70 21',weight:.06,gen:(st,T)=>{
     const flatV=dev(0.98+Math.random()*0.08,1), endV=dev(0.4+Math.random()*0.25,st.pMult);
-    return buildMultiPhase([[0.55,flatV],[1,endV]],0.008*NOISE_SCALE*st.noiseMult);
+    return buildMultiPhase([[0.55,flatV],[1,endV]],0.008*noiseScale(T)*st.noiseMult,T);
   }},
 ];
 function pickPattern(){
@@ -612,7 +624,7 @@ const NEWS_DOWN=['유상증자 검토','대주주 지분 매각설','실적 하�
                  '규제 심사 착수','공장 가동 중단','기관 매도 물량 출회'];
 function rollNews(path,stockName){
   const [a,b]=NEWS_AT;
-  const idx=Math.floor(ROUND_TICKS*(a+Math.random()*(b-a)));
+  const idx=Math.floor((path.length-1)*(a+Math.random()*(b-a)));
   const truth=path[path.length-1]>=path[idx]?'up':'down';
   const say=Math.random()<NEWS_ACC?truth:(truth==='up'?'down':'up');
   const pool=say==='up'?NEWS_UP:NEWS_DOWN;
@@ -620,7 +632,8 @@ function rollNews(path,stockName){
 }
 function genRound(stock,tier){
   const pat=pickInTier(tier||'mid',stock);
-  return {patternId:pat.id, patternEmo:pat.emo, path:pat.gen(stock)};
+  const T=ticksOf(stock);
+  return {patternId:pat.id, patternEmo:pat.emo, path:pat.gen(stock,T), ticks:T};
 }
 
 /* ===== 장세 신호 =====
@@ -835,6 +848,8 @@ const META_UNLOCKS=[
    ds:'급등 아니면 급락뿐인 종목이에요 · 완만한 판이 거의 없어요'},
   {lv:9, need:780, id:'dex',      emo:'📋', name:'패턴 도감',
    ds:'겪은 패턴이 쌓여요 · 신호 등급마다 뭐가 나오는지 볼 수 있어요'},
+  {lv:10,need:900, id:'coin',     emo:'🪙', name:'코인',
+   ds:'한 판이 20초예요 · 변동이 가장 크고 하루는 똑같이 하루예요'},
 ];
 /* ===== 📋 패턴 도감 =====
    이 게임은 패턴을 읽는 게임인데 읽는 법을 배울 곳이 없었다. 겪은 패턴을 영구히
@@ -1542,12 +1557,12 @@ function startRound(dir){
   const bet=S.betAmount;
   if(bet<MIN_BET||bet>S.cash)return;
   ensurePending();
-  const {patternId,patternEmo,path}=genRound(stock,S.pending.tier);
+  const {patternId,patternEmo,path,ticks}=genRound(stock,S.pending.tier);
   const maxLev=leverageMultOf(), minLev=minLevOf();
   const leverage=Math.min(Math.max(minLev,S.betLeverage||minLev),maxLev);
   const rankBefore=rankOf(); // 베팅금 차감 전 순위 — 결과 카드에서 변화를 보여주기 위해
   S.cash-=bet;
-  S.activeRound={stockId:stock.id,bet,path,patternId,patternEmo,leverage,rankBefore,
+  S.activeRound={stockId:stock.id,bet,path,ticks,patternId,patternEmo,leverage,rankBefore,
     dir:(metaHas('short')&&dir<0)?-1:1,
     entry:1, bet0:bet, watered:false,   // entry = 평균 단가. 물타기로만 움직인다
     news:metaHas('news')?rollNews(path,stock.name):null,
@@ -1875,7 +1890,8 @@ function renderRoundView(){
   if(!RV || RV.round!==r || !document.body.contains(RV.root)) buildRoundView(r,stock);
   const idx=currentTickIdx(), mult=r.path[idx];
   const entry=r.entry||1;
-  const remain=Math.max(0,(ROUND_TICKS-idx)*ROUND_TICK_MS/1000);
+  const T=r.ticks||(r.path.length-1);
+  const remain=Math.max(0,(T-idx)*ROUND_TICK_MS/1000);
   /* 색은 진입가(물탔으면 평단) 대비다 — 물탄 뒤에도 "지금 이익인가"와 맞아야 한다 */
   const dir=mult>entry*1.01?'up':mult<entry*0.99?'down':'flat';
   const W=RV.cw, H=RV_H, padX=RV_PADX, padY=RV_PADY;
@@ -1902,13 +1918,15 @@ function renderRoundView(){
   }
   if(typeof r.dispYMin!=='number'){r.dispYMin=r.yMin;r.dispYMax=r.yMax;}
   const rawRng=(r.yMax-r.yMin)||0.001, pad=rawRng*0.15;
-  const targetYMin=r.yMin-pad, targetYMax=r.yMax+pad;
+  /* 아래 여백은 0에서 자른다 — 가격은 0.05가 하한이라 음수 눈금이 나올 수가 없다.
+     진폭이 큰 종목(코인·유메이드)에서 pad가 커지면 축이 "-0.20x"까지 내려갔었다. */
+  const targetYMin=Math.max(0,r.yMin-pad), targetYMax=r.yMax+pad;
   const EASE=0.2;
   r.dispYMin+=(targetYMin-r.dispYMin)*EASE;
   r.dispYMax+=(targetYMax-r.dispYMax)*EASE;
   const yMin=r.dispYMin, yMax=r.dispYMax;
   const rng=(yMax-yMin)||0.001;
-  const xOf=i=>padX+(i/ROUND_TICKS)*(W-2*padX);
+  const xOf=i=>padX+(i/T)*(W-2*padX);
   const yOf=v=>H-padY-((v-yMin)/rng)*(H-2*padY);
   const clampY=y=>Math.max(2,Math.min(H-2,y));
   const pts=[];
@@ -2062,7 +2080,7 @@ function renderRoundView(){
     RV.lastCnt=c; RV.count.textContent=c;
     RV.count.className='round-count'; void RV.count.offsetWidth; RV.count.className='round-count on';
   }
-  RV.bar.style.width=(idx/ROUND_TICKS*100).toFixed(1)+'%';
+  RV.bar.style.width=(idx/T*100).toFixed(1)+'%';
 }
 
 /* ===== 연승/오늘의 기록 스트립 =====

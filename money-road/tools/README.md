@@ -18,7 +18,7 @@ playwright 기본 탐색 순으로 찾는다. 이미 chromium이 있으면 `play
 ```bash
 ./check.sh                      # <script> 블록 문법 검사 — 커밋 전 항상 먼저
 npm test                        # 회귀 테스트 전체
-node test/phase26.js            # 하나만
+node test/phase27.js            # 하나만
 node sim/tier.js                # 밸런스 시뮬 (수십 초~몇 분 걸리는 것도 있다)
 node shot.js /tmp/a.png "S.cash=140000;S.daysLeft=1;setBet(70000);render()"
 ```
@@ -67,6 +67,10 @@ node shot.js /tmp/a.png "S.cash=140000;S.daysLeft=1;setBet(70000);render()"
 앞부분을 `eval`해서 쓴다 — **게임의 `PATTERNS`/`buildMultiPhase`를 손으로 옮겨 적은
 사본**이라, 게임 쪽 패턴을 고치면 여기도 같이 고쳐야 결과가 유효하다.
 
+라운드 길이는 이제 종목별 속성이다(`ticks`, 코인만 400틱=20초). 시뮬은 전부 기본
+300틱 기준이라 사본을 고칠 필요가 없다 — **패턴 모양은 틱 수와 무관**하고, 노이즈는
+`noiseScale(T)=√(30/T)`가 보정해서 틱이 늘어도 흔들림의 크기가 같다(phase27 2번).
+
 ## 회귀 테스트
 
 `test/phaseNN.js`는 그 단계에서 바꾼 것만 확인한다. 전 기능 커버리지가 아니다.
@@ -83,6 +87,7 @@ node shot.js /tmp/a.png "S.cash=140000;S.daysLeft=1;setBet(70000);render()"
 - `phase24` — 장중 뉴스: truth 판정, 적중률 표본, 등장 구간, 3초 표시, 결과 카드 사후 공개
 - `phase25` — ETF·동전주와 종목 성격: pending이 등급 구조인지, 종목을 바꿔도 신호가 그대로인지, 등급 안 패턴 분포
 - `phase26` — 패턴 도감: 판당 1회 적립, 화면 비율이 실제 분포와 맞는지, 종목별로 달라지는지, 신호 적중률 불변
+- `phase27` — 코인과 종목별 라운드 길이: 틱 수, 노이즈 보정, 진행바·남은 시간, y축 하한
 
 **기능을 의도적으로 없앤 뒤 옛 테스트가 깨지는 건 회귀가 아니다.** 그때는 테스트를 고친다.
 테스트가 레벨업/결과 모달에 막혀 멈추는 경우가 많으니, 라운드를 여러 번 돌릴 때는

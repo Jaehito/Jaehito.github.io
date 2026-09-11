@@ -29,7 +29,8 @@ const { launch, GAME: url } = require('../lib/browser');
  let p=await fresh(0);
  L('', await p.evaluate(()=>{ startRound(1);
    const has=!!S.activeRound.news; S.activeRound=null;
-   return {metaHas:metaHas('news'), 뉴스:has, 오버레이숨김:$('rvNews').hidden};}));
+   return {metaHas:metaHas('news'), 뉴스:has,
+     상단줄:$('rvT1')?$('rvT1').textContent:'(라운드 없음)'};}));
  await p.close();
 
  console.log('\n=== 2. truth = 뉴스 시점 가격 vs 최종가 ===');
@@ -76,8 +77,9 @@ const { launch, GAME: url } = require('../lib/browser');
  L('', await p.evaluate(()=>{
    startRound(1);
    const R=S.activeRound; R.news.idx=100;
+   /* 뉴스는 그래프를 가리지 않도록 상단 줄을 빌려 쓴다 — .rt-news가 있으면 떠 있는 것 */
    const at=(tick)=>{ R.startedAt=Date.now()-tick*ROUND_TICK_MS; renderRoundView();
-     return !$('rvNews').hidden; };
+     return !!$('rvT1').querySelector('.rt-news'); };
    return {'idx 99 (뜨기 전)':at(99), 'idx 100 (뜨는 순간)':at(100),
      'idx 159 (마지막)':at(100+NEWS_TICKS-1), 'idx 160 (사라짐)':at(100+NEWS_TICKS),
      NEWS_TICKS, 초:NEWS_TICKS*ROUND_TICK_MS/1000};}));

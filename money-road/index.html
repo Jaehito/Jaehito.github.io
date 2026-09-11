@@ -182,18 +182,15 @@
   .sell-btn{width:100%; border:none; border-radius:14px; padding:13px; font-size:16px; font-weight:900; color:#fff; cursor:pointer;
     background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
   /* ✂️ 분할 매도 — 매도 버튼을 좌우로 쪼갠다. 절반 쪽은 "덜 센 선택"으로 읽히게 톤을 낮춘다. */
-  /* 📰 장중 뉴스 — 그래프 위에 겹친다. round-chartbox가 이미 relative라 블록이 안 는다. */
-  .news-pop{position:absolute; left:9px; right:9px; top:9px; z-index:2;
-    background:rgba(25,31,40,.93); color:#fff; border-radius:12px; padding:9px 11px;
-    display:flex; gap:8px; align-items:flex-start; text-align:left;
-    animation:newsIn .28s cubic-bezier(.2,1.2,.4,1);}
-  @keyframes newsIn{from{opacity:0; transform:translateY(-6px);}to{opacity:1; transform:none;}}
-  .news-pop .e{font-size:15px; flex-shrink:0;}
-  .news-pop .t{display:block; font-size:11.5px; font-weight:800; line-height:1.35;}
-  .news-pop .s{display:block; font-size:10px; font-weight:700; opacity:.55; margin-top:2px;}
+  /* 📰 장중 뉴스 — 상단 줄을 3초간 빌려 쓴다. 그래프를 가리지 않고 블록도 안 는다.
+     한 줄을 넘기면 레이아웃이 흔들리므로 넘치는 건 자른다. */
+  .round-timer .rt-l{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .rt-news{font-weight:900; animation:newsIn .3s cubic-bezier(.2,1.2,.4,1);}
+  .rt-news.up{color:var(--red);} .rt-news.down{color:var(--blue);}
+  @keyframes newsIn{from{opacity:0; transform:translateY(-4px);}to{opacity:1; transform:none;}}
+  @media(prefers-reduced-motion:reduce){ .rt-news{animation:none;} }
   .rs-chip.news.hit{background:#e9f9f0; color:#00a862;}
   .rs-chip.news.miss{background:var(--field); color:var(--gray2);}
-  @media(prefers-reduced-motion:reduce){ .news-pop{animation:none;} }
   /* 💧 물타기 — 매도 버튼 위 한 줄. 판당 한 번이라 쓰고 나면 사라진다. */
   .water{display:flex; align-items:center; gap:8px; background:#eef6ff; border:1.5px solid #3182F633;
     border-radius:12px; padding:9px 11px; margin-bottom:9px; font-size:12px; font-weight:800;
@@ -1712,11 +1709,6 @@ function buildRoundView(r,stock){
         <text id="rvLiqT" class="rv-txt" text-anchor="end" font-size="10" font-weight="800" fill="#f04452" opacity="0"/>
       </svg>
       <div class="round-count" id="rvCount"></div>
-      <div class="news-pop" id="rvNews" hidden>
-        <span class="e" id="rvNewsEmo">📰</span>
-        <span><span class="t" id="rvNewsText"></span>
-        <span class="s">확인되지 않은 소식이에요</span></span>
-      </div>
     </div>
     <div class="round-pnl up" id="rvPnl">+0원</div>
     <div class="rv-wallet" id="rvWallet"></div>
@@ -1738,7 +1730,7 @@ function buildRoundView(r,stock){
     pnl:g('rvPnl'), bar:g('rvBar'), wallet:g('rvWallet'),
     halfBtn:g('sellHalf'), halfAmt:g('rvHalfAmt'), sellLab:g('rvSellLab'), fullAmt:g('rvFullAmt'),
     water:g('rvWater'), waterAmt:g('rvWaterAmt'), waterNote:g('rvWaterNote'),
-    news:g('rvNews'), newsEmo:g('rvNewsEmo'), newsText:g('rvNewsText')};
+    };
   /* viewBox 폭 = 실제 픽셀 폭으로 맞춰야 SVG 안의 글자가 가로로 늘어나지 않는다 */
   const fit=w=>{ w=Math.round(w); if(w<40||w===RV.cw)return;
     RV.cw=w; RV.svg.setAttribute('viewBox',`0 0 ${w} ${RV_H}`);
@@ -1893,14 +1885,12 @@ function renderRoundView(){
         ? `💧 평단 <b>${entry.toFixed(2)}x</b> · 투입 ${fmtWon(r.bet)}`
         : `지금 팔면 잔고 <b>${fmtWon(S.cash+Math.max(0,r.bet+profit))}</b>`);
   /* 분할 매도는 판당 한 번. 쓰고 나면 버튼이 하나로 돌아간다. */
-  /* 📰 장중 뉴스 — 뜨는 순간부터 3초만. 놓치면 그만이고, 그게 이 기능의 긴장이다. */
+  /* 📰 장중 뉴스 — 뜨는 순간부터 3초만. 놓치면 그만이고, 그게 이 기능의 긴장이다.
+     그래프 위에 겹치면 선을 가린다(y축이 "본 값만"으로 확장돼서 세로로 꽉 차고, 3초면
+     가로도 20%가 더 채워진다). 그래서 상단 줄을 3초간 빌려 쓴다 — 거기 있는 종목명·
+     배율·청산선은 라운드 내내 안 변하는 정보라 잠깐 가려도 잃는 게 없다. */
   const nw=r.news;
   const newsOn=!!nw&&idx>=nw.idx&&idx<nw.idx+NEWS_TICKS;
-  RV.news.hidden=!newsOn;
-  if(newsOn&&RV.newsText.textContent!==nw.text){
-    RV.newsText.textContent=nw.text;
-    RV.newsEmo.textContent=nw.say==='up'?'📈':'📉';
-  }
   /* 💧 물타기 줄 — 해금했고 아직 안 썼으면 보인다. 조건이 안 맞으면 왜 못 누르는지 적어둔다. */
   const waterOn=metaHas('water')&&!r.watered;
   RV.water.hidden=!waterOn;
@@ -1925,7 +1915,15 @@ function renderRoundView(){
   const levTxt=hasLiq?` · 🎚️${lev}배 · 청산 ${liq.toFixed(2)}x`:(lev>1?` · 🎚️${lev}배`:'');
   const autoTxt=r.autoTarget?` · 🎯${(entry*(sdir>0?r.autoTarget:1/r.autoTarget)).toFixed(2)}x 자동`:'';
   const buffTxt=(r.buffs&&r.buffs.length)?' · '+r.buffs.map(b=>BUFFS[b].emo).join(''):'';
-  RV.t1.textContent=`${stock.emo} ${stock.name}${dirTxt}${levTxt}${autoTxt}${buffTxt}`;
+  if(newsOn){
+    if(RV.lastNews!==nw.text){
+      RV.lastNews=nw.text;
+      RV.t1.innerHTML=`<span class="rt-news ${nw.say}">${nw.say==='up'?'📈':'📉'} ${nw.text}</span>`;
+    }
+  }else{
+    RV.lastNews=null;
+    RV.t1.textContent=`${stock.emo} ${stock.name}${dirTxt}${levTxt}${autoTxt}${buffTxt}`;
+  }
   RV.t2.textContent=`${remain.toFixed(1)}초`;
 
   /* 마지막 3초 — 강제 매도 직전의 압박 */

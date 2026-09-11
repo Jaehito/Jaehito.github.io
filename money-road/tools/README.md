@@ -18,7 +18,7 @@ playwright 기본 탐색 순으로 찾는다. 이미 chromium이 있으면 `play
 ```bash
 ./check.sh                      # <script> 블록 문법 검사 — 커밋 전 항상 먼저
 npm test                        # 회귀 테스트 전체
-node test/phase25.js            # 하나만
+node test/phase26.js            # 하나만
 node sim/tier.js                # 밸런스 시뮬 (수십 초~몇 분 걸리는 것도 있다)
 node shot.js /tmp/a.png "S.cash=140000;S.daysLeft=1;setBet(70000);render()"
 ```
@@ -82,6 +82,7 @@ node shot.js /tmp/a.png "S.cash=140000;S.daysLeft=1;setBet(70000);render()"
 - `phase23` — 물타기: 평단 계산, 청산선 이동, 손실 중일 때만, 손익·자동 익절이 평단 기준, 분할 매도와 조합
 - `phase24` — 장중 뉴스: truth 판정, 적중률 표본, 등장 구간, 3초 표시, 결과 카드 사후 공개
 - `phase25` — ETF·동전주와 종목 성격: pending이 등급 구조인지, 종목을 바꿔도 신호가 그대로인지, 등급 안 패턴 분포
+- `phase26` — 패턴 도감: 판당 1회 적립, 화면 비율이 실제 분포와 맞는지, 종목별로 달라지는지, 신호 적중률 불변
 
 **기능을 의도적으로 없앤 뒤 옛 테스트가 깨지는 건 회귀가 아니다.** 그때는 테스트를 고친다.
 테스트가 레벨업/결과 모달에 막혀 멈추는 경우가 많으니, 라운드를 여러 번 돌릴 때는

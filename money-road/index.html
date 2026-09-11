@@ -341,6 +341,32 @@
   .cm-msg b{color:var(--ink); font-weight:800;}
   @keyframes cmIn{from{opacity:0; transform:translateY(-4px);}to{opacity:1; transform:none;}}
 
+  /* 📋 패턴 도감 */
+  .dex-btn{margin-left:auto; flex-shrink:0; border:none; background:rgba(255,255,255,.75);
+    border-radius:9px; width:28px; height:28px; font-size:14px; cursor:pointer;
+    display:grid; place-items:center;}
+  .dex-note{font-size:11px; font-weight:700; color:var(--gray2); background:var(--field);
+    border-radius:10px; padding:8px 10px; margin:10px 0 4px; text-align:left; line-height:1.45;}
+  .dex-note b{color:var(--ink); font-weight:900;}
+  .scroller{max-height:52vh; overflow-y:auto; -webkit-overflow-scrolling:touch; text-align:left;}
+  .dex-sec{margin-top:12px;}
+  .dex-head{font-size:12.5px; font-weight:900; padding:6px 9px; border-radius:9px;}
+  .dex-head small{font-weight:700; font-size:10.5px; opacity:.75; margin-left:5px;}
+  .dex-head.strong{background:#e9f9f0; color:#00a862;}
+  .dex-head.mid{background:#fff6e5; color:#c98600;}
+  .dex-head.weak{background:var(--red-weak); color:var(--red);}
+  .dex-grid{display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:7px;}
+  .dex{background:var(--field); border-radius:12px; padding:8px 10px;}
+  .dex.unseen{opacity:.55;}
+  .dex.none{opacity:.35;}
+  .dex-top{display:flex; align-items:baseline; gap:6px;}
+  .dex-nm{font-size:12px; font-weight:900;}
+  .dex-pct{margin-left:auto; font-size:11px; font-weight:900; color:var(--gray2);
+    font-variant-numeric:tabular-nums;}
+  .dex svg{display:block; margin-top:4px;}
+  .dex-st{font-size:10px; font-weight:700; color:var(--gray2); margin-top:3px;
+    font-variant-numeric:tabular-nums;}
+
   .hide{display:none !important;}
   /* display를 정한 클래스(.water의 flex 등)가 UA의 [hidden]{display:none}을 이겨서
      hidden을 걸어도 그대로 보인다. 한 줄로 막아둔다. */
@@ -512,40 +538,40 @@ function buildFlat(noiseAmt,driftAmt){
    패턴마다 요구하는 대응이 전부 달라서(즉시매도/버티기/중간에익절/초반무시 등),
    "일단 홀드"나 "일단 반응만 보고 팔기" 같은 단일 정답이 통하지 않는다. */
 const PATTERNS=[
-  {id:'up',emo:'📈',weight:.12,gen:st=>{
+  {id:'up',emo:'📈',name:'상승',spark:'M2 20 L20 17 L38 12 L54 6 L70 4',weight:.12,gen:st=>{
     const peakFrac=0.55+Math.random()*0.20, peakV=dev(1.4+Math.random()*0.7,st.pMult), endV=dev(1.15+Math.random()*0.35,st.pMult);
     return buildMultiPhase([[peakFrac,peakV],[1,endV]],0.012*NOISE_SCALE*st.noiseMult);
   }},
-  {id:'down',emo:'📉',weight:.15,gen:st=>{
+  {id:'down',emo:'📉',name:'하락',spark:'M2 4 L20 8 L38 14 L54 19 L70 20',weight:.15,gen:st=>{
     const bottomFrac=0.5+Math.random()*0.25, botV=dev(0.4+Math.random()*0.3,st.pMult), endV=1+(botV-1)*(0.9+Math.random()*0.15);
     return buildMultiPhase([[bottomFrac,botV],[1,endV]],0.01*NOISE_SCALE*st.noiseMult);
   }},
-  {id:'v',emo:'✅',weight:.12,gen:st=>{
+  {id:'v',emo:'✅',name:'V자 반등',spark:'M2 8 L18 20 L34 17 L52 9 L70 4',weight:.12,gen:st=>{
     const bottomFrac=0.22+Math.random()*0.16, botV=dev(0.5+Math.random()*0.25,st.pMult), endV=dev(1.05+Math.random()*0.45,st.pMult);
     return buildMultiPhase([[bottomFrac,botV],[1,endV]],0.014*NOISE_SCALE*st.noiseMult);
   }},
-  {id:'spike',emo:'🎢',weight:.10,gen:st=>{
+  {id:'spike',emo:'🎢',name:'급등급락',spark:'M2 16 L14 3 L26 8 L44 15 L70 20',weight:.10,gen:st=>{
     const peakFrac=0.08+Math.random()*0.17, peakV=dev(1.8+Math.random()*1.7,st.pMult), endV=dev(0.5+Math.random()*0.35,st.pMult);
     return buildMultiPhase([[peakFrac,peakV],[1,endV]],0.02*NOISE_SCALE*st.noiseMult);
   }},
-  {id:'flat',emo:'➖',weight:.08,gen:st=>buildFlat(0.01*NOISE_SCALE*st.noiseMult,0.15*st.pMult)},
-  {id:'invv',emo:'⛰️',weight:.10,gen:st=>{
+  {id:'flat',emo:'➖',name:'횡보',spark:'M2 12 L20 11 L38 13 L54 11 L70 12',weight:.08,gen:st=>buildFlat(0.01*NOISE_SCALE*st.noiseMult,0.15*st.pMult)},
+  {id:'invv',emo:'⛰️',name:'고점 후 하락',spark:'M2 18 L20 9 L36 4 L54 12 L70 19',weight:.10,gen:st=>{
     const peakFrac=0.4+Math.random()*0.2, peakV=dev(1.4+Math.random()*0.7,st.pMult), endV=dev(0.55+Math.random()*0.3,st.pMult);
     return buildMultiPhase([[peakFrac,peakV],[1,endV]],0.014*NOISE_SCALE*st.noiseMult);
   }},
-  {id:'w',emo:'🌊',weight:.10,gen:st=>{
+  {id:'w',emo:'🌊',name:'이중 바닥',spark:'M2 10 L14 19 L28 11 L42 20 L56 12 L70 13',weight:.10,gen:st=>{
     const d1=dev(0.5+Math.random()*0.25,st.pMult), b1=dev(1.15+Math.random()*0.25,st.pMult), d2=dev(0.55+Math.random()*0.25,st.pMult), endV=dev(0.95+Math.random()*0.2,st.pMult);
     return buildMultiPhase([[0.22,d1],[0.5,b1],[0.75,d2],[1,endV]],0.013*NOISE_SCALE*st.noiseMult);
   }},
-  {id:'m',emo:'🐫',weight:.10,gen:st=>{
+  {id:'m',emo:'🐫',name:'이중 고점',spark:'M2 14 L14 5 L28 13 L42 7 L56 16 L70 20',weight:.10,gen:st=>{
     const p1=dev(1.35+Math.random()*0.35,st.pMult), d1=dev(0.75+Math.random()*0.2,st.pMult), p2=dev(1.05+Math.random()*0.2,st.pMult), endV=dev(0.65+Math.random()*0.2,st.pMult);
     return buildMultiPhase([[0.22,p1],[0.5,d1],[0.75,p2],[1,endV]],0.013*NOISE_SCALE*st.noiseMult);
   }},
-  {id:'delayup',emo:'⏫',weight:.07,gen:st=>{
+  {id:'delayup',emo:'⏫',name:'지연 상승',spark:'M2 13 L24 12 L40 13 L54 8 L70 3',weight:.07,gen:st=>{
     const flatV=dev(0.98+Math.random()*0.08,1), endV=dev(1.6+Math.random()*0.5,st.pMult);
     return buildMultiPhase([[0.55,flatV],[1,endV]],0.008*NOISE_SCALE*st.noiseMult);
   }},
-  {id:'delaydown',emo:'⏬',weight:.06,gen:st=>{
+  {id:'delaydown',emo:'⏬',name:'지연 하락',spark:'M2 11 L24 12 L40 11 L54 16 L70 21',weight:.06,gen:st=>{
     const flatV=dev(0.98+Math.random()*0.08,1), endV=dev(0.4+Math.random()*0.25,st.pMult);
     return buildMultiPhase([[0.55,flatV],[1,endV]],0.008*NOISE_SCALE*st.noiseMult);
   }},
@@ -807,7 +833,25 @@ const META_UNLOCKS=[
    ds:'급변 패턴이 없는 종목이에요 · 읽기 쉬운 대신 폭이 작아요'},
   {lv:8, need:660, id:'penny',    emo:'🎲', name:'동전주',
    ds:'급등 아니면 급락뿐인 종목이에요 · 완만한 판이 거의 없어요'},
+  {lv:9, need:780, id:'dex',      emo:'📋', name:'패턴 도감',
+   ds:'겪은 패턴이 쌓여요 · 신호 등급마다 뭐가 나오는지 볼 수 있어요'},
 ];
+/* ===== 📋 패턴 도감 =====
+   이 게임은 패턴을 읽는 게임인데 읽는 법을 배울 곳이 없었다. 겪은 패턴을 영구히
+   쌓아서, 신호 등급별로 "실제로 무엇이 나왔는지"와 "지금 고른 종목에서는 어떤 비율로
+   나오는지"를 보여준다. 종목마다 등급 안 분포가 다르므로(patW) 이게 곧 실전 참고표다.
+
+   쉬워지지는 않는다 — 도감은 지나간 판의 통계와 규칙일 뿐, 다음 판에 무엇이 나올지는
+   알려주지 않는다. 신호 적중률도 그대로다. */
+function recordPattern(id,lo,hi){
+  if(!id)return;
+  const d=META.dex||(META.dex={});
+  const e=d[id]||(d[id]={n:0,hi:0,lo:0});
+  e.n++; e.hi+=hi; e.lo+=lo;
+  saveMeta();
+}
+function dexOf(id){return (META.dex&&META.dex[id])||{n:0,hi:0,lo:0};}
+function dexSeen(){return PATTERNS.filter(p=>dexOf(p.id).n>0).length;}
 function metaLv(){ let lv=1; for(const u of META_UNLOCKS) if((META.xp||0)>=u.need)lv=u.lv; return lv; }
 function metaHas(id){ const u=META_UNLOCKS.find(x=>x.id===id); return !!u&&(META.xp||0)>=u.need; }
 function nextUnlock(){ return META_UNLOCKS.find(u=>(META.xp||0)<u.need)||null; }
@@ -869,16 +913,17 @@ function loadMeta(){
     if(r){META=JSON.parse(r);
       if(typeof META.xp!=='number')META.xp=0;
       if(typeof META.cleared!=='number')META.cleared=0;
+      if(!META.dex||typeof META.dex!=='object')META.dex={};
       if(typeof META.seenIntro!=='boolean')META.seenIntro=false;
       return;}
     /* v4까지의 레거시 포인트는 1pt = 1XP로 옮겨준다. 트리는 사라졌지만
        그때까지 쌓은 판들을 없던 일로 만들 이유는 없다. */
     const old=localStorage.getItem('moneyroad2_meta_v4');
     if(old){const o=JSON.parse(old)||{};
-      META={mute:!!o.mute, xp:Math.max(0,o.legacyPoints|0), cleared:0, pendingSettle:null, seenIntro:!!o.seenIntro};
+      META={mute:!!o.mute, xp:Math.max(0,o.legacyPoints|0), cleared:0, dex:{}, pendingSettle:null, seenIntro:!!o.seenIntro};
       saveMeta(); return;}
   }catch(e){}
-  META={mute:false, xp:0, cleared:0, pendingSettle:null, seenIntro:false};
+  META={mute:false, xp:0, cleared:0, dex:{}, pendingSettle:null, seenIntro:false};
 }
 function saveMeta(){try{localStorage.setItem(META_KEY,JSON.stringify(META));}catch(e){}}
 
@@ -959,6 +1004,45 @@ function startRun(){ startRunAt(0); }
    잠긴 단계도 목록에 남겨서 "무엇이 기다리는지"는 보이게 하고, 디메리트는 접지 않는다 —
    고르기 전에 무엇을 짊어지는지 알아야 선택이다. */
 let tierPick=0;
+/* 도감은 신호 카드에서 연다 — "이 신호가 무슨 뜻이지?" 하는 바로 그 자리다.
+   메인 탭을 넷으로 늘리지 않는다. */
+function showDexModal(){
+  const st=TRADE_STOCKS.find(x=>x.id===S.selectedStock)||TRADE_STOCKS[0];
+  const rows=tier=>{
+    const pool=PATTERNS.filter(p=>PATTERN_TIER[p.id]===tier);
+    const w=st.patW||null;
+    const ws=pool.map(p=>p.weight*((w&&w[p.id]!==undefined)?w[p.id]:1));
+    const tot=ws.reduce((a,x)=>a+x,0)||1;
+    const col=tier==='strong'?'#f04452':tier==='weak'?'#3182F6':'#8b95a1';
+    return pool.map((p,i)=>{
+      const pct=Math.round(ws[i]/tot*100);
+      const d=dexOf(p.id), seen=d.n>0;
+      const avgHi=seen?(d.hi/d.n).toFixed(2):null, avgLo=seen?(d.lo/d.n).toFixed(2):null;
+      return `<div class="dex ${seen?'':'unseen'}${pct===0?' none':''}">
+        <div class="dex-top"><span class="dex-nm">${p.emo} ${p.name}</span>
+          <span class="dex-pct">${pct}%</span></div>
+        <svg width="100%" height="22" viewBox="0 0 72 24" preserveAspectRatio="none" aria-hidden="true">
+          <path d="${p.spark}" fill="none" stroke="${seen?col:'#d3d8de'}" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="dex-st">${seen?`${d.n}번 · 저 ${avgLo}x → 고 ${avgHi}x`:'아직 못 봤어요'}</div>
+      </div>`;
+    }).join('');
+  };
+  const sec=tier=>{
+    const g=SIGNAL_INFO[tier];
+    return `<div class="dex-sec"><div class="dex-head ${tier}">${g.emo} ${g.name}
+      <small>${g.ds}</small></div><div class="dex-grid">${rows(tier)}</div></div>`;
+  };
+  $('modalBox').innerHTML=`
+    <div class="cm-head"><span class="cm-title">📋 패턴 도감</span>
+      <span class="rs-badge cold">${dexSeen()} / ${PATTERNS.length}종</span></div>
+    <div class="dex-note">${st.emo} <b>${st.name}</b> 기준이에요 · 비율은 그 신호가 떴을 때
+      이 종목에서 각 패턴이 나올 확률이에요</div>
+    <div class="scroller">${SIGNAL_TIERS.map(sec).join('')}</div>
+    <button class="ok" id="mOk">닫기</button>`;
+  $('modal').classList.add('on');
+  $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
+}
 function showTierModal(){ tierPick=maxTierIdx(); renderTierModal(); $('modal').classList.add('on'); }
 function renderTierModal(){
   const maxI=maxTierIdx();
@@ -1558,6 +1642,7 @@ function sellRound(auto){
   const totalProfit=profit+(half?half.profit:0);
   const effMult=half?(half.mult*half.bet+mult*bet)/totalBet:mult;
   const grade=gradeOf(effMult,lo,hi,dir);
+  if(metaHas('dex'))recordPattern(R.patternId,lo,hi);   // 도감은 판이 끝날 때 한 번만 쌓인다
   const buffs=(R.buffs||[]).slice();
   S.cash+=payout; bumpPeak();
   sfx[totalProfit>=0?'pay':'warn']();
@@ -1673,6 +1758,7 @@ function renderTrade(){
       <div class="sg-left"><span class="sg-emo">${sg.emo}</span><span class="sg-name">${sg.name}</span></div>
       <div class="sg-mid"><div class="sg-ds">${sg.ds}</div>
         <div class="sg-acc">${(S.buffs||[]).includes('info')?'🔎 이번 판은 이 신호가 반드시 맞아요':`이 신호가 맞을 확률 ${acc}%`}</div></div>
+      ${metaHas('dex')?`<button class="dex-btn" id="dexBtn" title="패턴 도감">📋</button>`:''}
     </div>`;
   const canGo=S.betAmount>=MIN_BET && S.betAmount<=S.cash;
   const room=S.cash-MIN_BET;
@@ -1699,6 +1785,7 @@ function renderTrade(){
   if(metaHas('autosell')){
     $('tradeBody').querySelectorAll('.auto-row button[data-t]').forEach(b=>b.onclick=()=>{sfx.tap();S.betAutoTarget=parseFloat(b.dataset.t);saveRun();renderTrade();});
   }
+  if($('dexBtn'))$('dexBtn').onclick=()=>{sfx.tap();showDexModal();};
   $('tradeGo').onclick=()=>startRound(1);
   if($('tradeShort'))$('tradeShort').onclick=()=>startRound(-1);
 }

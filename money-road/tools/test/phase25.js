@@ -1,4 +1,5 @@
-/* phase25 — E단계 다섯째: 📊 코스피ETF · 그리고 종목이 "성격"을 갖는 구조
+/* phase25 — E단계 다섯·여섯째: 📊 코스피ETF · 🎲 동전주
+   그리고 종목이 "성격"을 갖는 구조
 
    원래 ETF는 "신호가 항상 맞는 종목"으로 잡았는데, 구현해 보니 익스플로잇이 열린다:
    신호는 라운드가 끝날 때 한 번 뽑히고 종목을 바꿔도 안 바뀌므로(좋은 신호가 뜰 때까지
@@ -15,7 +16,8 @@
      3) ETF는 급변 패턴이 안 나온다 (strong=up만, weak=down/flat)
      4) 다른 종목은 기본 분포 그대로
      5) 어떤 종목도 한 등급을 통째로 막지 않는다
-     6) 해금 전에는 잠겨 있다 */
+     6) 해금 전에는 잠겨 있다
+     7) 동전주는 ETF의 정반대편이다 — 급변 패턴에 몰린다 */
 const { launch, GAME: url } = require('../lib/browser');
 (async()=>{
  const b = await launch();
@@ -107,6 +109,39 @@ const { launch, GAME: url } = require('../lib/browser');
      sellRound(false); $('mOk').click();
    }
    return {패턴:c, '최고 배율':+maxHi.toFixed(2), '급등 없음':maxHi<2.2};}));
+ await p.close();
+
+ console.log('\n=== 7. 동전주는 ETF의 정반대편 ===');
+ p=await fresh(700,true);
+ L('강세·약세 안에서 무엇이 나오나 (각 4000회)', await p.evaluate(()=>{
+   const share=(st,tier)=>{ const c={};
+     for(let k=0;k<4000;k++){const id=pickInTier(tier,st).id; c[id]=(c[id]||0)+1;}
+     return Object.fromEntries(Object.entries(c).map(([k,v])=>[k,+(v/4000).toFixed(2)])); };
+   const etf=TRADE_STOCKS.find(s=>s.id==='etf'), pn=TRADE_STOCKS.find(s=>s.id==='penny');
+   const eS=share(etf,'strong'), pS=share(pn,'strong');
+   const eW=share(etf,'weak'),   pW=share(pn,'weak');
+   return {
+     'ETF 강세':eS, '동전주 강세':pS,
+     'ETF 약세':eW, '동전주 약세':pW,
+     'ETF는 급등이 없다':!eS.spike, '동전주는 급등이 지배적':pS.spike>0.5,
+     'ETF는 지연급락이 없다':!eW.delaydown, '동전주는 지연급락이 지배적':pW.delaydown>0.5};}));
+ L('실제 20판 — 고점·저점 폭', await p.evaluate(()=>{
+   const stat=(id)=>{ const his=[],los=[];
+     for(let k=0;k<20;k++){
+       S.cash=5000000; setBet(1000000); S.selectedStock=id;
+       S.pending={tier:'strong',sig:'strong'};
+       startRound(1);
+       const R=S.activeRound;
+       his.push(Math.max(...R.path)); los.push(Math.min(...R.path));
+       R.startedAt=Date.now()-(ROUND_TICKS+2)*ROUND_TICK_MS;
+       sellRound(false); $('mOk').click();
+     }
+     const avg=a=>+(a.reduce((x,y)=>x+y,0)/a.length).toFixed(2);
+     return {평균고점:avg(his), 평균저점:avg(los)}; };
+   const e=stat('etf'), s0=stat('stable'), p0=stat('penny');
+   return {ETF:e, 사성전자:s0, 동전주:p0,
+     '동전주가 가장 넓다':(p0.평균고점-p0.평균저점)>(s0.평균고점-s0.평균저점)
+                       &&(s0.평균고점-s0.평균저점)>(e.평균고점-e.평균저점)};}));
  await p.close();
 
  console.log('\n=== 오류 ==='); console.log(errs.length?errs.join('\n'):'없음');

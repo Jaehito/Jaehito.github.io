@@ -468,6 +468,14 @@ const TRADE_STOCKS=[
   {id:'etf',    emo:'📊', name:'코스피ETF', ds:'급변 없음', pMult:0.75, noiseMult:0.7,
    open:()=>metaHas('etf'),   lock:'🧬 해금',
    patW:{spike:0, delayup:0, delaydown:0}},
+  /* 🎲 ETF의 정반대편. 진폭(1.5)은 네코프로와 비슷한데 나오는 패턴이 급변뿐이라
+     체감이 완전히 다르다 — 강세면 대개 급등급락(spike), 약세면 대개 지연 급락
+     (delaydown)이다. 완만하게 흘러가는 판이 거의 없어서 손이 쉴 틈이 없다. */
+  {id:'penny',  emo:'🎲', name:'동전주',    ds:'급등 아니면 급락', pMult:1.5, noiseMult:1.7,
+   open:()=>metaHas('penny'), lock:'🧬 해금',
+   patW:{spike:3, up:0.4, delayup:1.5,
+         delaydown:3, down:0.6, flat:0.2,
+         v:1.5, invv:1.5, w:0.5, m:0.5}},
 ];
 function stockOpen(st){return !st.open||st.open();}
 const ROUND_TICKS=300, ROUND_TICK_MS=50; // 15초를 0.05초 단위로 나눠서 더 부드럽고 잦게 움직이게
@@ -797,6 +805,8 @@ const META_UNLOCKS=[
    ds:'라운드 중에 소식이 떠요 · 10번에 3번은 틀린 소식이에요'},
   {lv:7, need:540, id:'etf',      emo:'📊', name:'코스피ETF',
    ds:'급변 패턴이 없는 종목이에요 · 읽기 쉬운 대신 폭이 작아요'},
+  {lv:8, need:660, id:'penny',    emo:'🎲', name:'동전주',
+   ds:'급등 아니면 급락뿐인 종목이에요 · 완만한 판이 거의 없어요'},
 ];
 function metaLv(){ let lv=1; for(const u of META_UNLOCKS) if((META.xp||0)>=u.need)lv=u.lv; return lv; }
 function metaHas(id){ const u=META_UNLOCKS.find(x=>x.id===id); return !!u&&(META.xp||0)>=u.need; }

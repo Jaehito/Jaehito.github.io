@@ -1,0 +1,321 @@
+<title>머니로드 개편 계획</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --bg:#0f1216; --ink:#e8ecf2; --mut:#8b95a6; --dim:#5e6875; --line:#242a33; --panel:#141920;
+  --go:#4fd3a0; --wait:#ffbc4d; --dead:#ff7a85; --cool:#6aa8ff;
+}
+*{box-sizing:border-box;}
+body{background:var(--bg); color:var(--ink); margin:0;
+  font-family:'Noto Sans KR',system-ui,-apple-system,sans-serif; line-height:1.65;}
+.wrap{max-width:1080px; margin:0 auto; padding:0 20px; padding-block:0 80px;}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;}
+
+/* 머리말 */
+header{border-bottom:1px solid var(--line); padding-block:46px 28px; margin-bottom:8px;}
+.eyebrow{font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--mut);}
+h1{font-size:clamp(28px,5vw,42px); font-weight:900; letter-spacing:-.03em; margin:10px 0 0;
+  text-wrap:balance; line-height:1.12;}
+.lede{font-size:15.5px; color:var(--mut); max-width:66ch; margin:15px 0 0;}
+.lede b{color:var(--ink); font-weight:700;}
+.legend{display:flex; flex-wrap:wrap; gap:8px 20px; margin-top:20px;
+  font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--mut);}
+.legend span{display:flex; align-items:center; gap:7px;}
+.dot{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
+.dot.go{background:var(--go);} .dot.wait{background:var(--wait);} .dot.later{background:var(--dim);}
+
+section{padding-block:34px; border-top:1px solid var(--line);}
+h2{font-size:22px; font-weight:800; letter-spacing:-.02em; margin:7px 0 0;}
+section > p{font-size:14.5px; color:var(--mut); margin:9px 0 0; max-width:72ch;}
+section > p b{color:var(--ink); font-weight:700;}
+
+/* 항목 지도 */
+.map{margin-top:24px; display:grid; gap:9px;}
+.row{display:grid; grid-template-columns:44px 1fr 118px; gap:14px; align-items:center;
+  border:1px solid var(--line); border-radius:12px; padding:12px 15px; background:var(--panel);}
+.row .no{font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:600; color:var(--mut);}
+.row .txt{font-size:14px;}
+.row .txt b{font-weight:700;}
+.row .txt em{font-style:normal; color:var(--mut); font-size:13px;}
+.row .to{font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:600;
+  text-align:right; letter-spacing:.04em;}
+.row.s1 .to{color:var(--go);} .row.s2 .to{color:var(--wait);} .row.s3 .to{color:var(--cool);}
+
+/* 단계 카드 */
+.stages{margin-top:26px; display:grid; gap:14px;}
+.stage{border:1px solid var(--line); border-radius:16px; background:var(--panel); overflow:hidden;}
+.stage.now{border-color:#2c5f4c;}
+.st-head{display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:15px 18px; border-bottom:1px solid var(--line);}
+.st-n{font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; letter-spacing:.1em;
+  color:var(--mut); text-transform:uppercase;}
+.st-t{font-size:17px; font-weight:800; letter-spacing:-.02em;}
+.badge{margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600;
+  padding:4px 10px; border-radius:999px; border:1px solid currentColor; white-space:nowrap;}
+.badge.go{color:var(--go);} .badge.wait{color:var(--wait);} .badge.later{color:var(--dim);}
+.st-body{padding:15px 18px 18px;}
+.st-body ul{margin:0; padding-left:18px; display:grid; gap:7px;}
+.st-body li{font-size:14px; color:var(--mut);}
+.st-body li b{color:var(--ink); font-weight:700;}
+.ev{margin-top:13px; padding:11px 14px; border-radius:10px; background:#0f1318;
+  border:1px solid var(--line); font-family:'IBM Plex Mono',monospace;
+  font-size:12.5px; color:var(--mut); line-height:1.8; overflow-x:auto; white-space:pre;}
+.ev b{color:var(--go); font-weight:500;} .ev i{font-style:normal; color:var(--dead);}
+.ask{margin-top:12px; display:flex; gap:10px; align-items:flex-start;
+  padding:11px 14px; border-radius:10px; background:#241c10; border:1px solid #4a3a1a;
+  font-size:13.5px; color:#e6cf9a;}
+.ask .q{flex-shrink:0; font-weight:800;}
+.ask b{color:#ffd88a;}
+
+/* 표 */
+.tbl{margin-top:22px; border:1px solid var(--line); border-radius:14px; overflow-x:auto;}
+table{width:100%; border-collapse:collapse; font-size:13.5px; min-width:540px;}
+th,td{padding:10px 15px; text-align:left; border-bottom:1px solid var(--line);}
+th{font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--mut); background:#0f1318;}
+tr:last-child td{border-bottom:none;}
+td{color:var(--mut);} td:first-child{color:var(--ink); font-weight:700;}
+td b{color:var(--go); font-weight:700;} td i{font-style:normal; color:var(--dead);}
+.num{font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; font-size:12.5px;}
+
+/* 죽은 가설 */
+.dead{margin-top:22px; display:grid; gap:9px;}
+.dead .d{border:1px solid var(--line); border-left:3px solid var(--dead); border-radius:0 12px 12px 0;
+  padding:12px 16px; background:var(--panel);}
+.dead .dt{font-size:14px; font-weight:700; color:var(--ink);}
+.dead .dd{font-size:13.5px; color:var(--mut); margin-top:3px;}
+.dead .dd .mono{color:var(--dead);}
+
+.warn{margin-top:22px; border:1px solid #4a2a2a; border-radius:14px; background:#1c1314;
+  padding:16px 18px;}
+.warn .wt{font-size:14.5px; font-weight:800; color:#ffb3ba;}
+.warn p{font-size:13.5px; color:#d3a9ad; margin:7px 0 0; max-width:74ch;}
+.warn code{font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#ffd2d6;}
+
+.asks{margin-top:24px; display:grid; gap:11px;}
+.askbig{display:grid; grid-template-columns:32px 1fr; gap:14px; align-items:start;
+  border:1px solid #4a3a1a; border-radius:14px; background:#241c10; padding:15px 18px;}
+.askbig .n{font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:600; color:#ffd88a;}
+.askbig .t{font-size:14.5px; font-weight:700; color:#ffd88a;}
+.askbig .d{font-size:13.5px; color:#c8b189; margin-top:4px;}
+
+a{color:var(--go);}
+@media (max-width:640px){
+  .row{grid-template-columns:36px 1fr; }
+  .row .to{grid-column:2; text-align:left; margin-top:2px;}
+}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">머니로드 · 개편 계획</div>
+  <h1>여섯 개의 지적, 다섯 단계</h1>
+  <p class="lede">지적해주신 여섯 항목을 <b>서로 간섭하지 않는 다섯 단계</b>로 나눴습니다. 순서의 원칙은 하나입니다 — <b>난이도를 움직이는 것은 한 번에 하나씩</b>. 이번에 제 제안이 시뮬로 다섯 번 뒤집혔는데, 그때마다 "무엇이 틀렸는지"를 알 수 있었던 건 한 번에 하나만 바꿨기 때문입니다.</p>
+  <div class="legend">
+    <span><i class="dot go"></i> 지금 갈 수 있음</span>
+    <span><i class="dot wait"></i> 결정 대기</span>
+    <span><i class="dot later"></i> 앞 단계 결과가 필요</span>
+  </div>
+</header>
+
+<section style="border-top:none">
+  <div class="eyebrow">지도</div>
+  <h2>항목이 어느 단계로 갔는지</h2>
+  <p>6번과 3번은 하나의 항목이 아니라 <b>원인이 다른 문제 여럿</b>이라 쪼갰습니다. 특히 6-1과 6-2는 원인이 같아서 한 단계에 묶였습니다.</p>
+
+  <div class="map">
+    <div class="row s1"><span class="no">1</span><span class="txt"><b>공매도 토글</b> · 덮기 → 매도 <em>— 오발이 되돌릴 수 없음</em></span><span class="to">1단계</span></div>
+    <div class="row s1"><span class="no">2</span><span class="txt"><b>관문 → 상환</b> <em>— 나머지가 다 금융 말인데 여기만 게임 용어</em></span><span class="to">1단계</span></div>
+    <div class="row s1"><span class="no">4</span><span class="txt"><b>자동 익절 삭제</b> <em>— 유일한 행동을 대신해 주던 첫 해금</em></span><span class="to">1단계</span></div>
+    <div class="row s1"><span class="no">5</span><span class="txt"><b>뉴스</b> <em>— 글리프로 바꾸거나 삭제하거나</em></span><span class="to">1단계</span></div>
+    <div class="row s1"><span class="no">UX</span><span class="txt"><b>남은 금액을 베팅 구역으로</b> · 여유 삭제</span><span class="to">1단계</span></div>
+
+    <div class="row s2"><span class="no">6-1</span><span class="txt"><b>거래일이 너무 많다</b></span><span class="to">2단계</span></div>
+    <div class="row s2"><span class="no">6-2</span><span class="txt"><b>중반부터 너무 쉽다</b> <em>— 6-1과 원인이 같음</em></span><span class="to">2단계</span></div>
+
+    <div class="row s3"><span class="no">3-2</span><span class="txt"><b>변동 큰 종목이 거의 대부분 이득</b></span><span class="to">3 · 4단계</span></div>
+    <div class="row s3"><span class="no">3-1</span><span class="txt"><b>신호가 많으면 초록만 고른다</b> <em>— 종목별 신호는 보류</em></span><span class="to">4단계 이후</span></div>
+    <div class="row s3"><span class="no">6-3</span><span class="txt"><b>초반에 방향이 읽히면 쉬워진다</b> <em>— 부분 해결, 아래 참고</em></span><span class="to">3단계 · 미해결</span></div>
+    <div class="row s3"><span class="no">6-4</span><span class="txt"><b>런 내 레벨업에 새로운 맛이 없다</b></span><span class="to">5단계</span></div>
+    <div class="row s3"><span class="no">6-5</span><span class="txt"><b>메타 해금이 너무 빠르다</b></span><span class="to">5단계</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">단계</div>
+  <h2>무엇을, 왜, 무슨 근거로</h2>
+
+  <div class="stages">
+
+    <!-- 1단계 -->
+    <div class="stage now">
+      <div class="st-head"><span class="st-n">1단계</span><span class="st-t">화면 정리</span>
+        <span class="badge wait">뉴스만 정하면 출발</span></div>
+      <div class="st-body">
+        <ul>
+          <li><b>방향 토글</b> — 자동 익절이 빠진 자리에 들어가고 시작 버튼이 다시 하나가 됩니다. 세로 블록 증가 0. 시작 버튼이 방향 색을 따라가되 문구에도 방향을 적습니다(이 게임은 기본 버튼도 파랑이라 색만으로는 구분이 안 됩니다).</li>
+          <li><b>자동 익절 삭제</b> — 공매도(목표의 역수)·물타기(평단 기준)·분할 매도에 걸려 있던 손이 같이 풀립니다. 40 XP 해금 한 칸이 빕니다.</li>
+          <li><b>덮기 → 매도</b>, <b>관문 → 상환</b>(화면에 나오는 곳 네 군데), <b>여유 → 목표까지 남은 금액</b>.</li>
+          <li><b>밸런스를 전혀 안 건드립니다.</b> 그래서 제일 먼저입니다.</li>
+        </ul>
+        <div class="ask"><span class="q">정할 것</span><span><b>뉴스 — 안 A(글리프 <span class="mono">📰▼</span>를 배율 옆에) 인가 안 B(삭제) 인가.</b> 안 읽히는 이유가 자리가 아니라 형태라서, 고쳐보고 나서 지우는 편이 되돌리기 쉽습니다. 다만 뉴스는 클리어율을 21%→27%로 올리므로 삭제는 밸런스로도 이득입니다.</span></div>
+      </div>
+    </div>
+
+    <!-- 2단계 -->
+    <div class="stage">
+      <div class="st-head"><span class="st-n">2단계</span><span class="st-t">거래일 조이기</span>
+        <span class="badge later">1단계 뒤</span></div>
+      <div class="st-body">
+        <ul>
+          <li><b>이 게임의 난이도는 사실상 전부 거래일에서 나옵니다.</b> 마감을 빼고 돌리면 클리어율이 98%입니다. 다른 장치들은 난이도에 거의 기여하지 않고 있습니다.</li>
+          <li>판당 기댓값 1.69로 각 단계를 넘는 데 필요한 판수를 더하면 <b>25판</b>인데 예산이 <b>103일</b>입니다 — 4.1배가 남습니다.</li>
+          <li><b>6-2(중반이 쉽다)도 여기서 풀립니다.</b> 판당 필요 수익률이 <span class="mono">(목표/현금)^(1/남은일수)</span>라, 일수가 넉넉하면 조금씩 걸어도 되고 조금씩 걸면 안 죽습니다. 초반에만 어려운 건 레버리지가 아니라 현금이 최소 베팅에 가까워 <b>강제로 크게 걸어야 하기</b> 때문입니다.</li>
+          <li>제안: <b>13→8 · 15→9 · 17→10 (103→61일)</b>, 그리고 뒤로 갈수록 줄이기(10,9,9,8,8,7,7). 지금은 오히려 늘어납니다.</li>
+          <li>부수 효과 — 한 판이 38분에서 22분으로 줄어 <b>6-5(해금이 빠르다)</b>에도 듣습니다.</li>
+        </ul>
+        <div class="ev">이론 최소 판수 vs 예산
+  1차  10만→50만 (5배)     3.1판   예산 13일
+  4차  2000만→1.5억        3.8판   예산 15일
+  7차  80억→500억          3.5판   예산 17일
+  ─────────────────────────────────────────
+  합계                     <b>25판</b>    예산 <i>103일</i>  ← 4.1배</div>
+      </div>
+    </div>
+
+    <!-- 3단계 -->
+    <div class="stage">
+      <div class="st-head"><span class="st-n">3단계</span><span class="st-t">⛔ 거래정지</span>
+        <span class="badge wait">목업 완료 · 청산 여부 대기</span></div>
+      <div class="st-body">
+        <ul>
+          <li><b>1초 안에 −20% 이상 떨어지면 0.6초간 매도 잠금.</b></li>
+          <li>청산선은 가격의 <b>수준</b>을 보고 트레일링 스톱은 거기 닿기 전에 도망칩니다. 정지는 <b>속도</b>를 보므로 도망칠 수 없습니다 — 빠르게 터는 플레이가 가장 크게 이득 보는 구간에만 자물쇠가 걸립니다.</li>
+          <li><b>체결 지연 대신 이걸 고른 이유</b>는 계약을 안 깨기 때문입니다. 지연은 "내 입력이 씹혔다"로 읽히고, 누른 가격이 이미 기준점이 되어 차액이 <b>못 번 돈이 아니라 빼앗긴 돈</b>으로 기억됩니다. 정지는 시장이 멈춘 것이고, 정지 전에 나갈 기회가 있었으므로 귀책이 플레이어에게 있습니다.</li>
+          <li><b>기본 종목은 판당 0.0회</b>라 갓 시작한 사람은 이 장치를 만나지도 않습니다.</li>
+        </ul>
+        <div class="ev">                1초하락 하위1%   정지없음 → −20%정지   판당정지
+  📊 ETF           −15.1%        4% →  <b>3%</b>        0.0회
+  🏦 사성전자        −20.1%       14% → <b>16%</b>        0.0회
+  🎲 동전주         −28.8%       48% → <i>23%</i>        0.4회
+  🪙 코인          −65.6%       64% → <i>13%</i>        0.8회</div>
+        <div class="ask"><span class="q">정할 것</span><span><b>정지 중에 청산선에 닿으면 청산되는가.</b> 위 숫자는 "발동한다"로 계산했습니다. 여기가 이 장치의 이빨이자 제일 아픈 곳입니다 — 막으면 훨씬 순해지고 코인 13%도 다시 올라갑니다.</span></div>
+      </div>
+    </div>
+
+    <!-- 4단계 -->
+    <div class="stage">
+      <div class="st-head"><span class="st-n">4단계</span><span class="st-t">종목별 기대값</span>
+        <span class="badge later">3단계 결과 위에서 재측정</span></div>
+      <div class="st-body">
+        <ul>
+          <li>3번의 뿌리는 <b>페이오프가 진폭에 볼록하다</b>는 것입니다. 매도 시점을 고를 수 있으니 위는 다 먹고 아래는 끊습니다. 위험을 깎는 세금(증거금·베팅상한)은 전부 빗나갔고, <b>기대값 자체를 깎는 것만 들었습니다.</b></li>
+          <li>종목마다 하락 패턴 가중치에 오프셋을 줍니다 — <b>ETF −8%p · 사성전자 +0 · 동전주 +5%p · 코인 +12%p</b> 근처.</li>
+          <li>설계로도 맞습니다. 코인과 테마주는 <b>기대수익이 낮고 변동만 큰 게 현실</b>입니다. 종목 선택이 "위험과 시간의 교환"이 됩니다 — 여유 있으면 ETF로 천천히, <b>마감이 코앞이면 코인으로 한 방.</b> 2단계가 마감을 조이면 그 상황이 자주 옵니다.</li>
+          <li><b>ETF는 별도 문제입니다.</b> 지금 4%인데 진폭이 작아 복리가 안 붙는 탓이라 정지로도 안 풀립니다. pMult를 올리거나 오프셋을 더 크게 줘야 합니다.</li>
+          <li>3-1(초록만 고른다) 때문에 <b>종목별 신호는 보류</b>합니다. 여섯 개에 각자 신호를 주면 초록 찾기 게임이 됩니다. 종목에 진짜 성격이 생긴 뒤에 다시 봅니다.</li>
+        </ul>
+        <div class="ev">하락 가중치 오프셋 (3단계 기준 +4%p에 더함) — <i>진폭 1.0 행만 유효, 재측정 필요</i>
+               -4%p   +0%p   +4%p   +8%p  +12%p
+  🏦 사성전자     36%    <b>20%</b>     6%     1%     0%</div>
+      </div>
+    </div>
+
+    <!-- 5단계 -->
+    <div class="stage">
+      <div class="st-head"><span class="st-n">5단계</span><span class="st-t">조건 카드 · XP 구조</span>
+        <span class="badge later">3·4단계가 자리잡은 뒤</span></div>
+      <div class="st-body">
+        <ul>
+          <li><b>6-4</b> — 상환 단계를 넘을 때마다 <b>둘 중 하나를 고릅니다. 둘 다 나쁜 것으로.</b> 원하셨던 덱빌딩 로그라이크의 맛이 여기 들어가고, 난이도 선택 화면의 카드 UI를 그대로 재활용합니다.</li>
+          <li>디메리트를 <b>종목을 겨냥하게</b> 만듭니다. 핵심은 <b>"가장 많이 쓴 종목"</b>을 따라다니며 때리는 것 — 하드코딩 없이 순환이 강제됩니다. 그러면 <b>해금이 힘이 아니라 도피처</b>가 됩니다. 종목 하나뿐인 사람은 규제를 맞으면 도망갈 곳이 없고, 여섯 개를 연 사람은 갈아탈 수 있습니다.</li>
+          <li><b>6-5</b> — 지금 900 XP가 6~8판, 1~2시간입니다. 게다가 <b>사다리가 뒤집혀 있습니다</b>: 어려운 단계일수록 XP 효율이 높아(1단계 분당 7 XP, 5단계 17 XP) 난이도를 올릴 이유가 "빨리 털리려고"가 됩니다.</li>
+          <li>고칠 것 셋 — <b>XP를 최고 잔액이 아니라 넘긴 상환 단계로</b>(뒤로 갈수록 가파르게), <b>난이도 배율은 클리어했을 때만</b>, <b>파산 패널티 강화</b>. 임계값을 900→3000으로 올리는 건 임시방편입니다.</li>
+        </ul>
+        <div class="ev">단계      클리어   판당XP   900까지   한 판    총 시간
+  1 개미      37%      113    8.0판    16분   <i>2.1시간</i>
+  5 벼랑      11%      156    5.8판     9분   <i>0.8시간</i>   ← 어려운 쪽이 더 빠름</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">6-3</div>
+  <h2>아직 답이 없는 것</h2>
+  <p>"초반에 방향이 읽히면 빠르게 털고 크게 먹는 게 통한다"는 지적입니다. <b>정지는 이 문제의 부분적인 답일 뿐입니다</b> — 기본 종목에서 판당 0.0회라는 건, 사성전자에서는 이 전략이 그대로 통한다는 뜻입니다.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>시도</th><th>결과</th><th>판정</th></tr></thead>
+      <tbody>
+        <tr><td>패턴 머리 가리기</td><td>공통 머리 뒤에 갈림 — 읽는 시점만 미뤄질 뿐 읽고 나서 나가는 건 같음</td><td><i>기각</i></td></tr>
+        <tr><td>체결 지연 0.15초</td><td>클리어 33%→23%로 잘 듣지만, 누른 가격이 기준점이 되어 불쾌함이 남음</td><td><i>보류</i></td></tr>
+        <tr><td>지연 시세</td><td>차트만 0.2초 늦고 체결은 즉시 — 계약을 안 깨고, 판 뒤에 못 본 구간을 그려주면 복기가 됨</td><td>후보</td></tr>
+        <tr><td>거래정지</td><td>고변동 종목에서만 작동 (3단계)</td><td>부분 해결</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:14px">2단계(거래일 조이기)가 전체 난이도를 올리므로, <b>그 뒤에도 여전히 쉬운지를 보고 결정하는 게 맞습니다.</b> 지금 손대면 무엇이 들었는지 구분할 수 없습니다.</p>
+</section>
+
+<section>
+  <div class="eyebrow">기록</div>
+  <h2>죽은 가설 — 다시 시도하지 말 것</h2>
+  <p>이번 개편에서 시뮬이 뒤집은 것들입니다. 하나같이 <b>그럴듯해서 또 떠오를</b> 것들이라 남겨둡니다.</p>
+
+  <div class="dead">
+    <div class="d">
+      <div class="dt">종목별 증거금 — 변동 큰 종목의 청산선을 가깝게</div>
+      <div class="dd">코인은 청산선 <span class="mono">0.85</span>에서도 클리어 43%. 트레일링 스톱이 청산선에 닿기 전에 빠져나가므로 <b>수준을 보는 장치는 전부 빗나갑니다.</b></div>
+    </div>
+    <div class="d">
+      <div class="dt">종목별 베팅 상한 — 변동 큰 종목은 적게만 걸게</div>
+      <div class="dd">코인 클리어 <span class="mono">61% → 70%</span>로 <b>오히려 올라갔습니다.</b> 진폭이 크면 적게 걸어도 필요 수익률이 나오므로, 상한은 안티-켈리(과베팅)를 고쳐주는 선물이 됩니다.</div>
+    </div>
+    <div class="d">
+      <div class="dt">최소 레버리지를 난이도 축으로</div>
+      <div class="dd">낮추면 파산은 사라지지만 복리가 느려져 기한을 못 채웁니다(1배 관문실패 90%). <b>난이도가 아니라 속도 다이얼</b>입니다. — D단계에서 확인</div>
+    </div>
+    <div class="d">
+      <div class="dt">거래일 이월에 상한 걸기</div>
+      <div class="dd">거래일은 복리로 붙습니다. 5일이면 1.68⁵ ≈ 13배의 여유라 <b>어떤 상한도 부족합니다.</b> 이월을 없애고 현금 보너스로 바꾼 이유. — B단계에서 확인</div>
+    </div>
+    <div class="d">
+      <div class="dt">종목마다 신호를 따로 굴리기</div>
+      <div class="dd">여섯 개 중 초록이 하나는 있으므로 <b>초록 찾기 게임</b>이 됩니다. 종목에 진짜 성격(4단계)이 생긴 뒤에나 의미가 있습니다.</div>
+    </div>
+    <div class="d">
+      <div class="dt">ETF의 신호는 항상 정확하게</div>
+      <div class="dd">신호는 한 번만 굴리고 종목을 바꿔도 유지되므로(리롤 방지), ETF가 <b>고변동 종목의 치트키</b>가 됩니다. 신호가 등급까지만 말하도록 구조를 바꾼 이유. — E-5에서 확인</div>
+    </div>
+  </div>
+
+  <div class="warn">
+    <div class="wt">⚠️ 시뮬 방법론 — 진폭을 흉내낼 때</div>
+    <p>종목 진폭은 반드시 <code>pats(pMult, noiseMult)</code>로 <b>생성기 안에서</b> 적용해야 합니다. 완성된 경로를 <code>1+(v-1)*amp</code>로 늘리면 <code>dev()</code>의 0.05 하한을 건너뛰어 <b>가격이 음수가 됩니다</b>(진폭 2.6배에서 1초 하락률 −162%로 발견). 이번에 네 개의 시뮬이 이 오류로 다시 돌려야 했습니다.</p>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">대기</div>
+  <h2>정해주셔야 진행됩니다</h2>
+  <div class="asks">
+    <div class="askbig"><span class="n">1</span><span>
+      <div class="t">뉴스 — 안 A(글리프)인가 안 B(삭제)인가</div>
+      <div class="d">1단계를 막고 있는 유일한 결정입니다. 나머지 네 항목은 준비가 끝났습니다.</div></span></div>
+    <div class="askbig"><span class="n">2</span><span>
+      <div class="t">거래정지 중에 청산선에 닿으면 청산되는가</div>
+      <div class="d">3단계용. 지금 숫자는 "발동한다" 기준이라, 막기로 하면 파라미터를 다시 잡아야 합니다.</div></span></div>
+    <div class="askbig"><span class="n">3</span><span>
+      <div class="t">시뮬 스크립트를 저장소에 넣을까</div>
+      <div class="d"><span class="mono">lag · margin · cap · stockev · vi</span> 다섯 개가 지금 임시 폴더에만 있습니다. <b>실패한 것들이야말로</b> 남아야 다음에 또 시도하지 않습니다.</div></span></div>
+  </div>
+</section>
+
+</div>

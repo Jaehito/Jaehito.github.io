@@ -182,6 +182,15 @@
   .sell-btn{width:100%; border:none; border-radius:14px; padding:13px; font-size:16px; font-weight:900; color:#fff; cursor:pointer;
     background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
   /* ✂️ 분할 매도 — 매도 버튼을 좌우로 쪼갠다. 절반 쪽은 "덜 센 선택"으로 읽히게 톤을 낮춘다. */
+  /* 💧 물타기 — 매도 버튼 위 한 줄. 판당 한 번이라 쓰고 나면 사라진다. */
+  .water{display:flex; align-items:center; gap:8px; background:#eef6ff; border:1.5px solid #3182F633;
+    border-radius:12px; padding:9px 11px; margin-bottom:9px; font-size:12px; font-weight:800;
+    color:var(--blue); cursor:pointer;}
+  .water b{font-weight:900;}
+  .water .r{margin-left:auto; font-size:10.5px; font-weight:700; color:var(--gray2);}
+  .water.off{background:var(--field); border-color:var(--line); color:var(--gray3); cursor:default;}
+  .water.off .r{color:var(--gray3);}
+  .rs-chip.water{background:#eef6ff; color:var(--blue);}
   .sell-row{display:flex; gap:8px;}
   .sell-row .sell-btn{flex:1;}
   .sell-btn small{display:block; font-size:11.5px; font-weight:800; opacity:.85; margin-top:2px;
@@ -324,6 +333,9 @@
   @keyframes cmIn{from{opacity:0; transform:translateY(-4px);}to{opacity:1; transform:none;}}
 
   .hide{display:none !important;}
+  /* display를 정한 클래스(.water의 flex 등)가 UA의 [hidden]{display:none}을 이겨서
+     hidden을 걸어도 그대로 보인다. 한 줄로 막아둔다. */
+  [hidden]{display:none !important;}
 
   .modal{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:28px; background:rgba(0,0,0,.5);} .modal.on{display:flex;}
   .modal .box{width:100%; max-width:360px; background:var(--card); border-radius:26px; padding:30px 24px 22px; text-align:center; animation:pop .3s cubic-bezier(.2,1.2,.4,1);}
@@ -577,9 +589,10 @@ function ensurePending(){ if(!S.pending||!S.pending.patId)rollPending(); }
    숏: (1-mult)*L = -1  →  mult = 1 + 1/L   (위쪽, 1배도 2배에서 청산된다)
    숏이 비대칭으로 위험한 건 이 때문이다. 가격은 아래로 0까지지만 위로는 상한이 없어서
    spike 패턴(최대 3.5배)이면 1배 숏도 전액 손실이 난다. */
-function liqMultOf(lev,dir){
-  if((dir||1)<0)return 1+1/lev;          // 숏은 배율 1배에서도 청산선이 있다
-  return lev>1?1-1/lev:0;
+function liqMultOf(lev,dir,entry){
+  const e=entry||1;                      // 물타기로 평단이 움직이면 청산선도 같이 움직인다
+  if((dir||1)<0)return e*(1+1/lev);      // 숏은 배율 1배에서도 청산선이 있다
+  return lev>1?e*(1-1/lev):0;
 }
 
 /* ===== 상환 기한 =====
@@ -721,6 +734,8 @@ const META_UNLOCKS=[
    ds:'하락에도 걸 수 있어요 · 대신 오르면 청산이 더 빨라요'},
   {lv:4, need:220, id:'split',    emo:'✂️', name:'분할 매도',
    ds:'절반만 먼저 실현하고 나머지는 들고 갈 수 있어요'},
+  {lv:5, need:320, id:'water',    emo:'💧', name:'물타기',
+   ds:'손실 중일 때 한 번 더 얹어 평단을 낮출 수 있어요'},
 ];
 function metaLv(){ let lv=1; for(const u of META_UNLOCKS) if((META.xp||0)>=u.need)lv=u.lv; return lv; }
 function metaHas(id){ const u=META_UNLOCKS.find(x=>x.id===id); return !!u&&(META.xp||0)>=u.need; }
@@ -1123,6 +1138,7 @@ function resultModalHTML(R){
     :R.tier==='disaster'?`<span class="rs-badge cold">💀 오늘의 참사</span>`:'';
   const chips=[];
   if(g)chips.push(`<span class="rs-chip grade${g.pct<45?' low':''}">매도 ${g.g} · ${g.pct}%</span>`);
+  if(R.watered)chips.push(`<span class="rs-chip water">💧 평단 ${R.entry.toFixed(2)}x</span>`);
   if(R.half)chips.push(`<span class="rs-chip split">✂️ 분할</span>`);
   if((R.dir||1)<0)chips.push(`<span class="rs-chip short">📉 숏</span>`);
   if(R.lev>1)chips.push(`<span class="rs-chip lev">🎚️ ${R.lev}배</span>`);
@@ -1376,6 +1392,7 @@ function startRound(dir){
   S.cash-=bet;
   S.activeRound={stockId:stock.id,bet,path,patternId,patternEmo,leverage,rankBefore,
     dir:(metaHas('short')&&dir<0)?-1:1,
+    entry:1, bet0:bet, watered:false,   // entry = 평균 단가. 물타기로만 움직인다
     autoTarget:metaHas('autosell')?(S.betAutoTarget||0):0,
     startedAt:Date.now(), yMin:0.96, yMax:1.04, boundsIdx:0, dispYMin:0.96, dispYMax:1.04,
     peak:1, peakIdx:0, low:1, lowIdx:0,
@@ -1389,8 +1406,8 @@ function startRound(dir){
 /* 베팅금 중 part만큼을 지금 가격에 청산했을 때의 손익.
    티켓 효과(⚡부스터·🛟청산 면제)와 손절 보험은 청산하는 금액을 기준으로 건마다 적용한다.
    두 번에 나눠 팔아도 금액의 합이 원래 베팅금이므로 효과가 불어나지 않는다. */
-function cashOutOf(part,mult,lev,dir){
-  let raw=Math.round(part*(mult-1)*lev*dir);              // 숏이면 가격이 내려야 이익
+function cashOutOf(part,mult,lev,dir,entry){
+  let raw=Math.round(part*(mult/(entry||1)-1)*lev*dir);   // 숏이면 가격이 내려야 이익
   if(raw>0&&roundHas('boost'))raw=Math.round(raw*1.5);    // ⚡ 이익만 1.5배
   let profit=applyStoploss(raw);
   let payout=Math.max(0,part+profit);
@@ -1405,11 +1422,42 @@ function sellHalf(){
   const part=Math.floor(R.bet/2);
   if(part<1)return;
   const mult=R.path[currentTickIdx()];
-  const {profit,payout}=cashOutOf(part,mult,R.leverage||1,roundDir());
+  const {profit,payout}=cashOutOf(part,mult,R.leverage||1,roundDir(),R.entry);
   R.half={bet:part,mult,profit};
   R.bet-=part;                       // 남은 절반만 계속 굴린다
   S.cash+=payout; bumpPeak();
   sfx[profit>=0?'pay':'warn']();
+  saveRun(); renderRoundView();
+}
+/* 💧 물타기 — 라운드 중 베팅금을 더 얹는다. 판당 한 번, 손실 중일 때만.
+   금액 B를 가격 p에 사면 수량은 B/p이므로 평단은 총투입 ÷ 총수량으로 내려가고,
+   청산선(평단 × (1−1/L))도 같이 내려간다. 버틸 여력이 생기는 대신 투입금이 늘어
+   더 밀리면 손실도 같이 커진다.
+
+   수수료는 안 붙인다. sim/water.js 실측(3단계 기준): 기계적으로 쓰면 클리어율이
+   17% → 12%로 떨어지고 파산률은 11% → 14%로 오른다 — 지는 판에만 더 걸고 이기는
+   판엔 안 거는 역-켈리라, 판당 기댓값이 양수여도 성장률이 깎인다. 이미 충분히
+   위험해서 수수료까지 물리면(5%에 8%) 아무도 안 쓰는 죽은 버튼이 된다.
+   잘 쓰면 이득이고 막 쓰면 손해인 것 — 그게 이 버튼이 선택인 이유다. */
+const WATER_FRAC=0.5;                       // 최초 베팅의 절반을 얹는다
+function waterAmountOf(R){return Math.floor((R.bet0||R.bet)*WATER_FRAC);}
+function canWater(R,mult){
+  if(!R||R.watered||!metaHas('water'))return false;
+  const add=waterAmountOf(R);
+  if(add<1||S.cash<add)return false;
+  const m=(mult===undefined)?R.path[currentTickIdx()]:mult;
+  return (m-(R.entry||1))*(R.dir||1)<0;     // 손실 중일 때만 — 이익 중에 얹는 건 물타기가 아니다
+}
+function addWater(){
+  const R=S.activeRound;
+  const mult=R?R.path[currentTickIdx()]:0;
+  if(!canWater(R,mult))return;
+  const add=waterAmountOf(R), entry=R.entry||1;
+  const q0=R.bet/entry, q1=add/mult;        // 수량 = 금액 ÷ 가격
+  R.entry=(R.bet+add)/(q0+q1);
+  R.bet+=add; R.watered=true;
+  S.cash-=add;
+  sfx.buy();
   saveRun(); renderRoundView();
 }
 function sellRound(auto){
@@ -1419,7 +1467,7 @@ function sellRound(auto){
   const bet=S.activeRound.bet;
   const lev=S.activeRound.leverage||1;
   const dir=roundDir();
-  const {profit,payout}=cashOutOf(bet,mult,lev,dir);
+  const {profit,payout}=cashOutOf(bet,mult,lev,dir,S.activeRound.entry);
   const rankBefore=S.activeRound.rankBefore||rankOf();
   /* 매도 등급 — 그 판 "전 구간"의 최저~최고 안에서 내가 판 위치.
      매도 시점까지(본 구간)로 잡으면, 하락장에서는 매도 순간이 곧 그때까지의 최저점이라
@@ -1453,7 +1501,8 @@ function sellRound(auto){
   if(totalProfit>T.bestProfit)T.bestProfit=totalProfit;
   if(S.streak>T.bestStreak)T.bestStreak=S.streak;
   if(grade&&grade.g==='S')T.sCount++;
-  const res={mult,effMult,half,profit:totalProfit,bet:totalBet,lev,dir,rankBefore,rankAfter:rankOf(),
+  const res={mult,effMult,half,entry:R.entry||1,watered:!!R.watered,
+    profit:totalProfit,bet:totalBet,lev,dir,rankBefore,rankAfter:rankOf(),
     grade,lo,hi,streak:S.streak,prevStreak,earned,buffs,daysLeft:S.daysLeft};
   const rx=buildReactions(res);
   res.tier=rx.tier; res.list=rx.list;
@@ -1626,6 +1675,8 @@ function buildRoundView(r,stock){
     <div class="round-pnl up" id="rvPnl">+0원</div>
     <div class="rv-wallet" id="rvWallet"></div>
     <div class="round-bar"><i id="rvBar"></i></div>
+    <div class="water" id="rvWater" hidden>
+      <span>💧 물타기 <b id="rvWaterAmt"></b></span><span class="r" id="rvWaterNote"></span></div>
     <div class="sell-row">
       <button class="sell-btn sell-half" id="sellHalf" hidden>절반 매도<small id="rvHalfAmt"></small></button>
       <button class="sell-btn" id="sellBtn"><span id="rvSellLab"></span><small id="rvFullAmt"></small></button>
@@ -1639,7 +1690,8 @@ function buildRoundView(r,stock){
     pkL:g('rvPkL'), pkD:g('rvPkD'), pkT:g('rvPkT'), pulse:g('rvPulse'), head:g('rvHead'),
     tHi:g('rvTHi'), tLo:g('rvTLo'), liqT:g('rvLiqT'), count:g('rvCount'),
     pnl:g('rvPnl'), bar:g('rvBar'), wallet:g('rvWallet'),
-    halfBtn:g('sellHalf'), halfAmt:g('rvHalfAmt'), sellLab:g('rvSellLab'), fullAmt:g('rvFullAmt')};
+    halfBtn:g('sellHalf'), halfAmt:g('rvHalfAmt'), sellLab:g('rvSellLab'), fullAmt:g('rvFullAmt'),
+    water:g('rvWater'), waterAmt:g('rvWaterAmt'), waterNote:g('rvWaterNote')};
   /* viewBox 폭 = 실제 픽셀 폭으로 맞춰야 SVG 안의 글자가 가로로 늘어나지 않는다 */
   const fit=w=>{ w=Math.round(w); if(w<40||w===RV.cw)return;
     RV.cw=w; RV.svg.setAttribute('viewBox',`0 0 ${w} ${RV_H}`);
@@ -1649,14 +1701,17 @@ function buildRoundView(r,stock){
   fit(RV.svg.clientWidth||320);
   $('sellBtn').onclick=()=>sellRound(false);
   $('sellHalf').onclick=()=>{sfx.tap();sellHalf();};
+  $('rvWater').onclick=()=>{ if(canWater(S.activeRound)){sfx.tap();addWater();} };
 }
 
 function renderRoundView(){
   const r=S.activeRound, stock=TRADE_STOCKS.find(s=>s.id===r.stockId);
   if(!RV || RV.round!==r || !document.body.contains(RV.root)) buildRoundView(r,stock);
   const idx=currentTickIdx(), mult=r.path[idx];
+  const entry=r.entry||1;
   const remain=Math.max(0,(ROUND_TICKS-idx)*ROUND_TICK_MS/1000);
-  const dir=mult>1.01?'up':mult<0.99?'down':'flat';
+  /* 색은 진입가(물탔으면 평단) 대비다 — 물탄 뒤에도 "지금 이익인가"와 맞아야 한다 */
+  const dir=mult>entry*1.01?'up':mult<entry*0.99?'down':'flat';
   const W=RV.cw, H=RV_H, padX=RV_PADX, padY=RV_PADY;
   /* y축은 "지금까지 실제로 본 값"만 확장형(expand-only)으로 반영한다 — 미래 전체 경로의
      최고/최저로 미리 고정하면, 선이 차트 위/아래 끝에 닿는 순간 "이게 그 라운드의 진짜
@@ -1695,15 +1750,16 @@ function renderRoundView(){
   const d=smoothPathD(pts);
   const col=dir==='up'?'#f04452':dir==='down'?'#3182F6':'#8b95a1';
   const lev=r.leverage||1, sdir=r.dir||1;
-  const profit=Math.round(r.bet*(mult-1)*lev*sdir);
+  const profit=Math.round(r.bet*(mult/entry-1)*lev*sdir);
 
   RV.line.setAttribute('d',d);
   RV.line.setAttribute('stroke',col);
 
-  /* 1.00x 진입선 + 그 위/아래를 손익 색으로 채워서 "내가 산 자리" 기준 손익이 면적으로 읽히게 */
-  const baseY=clampY(yOf(1));
+  /* 진입선(물탔으면 평단) + 그 위/아래를 손익 색으로 채워서 "내가 산 자리" 기준 손익이 면적으로 읽히게 */
+  const baseY=clampY(yOf(entry));
   RV.base.setAttribute('y1',baseY.toFixed(1)); RV.base.setAttribute('y2',baseY.toFixed(1));
   RV.baseT.setAttribute('x',W-6); RV.baseT.setAttribute('y',(baseY-4).toFixed(1));
+  RV.baseT.textContent=r.watered?`${entry.toFixed(2)}x 평단`:'1.00x 진입';
   const first=pts[0], last=pts[pts.length-1];
   const areaD=d+` L${last[0].toFixed(1)} ${baseY.toFixed(1)} L${first[0].toFixed(1)} ${baseY.toFixed(1)} Z`;
   RV.areaUp.setAttribute('d',areaD); RV.areaDn.setAttribute('d',areaD);
@@ -1716,7 +1772,7 @@ function renderRoundView(){
 
   /* 청산선 + 가까워질수록 짙어지는 경고 영역.
      롱은 선 아래가 위험 구간이고 숏은 선 위가 위험 구간이라 방향마다 반대로 칠한다. */
-  const liq=liqMultOf(lev,sdir);
+  const liq=liqMultOf(lev,sdir,entry);
   const hasLiq=sdir<0||lev>1;
   const liqY=hasLiq?yOf(liq):null;
   const liqOn=(liqY!==null&&liqY>padY&&liqY<H-padY);
@@ -1724,7 +1780,7 @@ function renderRoundView(){
   if(liqOn){ RV.liq.setAttribute('y1',liqY.toFixed(1)); RV.liq.setAttribute('y2',liqY.toFixed(1)); }
   let zoneOp=0;
   if(hasLiq){
-    const gap=Math.max(0.02,Math.abs(liq-1));
+    const gap=Math.max(0.02,Math.abs(liq-entry));
     const head=(sdir>0?mult-liq:liq-mult)/gap;
     zoneOp=Math.max(0,Math.min(.42,(1-head)*.55));
   }
@@ -1786,21 +1842,33 @@ function renderRoundView(){
   RV.pnl.className='round-pnl '+(shown>=0?'up':'down');
   RV.wallet.innerHTML=r.half
     ? `✂️ ${r.half.mult.toFixed(2)}x에 절반 실현 <b>${(realized>=0?'+':'')+fmtWon(realized)}</b> · 남은 ${fmtWon(r.bet)}`
-    : `지금 팔면 잔고 <b>${fmtWon(S.cash+Math.max(0,r.bet+profit))}</b>`;
+    : (r.watered
+        ? `💧 평단 <b>${entry.toFixed(2)}x</b> · 투입 ${fmtWon(r.bet)}`
+        : `지금 팔면 잔고 <b>${fmtWon(S.cash+Math.max(0,r.bet+profit))}</b>`);
   /* 분할 매도는 판당 한 번. 쓰고 나면 버튼이 하나로 돌아간다. */
+  /* 💧 물타기 줄 — 해금했고 아직 안 썼으면 보인다. 조건이 안 맞으면 왜 못 누르는지 적어둔다. */
+  const waterOn=metaHas('water')&&!r.watered;
+  RV.water.hidden=!waterOn;
+  if(waterOn){
+    const add=waterAmountOf(r), ok=canWater(r,mult);
+    RV.water.classList.toggle('off',!ok);
+    RV.waterAmt.textContent='+'+fmtWon(add);
+    RV.waterNote.textContent = ok?'판당 1회'
+      : (S.cash<add?'현금이 모자라요':(sdir>0?'평단 아래일 때만':'평단 위일 때만'));
+  }
   const canSplit=metaHas('split')&&!r.half;
   RV.halfBtn.hidden=!canSplit;
   const sellWord=sdir<0?'덮기':'매도';
   RV.sellLab.textContent=canSplit?`전량 ${sellWord}`:(r.half?`남은 ${fmtWon(r.bet)} ${sellWord}`:`지금 ${sellWord}`);
   RV.fullAmt.textContent=(profit>=0?'+':'')+fmtWon(profit);
   if(canSplit){
-    const hp=cashOutOf(Math.floor(r.bet/2),mult,lev,sdir).profit;
+    const hp=cashOutOf(Math.floor(r.bet/2),mult,lev,sdir,entry).profit;
     RV.halfAmt.textContent=(hp>=0?'+':'')+fmtWon(hp);
   }
 
   const dirTxt=sdir<0?' · 📉 숏':'';
   const levTxt=hasLiq?` · 🎚️${lev}배 · 청산 ${liq.toFixed(2)}x`:(lev>1?` · 🎚️${lev}배`:'');
-  const autoTxt=r.autoTarget?` · 🎯${(sdir>0?r.autoTarget:1/r.autoTarget).toFixed(2)}x 자동`:'';
+  const autoTxt=r.autoTarget?` · 🎯${(entry*(sdir>0?r.autoTarget:1/r.autoTarget)).toFixed(2)}x 자동`:'';
   const buffTxt=(r.buffs&&r.buffs.length)?' · '+r.buffs.map(b=>BUFFS[b].emo).join(''):'';
   RV.t1.textContent=`${stock.emo} ${stock.name}${dirTxt}${levTxt}${autoTxt}${buffTxt}`;
   RV.t2.textContent=`${remain.toFixed(1)}초`;
@@ -1903,8 +1971,9 @@ setInterval(()=>{
     if(idx>=S.activeRound.path.length-1){ sellRound(false); return; }
     /* 자동 익절 목표는 가격 배율이다. 숏은 그 역수까지 내려오면 같은 값어치가 된다
        — 1.5x 목표면 숏은 0.67x. 둘 다 실제로 도달 가능한 값이라야 한다. */
-    const at=S.activeRound.autoTarget, ad=S.activeRound.dir||1;
-    if(at && (ad>0 ? mult>=at : mult<=1/at)){ sellRound(true); return; }
+    const at=S.activeRound.autoTarget, ad=S.activeRound.dir||1, ae=S.activeRound.entry||1;
+    const rel=mult/ae;                    // 목표는 언제나 평단 대비다
+    if(at && (ad>0 ? rel>=at : rel<=1/at)){ sellRound(true); return; }
     if(S.mainTab==='trade')renderRoundView();
   }else{
     checkBankrupt();

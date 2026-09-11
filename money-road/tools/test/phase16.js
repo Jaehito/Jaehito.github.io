@@ -40,7 +40,9 @@ const { launch, GAME: url } = require('../lib/browser');
  }));
  await p.close();
 
- console.log('\n=== 4. 상환 성공 + 남은 거래일 이월 ===');
+ /* 이월은 B단계에서 삭제됐다(phase18이 대체 보상을 본다). 여기서는 상환이 성공하면
+    다음 관문이 GATES에 적힌 일수 그대로 시작하는지만 확인한다. */
+ console.log('\n=== 4. 상환 성공 → 다음 관문은 정해진 일수로 새로 시작 ===');
  p=await fresh();
  await p.evaluate(helper);
  L('', await p.evaluate(async()=>{
@@ -48,7 +50,7 @@ const { launch, GAME: url } = require('../lib/browser');
    await window.playRound(2.0);                 // 50만 돌파
    const modal=$('modalBox')?$('modalBox').textContent.replace(/\s+/g,' ').trim():'';
    return {모달:modal.slice(0,80), gate:S.gate, level:S.level, daysLeft:S.daysLeft,
-     이월확인:`기본 ${GATES[1].days}일 + 이월 = ${S.daysLeft}일`};
+     이월없음:`2차 기본 ${GATES[1].days}일 === 남은 ${S.daysLeft}일`};
  }));
  await p.close();
 

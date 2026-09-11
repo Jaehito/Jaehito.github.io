@@ -1,7 +1,11 @@
-/* phase18 — A단계: 결과 팝업 장 마감 줄 축소 · 완제하면 바로 정산
-   그 단계에서 바꾼 것만 본다. phase17이 이미 스트립/경고줄/riskAt을 덮고 있으므로
-   여기서는 (1) 장 마감 줄에서 뺀 정보가 정말 빠졌는지, (2) 완제 버튼이 레거시 화면으로
-   넘어가면서 포인트를 100% 주는지만 확인한다. */
+/* phase18 — A·B단계
+   A: 결과 팝업 장 마감 줄 축소 · 완제하면 바로 정산
+   B: 거래일 이월 삭제 → 조기 상환 현금 보너스 · 관문 일수 +1
+
+   그 단계에서 바꾼 것만 본다. phase17이 이미 스트립/경고줄/riskAt을 덮고 있다.
+
+   보너스를 잴 때는 2차 관문(→Lv.3 네코프로 해금)을 쓴다. 1차는 레벨 보상이
+   "현금 +20만원"이라 현금 증가분에 섞여 들어가서 보너스만 따로 잴 수가 없다. */
 const { launch, GAME: url } = require('../lib/browser');
 (async()=>{
  const b = await launch();
@@ -67,20 +71,43 @@ const { launch, GAME: url } = require('../lib/browser');
  console.log('기대 포인트(은퇴와 동일한 100%)', expect);
  await p.close();
 
- console.log('\n=== 3. 중간 관문은 그대로 (회귀 확인) ===');
+ console.log('\n=== 3. 조기 상환 보너스 — 이월을 대체한다 ===');
  p=await fresh();
- L('', await p.evaluate(()=>{
-   S.gate=0; S.level=1; S.cash=S.peakCash=GATES[0].goal; S.daysLeft=7;
+ L('7거래일 남기고 2차 상환', await p.evaluate(()=>{
+   S.gate=1; S.level=2; S.cash=S.peakCash=GATES[1].goal; S.daysLeft=7;
+   const before=S.cash, want=Math.round(GATES[1].goal*EARLY_BONUS_RATE*7);
    checkLevelUp();
-   return {제목:$('modalBox').querySelector('.tt').textContent,
-     버튼:$('mOk').textContent.trim(),
-     이월문구:$('modalBox').querySelector('.dc').textContent.replace(/\s+/g,' ').trim(),
-     gate:S.gate, daysLeft:S.daysLeft};}));
+   const gain=$('modalBox').querySelector('.lv-gain.early');
+   return {
+     보너스줄:gain?gain.textContent.replace(/\s+/g,' ').trim():'(없음)',
+     현금증가:S.cash-before, 기대값:want, 일치:S.cash-before===want,
+     남은일:S.daysLeft, '3차기본':GATES[2].days,
+     이월안됨:S.daysLeft===GATES[2].days,
+     버튼:$('mOk').textContent.trim()};}));
  await p.evaluate(()=>$('mOk').click());
  await p.waitForTimeout(120);
  L('닫은 뒤 판이 이어지는지', await p.evaluate(()=>({
-   모달열림:$('modal').classList.contains('on'),
-   레벨:S.level, gate:S.gate})));
+   모달열림:$('modal').classList.contains('on'), 레벨:S.level, gate:S.gate})));
+ await p.close();
+
+ console.log('\n=== 4. 마지막 날에 겨우 갚으면 보너스 없음 ===');
+ p=await fresh();
+ L('', await p.evaluate(()=>{
+   S.gate=1; S.level=2; S.cash=S.peakCash=GATES[1].goal; S.daysLeft=0;
+   const before=S.cash;
+   checkLevelUp();
+   return {현금증가:S.cash-before,
+     보너스줄:!!$('modalBox').querySelector('.lv-gain.early'),
+     레벨보상줄:!!$('modalBox').querySelector('.lv-gain:not(.early)'),
+     남은일:S.daysLeft};}));
+ await p.close();
+
+ console.log('\n=== 5. 관문 일수 (이월 삭제 보정으로 전부 +1) ===');
+ p=await fresh();
+ L('', await p.evaluate(()=>({
+   일수표:GATES.map(g=>`${g.n} ${g.days}일`),
+   보너스율:EARLY_BONUS_RATE,
+   'CARRY_MAX 제거됨':typeof CARRY_MAX==='undefined'})));
  await p.close();
 
  console.log('\n=== 오류 ==='); console.log(errs.length?errs.join('\n'):'없음');

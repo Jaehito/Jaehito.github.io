@@ -301,6 +301,8 @@
   .modal .ok.bankrupt{background:linear-gradient(135deg,#4e5968,#191f28);}
   .stat-grid{display:flex; gap:10px; margin:16px 0 4px;} .stat-grid .s{flex:1; background:var(--field); border-radius:14px; padding:12px 6px;} .stat-grid .s .k{font-size:11px; color:var(--gray2); font-weight:700;} .stat-grid .s .v{font-size:15px; font-weight:800; margin-top:3px;}
   .lv-gain{margin-top:9px; font-size:13.5px; font-weight:700; color:var(--gray); background:var(--field); border-radius:12px; padding:10px 12px; text-align:left;} .lv-gain b{color:var(--blue); font-weight:800;}
+  /* 조기 상환 보너스는 레벨 보상과 나란히 뜨므로 금색으로 갈라둔다 — 현금이 들어온 줄이다 */
+  .lv-gain.early{background:#fff9ec;} .lv-gain.early b{color:#8a5a00;}
 
   .toast{position:fixed; left:50%; bottom:28px; translate:-50% 0; background:rgba(25,31,40,.92); color:#fff; font-size:13.5px; font-weight:700; padding:11px 18px; border-radius:14px; z-index:70; opacity:0; transition:.25s; pointer-events:none; max-width:88%; text-align:center;} .toast.on{opacity:1;}
 </style>
@@ -546,21 +548,36 @@ function liqMultOf(lev){return lev>1?1-1/lev:0;}
    관문만 넣으면 패턴 밸런스를 하나도 안 건드리고 클리어 99% → 23%,
    성공 런 22분 / 실패 런 8분으로 길이도 균형이 잡힌다.
 
-   남은 거래일은 다음 회차로 "이월"된다 — 그래야 기한이 벌칙이 아니라 자원이 되고,
-   빨리 갚을수록 이득이라 최적화 대상이 된다. */
+   관문마다 정해진 일수로 새로 시작한다 — 남은 거래일은 이월되지 않는다. */
 const GATES=[
-  {n:'1차', goal:500000,     days:12},
-  {n:'2차', goal:3000000,    days:12},
-  {n:'3차', goal:20000000,   days:12},
-  {n:'4차', goal:150000000,  days:14},
-  {n:'5차', goal:1000000000, days:14},
-  {n:'6차', goal:8000000000, days:16},
-  {n:'완제', goal:50000000000, days:16},
+  {n:'1차', goal:500000,     days:13},
+  {n:'2차', goal:3000000,    days:13},
+  {n:'3차', goal:20000000,   days:13},
+  {n:'4차', goal:150000000,  days:15},
+  {n:'5차', goal:1000000000, days:15},
+  {n:'6차', goal:8000000000, days:17},
+  {n:'완제', goal:50000000000, days:17},
 ];
 const EXTEND_DAYS=3, EXTEND_COST_FRAC=0.25;   // 기한 연장: 자산의 25%로 3거래일
-/* 이월 상한 — 무제한으로 두면 초반에 벌어둔 여유가 후반을 통째로 덮어서 클리어율이
-   19% → 40%로 뛴다(실측). 5일이면 "빨리 갚으면 이득"은 살리되 난이도는 유지된다. */
-const CARRY_MAX=5;
+/* ===== 조기 상환 보너스 (이월을 대체한다) =====
+   예전에는 남은 거래일을 다음 관문으로 이월했다(상한 5일). 그런데 거래일은 복리로 붙는다 —
+   판당 기댓값이 3배에서 1.68이라 5일이면 13배의 여유다. 그래서 관문을 넘을 때마다 다음
+   관문이 눈에 띄게 헐거워졌고(sim/carry.js: 이월 상한 0 → 무제한에서 클리어 22% → 41%),
+   "보상이 선택을 넓히는 게 아니라 난이도를 낮춘다"는 문제의 가장 큰 몫이기도 했다.
+
+   대신 남은 거래일 1일당 방금 갚은 관문 목표의 10%를 현금으로 준다. 통과 시점의 현금이
+   대략 목표와 같으므로 이건 매 관문에 같은 비율로 주는 선불이고, 판수를 늘리지 않으니
+   복리로 불어나지 않는다 — 계수 하나로 조절되는 다이얼이 된다.
+   상한은 두지 않는다. 상한 5일을 걸면 클리어가 19% → 15%로 현행보다 어려워져서,
+   결국 조율할 상수만 하나 더 느는 셈이었다(sim/bonus.js 5번 블록).
+
+   sim/bonus.js 실측(각 500회, 3배·보험0%·하락+4%p):
+     현행(이월5)                        클리어 18%
+     이월만 삭제                        클리어  9%   ← 그냥 없애면 너무 가혹하다
+     이월0 + 보너스 10%/일              클리어 14%
+     이월0 + 보너스 10%/일 + 일수 +1    클리어 19%   ← 채택. 현행과 같은 난이도
+   그래서 GATES 일수를 전부 +1 했다(12→13, 14→15, 16→17). */
+const EARLY_BONUS_RATE=0.10;
 function gateOf(){return GATES[Math.min(GATES.length-1,S.gate||0)];}
 function gateDone(){return (S.gate||0)>=GATES.length;}
 /* 거래일 → 날짜. 주말은 건너뛴다(장이 안 서니까). */
@@ -590,11 +607,11 @@ const LEVELS=[
   {lv:2, need:500000, tag:'현금 +20만원',
    reward:{emo:'🚗',t:'첫 차',d:'중고차를 뽑았어요.',bonusTxt:'현금 +20만원',f:S=>{S.cash+=200000;bumpPeak();}}},
   {lv:3, need:3000000, tag:'🚀 네코프로 거래 해금',
-   reward:{emo:'🚀',t:'네코프로 해금',d:'변동성 큰 네코프로에도 손댈 수 있게 됐어요.',bonusTxt:'🚀 네코프로 해금',f:S=>{S.themeUnlocked=true;}}},
+   reward:{emo:'🚀',t:'네코프로 해금',d:'변동성 큰 네코프로에도 손댈 수 있게 됐어요.',f:S=>{S.themeUnlocked=true;}}},
   {lv:4, need:20000000, tag:'현금 +50만원 · 🎯 자동 익절 해금',
    reward:{emo:'💍',t:'결혼 · 자동 익절 해금',d:'평생의 짝을 만났어요. 목표 배율에 닿으면 자동으로 매도해주는 기능도 열렸어요.',bonusTxt:'축의금 +50만원 · 🎯 자동 익절 해금',f:S=>{S.cash+=500000;S.upg.autosell=true;bumpPeak();}}},
   {lv:5, need:150000000, tag:'🔥 유메이드 거래 해금',
-   reward:{emo:'🔥',t:'유메이드 해금',d:'변동성이 가장 큰 유메이드까지 손댈 수 있게 됐어요.',bonusTxt:'🔥 유메이드 해금',f:S=>{S.upg.surge=true;}}},
+   reward:{emo:'🔥',t:'유메이드 해금',d:'변동성이 가장 큰 유메이드까지 손댈 수 있게 됐어요.',f:S=>{S.upg.surge=true;}}},
   {lv:6, need:1000000000, tag:'🎚️ 레버리지 1단계 무료 강화',
    reward:{emo:'🏠',t:'내 집 마련',d:'집을 담보로 더 크게 굴릴 수 있게 됐어요.',bonusTxt:'레버리지 1단계 무료 강화',f:S=>{S.upg.leverageLv=Math.min(LEVERAGE_MULTS.length-1,(S.upg.leverageLv||0)+1);}}},
   {lv:7, need:8000000000, tag:'🔎 정보력 1단계 무료 강화',
@@ -1051,23 +1068,22 @@ function checkLevelUp(){
   if(S.peakCash<g.goal)return false;
   const nl=LEVELS.find(l=>l.lv===S.level+1);
   S.gate++; S.level=nl?nl.lv:S.level+1;
-  const carried=Math.min(CARRY_MAX,Math.max(0,S.daysLeft));   // 남은 거래일 이월(상한 있음)
-  if(!gateDone())S.daysLeft=carried+GATES[S.gate].days;
-  if(nl&&nl.reward){
-    if(nl.reward.f)nl.reward.f(S);
-    saveRun(); render();
-    showRepayModal(g,nl,carried);
-  }else{
-    saveRun(); render();
-    showRepayModal(g,null,carried);
-  }
+  /* 기한보다 며칠 일찍 갚았나 → 그만큼 현금으로 받는다. 거래일은 이월되지 않고,
+     다음 관문은 언제나 GATES에 적힌 일수로 새로 시작한다. */
+  const early=Math.max(0,S.daysLeft);
+  const bonus=Math.round(g.goal*EARLY_BONUS_RATE*early);
+  if(bonus>0){ S.cash+=bonus; bumpPeak(); }
+  if(!gateDone())S.daysLeft=GATES[S.gate].days;
+  if(nl&&nl.reward&&nl.reward.f)nl.reward.f(S);
+  saveRun(); render();
+  showRepayModal(g,(nl&&nl.reward)?nl:null,early,bonus);
   return true;
 }
 /* 완제(마지막 관문 통과)는 그 판의 끝이다. 예전에는 "계속 플레이" 버튼이 팝업만 닫아서,
    더 넘을 관문도 받을 보상도 없는 판에 그대로 방치됐다(정산하려면 해금 탭에 들어가
    은퇴를 따로 눌러야 했다). 이제 버튼 하나로 100% 정산하고 레거시 화면으로 넘어간다
    — 은퇴와 같은 대우다. 기한 안에 다 갚은 사람을 은퇴보다 불리하게 둘 이유가 없다. */
-function showRepayModal(g,nl,carried){
+function showRepayModal(g,nl,early,bonus){
   const done=gateDone();
   const r=nl&&nl.reward;
   const next=done?null:GATES[S.gate];
@@ -1075,7 +1091,9 @@ function showRepayModal(g,nl,carried){
   $('modalBox').innerHTML=`<div class="emo">${done?'🏆':(r?r.emo:'🔗')}</div>
     <div class="tt">${done?'빚을 다 갚았어요':`${g.n} 상환 완료`}</div>
     <div class="dc">${done?'대출을 완제했어요. 최고 기록으로 정산할게요.'
-      :`${fmtWon(g.goal)}을 갚았어요.${carried>0?` 남은 <b>${carried}거래일</b>이 이월돼요.`:''}`}</div>
+      :`${fmtWon(g.goal)}을 갚았어요.`}</div>
+    ${bonus>0?`<div class="lv-gain early"><b>⏱️ ${early}거래일 일찍 갚았어요</b>
+      — 하루당 상환금의 ${Math.round(EARLY_BONUS_RATE*100)}%씩 <b>${fmtWon(bonus)}</b></div>`:''}
     ${r?`<div class="lv-gain"><b>${r.t}</b> — ${r.bonusTxt||r.d}</div>`:''}
     ${next?`<div class="stat-grid">
       <div class="s"><div class="k">${next.n} 상환금</div><div class="v">${fmtWon(next.goal)}</div></div>
@@ -1646,7 +1664,7 @@ function showIntroModal(){
       <div class="s"><div class="k">기한</div><div class="v">${g.days}거래일</div></div></div>
     <div class="intro-li"><span class="e">📅</span><span>단타 <b>한 판이 끝날 때마다 하루</b>가 지나요.</span></div>
     <div class="intro-li"><span class="e">🏦</span><span>기한 안에 못 갚으면 <b>반대매매</b>로 계좌가 청산돼요.</span></div>
-    <div class="intro-li"><span class="e">🔁</span><span>일찍 갚으면 남은 날은 최대 ${CARRY_MAX}일까지 다음 회차로 이월돼요.</span></div>
+    <div class="intro-li"><span class="e">💰</span><span>일찍 갚으면 남은 거래일 하루당 상환금의 ${Math.round(EARLY_BONUS_RATE*100)}%를 현금으로 받아요.</span></div>
     <button class="ok" id="mOk">시작하기</button>`;
   $('modal').classList.add('on');
   META.seenIntro=true; saveMeta();

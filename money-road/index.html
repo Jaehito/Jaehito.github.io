@@ -113,7 +113,7 @@
   .trade-panel{margin:12px 20px 0; background:var(--card); border-radius:20px; padding:14px 16px 16px; box-shadow:var(--shadow);}
   .tp-head{display:flex; justify-content:flex-start; align-items:center; margin-bottom:9px;}
   .tp-limit{font-size:11.5px; font-weight:700; color:var(--gray2); background:var(--field); padding:4px 9px; border-radius:999px;}
-  .stock-tabs{display:flex; gap:7px; margin-bottom:11px;}
+  .stock-tabs{display:grid; gap:7px; margin-bottom:11px;}
   .stock-tab{flex:1; border:2px solid var(--line); background:var(--card); border-radius:14px; padding:9px 8px; cursor:pointer; text-align:center;}
   .stock-tab.sel{border-color:var(--blue); background:var(--blue-weak);}
   .stock-tab.locked{opacity:.45; cursor:default;}
@@ -453,11 +453,23 @@ function hasDebt(){return minLevOf()>1;}
 
 /* 단타 종목 — 종목마다 변동성(pMult/noiseMult)이 다르다. 실제 가격 흐름은
    아래 PATTERNS(5종)이 만들고, 종목은 그 흐름의 진폭만 키운다. */
+/* patW = 패턴별 등장 가중치 배수. 없으면 1(기본 분포).
+   종목은 이걸로 "성격"을 갖는다 — 진폭(pMult)만 다르면 종목은 변동성 사다리일 뿐이고,
+   어느 종목을 고르든 판이 똑같이 흘러간다. */
 const TRADE_STOCKS=[
-  {id:'stable', emo:'🏦', name:'사성전자', pMult:1.0, noiseMult:1.0},
-  {id:'theme',  emo:'🚀', name:'네코프로', pMult:1.6, noiseMult:1.8},
-  {id:'surge',  emo:'🔥', name:'유메이드', pMult:2.3, noiseMult:2.6},
+  {id:'stable', emo:'🏦', name:'사성전자',  ds:'변동 보통', pMult:1.0,  noiseMult:1.0},
+  {id:'theme',  emo:'🚀', name:'네코프로',  ds:'변동 큼',   pMult:1.6,  noiseMult:1.8,
+   open:()=>!!S.themeUnlocked, lock:'Lv.3'},
+  {id:'surge',  emo:'🔥', name:'유메이드',  ds:'변동 최대', pMult:2.3,  noiseMult:2.6,
+   open:()=>!!S.upg.surge,    lock:'Lv.5'},
+  /* 📊 지수를 따라가는 종목이라 개별 호재·악재가 없다 = 급변 패턴이 안 나온다.
+     강세 신호면 반드시 완만한 상승(up)이고, 약세면 하락이나 횡보다. 읽기는 쉬운데
+     진폭이 작아서 먹을 게 적다 — 관문이 급할 때는 못 쓰는 종목이다. */
+  {id:'etf',    emo:'📊', name:'코스피ETF', ds:'급변 없음', pMult:0.75, noiseMult:0.7,
+   open:()=>metaHas('etf'),   lock:'🧬 해금',
+   patW:{spike:0, delayup:0, delaydown:0}},
 ];
+function stockOpen(st){return !st.open||st.open();}
 const ROUND_TICKS=300, ROUND_TICK_MS=50; // 15초를 0.05초 단위로 나눠서 더 부드럽고 잦게 움직이게
 const NOISE_SCALE=Math.sqrt(30/ROUND_TICKS); // 기존 30틱 기준으로 검증한 노이즈 강도를 촘촘한 해상도에 맞게 보정
 
@@ -535,6 +547,20 @@ function pickPattern(){
   for(const p of PATTERNS){acc+=p.weight; if(r<=acc)return p;}
   return PATTERNS[PATTERNS.length-1];
 }
+/* 신호가 말하는 건 "등급"까지고, 그 등급 안에서 어떤 패턴이 나올지는 종목이 정한다.
+   이 분리가 중요하다 — 등급 분포는 종목과 무관하므로 종목을 바꿔도 신호가 그대로
+   유효하고(그래서 다시 뽑을 필요가 없고), 동시에 종목마다 다른 판이 나온다.
+   등급까지 종목이 바꾸게 두면 "좋은 신호가 뜰 때까지 종목 돌리기"가 열린다. */
+function pickInTier(tier,stock){
+  const w=(stock&&stock.patW)||null;
+  const pool=PATTERNS.filter(p=>PATTERN_TIER[p.id]===tier);
+  const ws=pool.map(p=>p.weight*((w&&w[p.id]!==undefined)?w[p.id]:1));
+  const tot=ws.reduce((a,x)=>a+x,0);
+  if(!(tot>0))return pool[0];   // 종목이 한 등급을 통째로 막는 일은 없어야 한다
+  let r=Math.random()*tot,acc=0;
+  for(let i=0;i<pool.length;i++){ acc+=ws[i]; if(r<=acc)return pool[i]; }
+  return pool[pool.length-1];
+}
 /* ===== 📰 장중 뉴스 =====
    라운드 중간에 한 번 뜬다. 지금 시점의 가격과 최종가를 비교한 "진실"을 NEWS_ACC 확률로
    말하고, 나머지는 반대로 말한다 — 그래서 정보가 아니라 판단 재료다.
@@ -558,8 +584,8 @@ function rollNews(path,stockName){
   const pool=say==='up'?NEWS_UP:NEWS_DOWN;
   return {idx,say,truth,text:`${stockName} ${pool[Math.floor(Math.random()*pool.length)]}`};
 }
-function genRound(stock,patId){
-  const pat=PATTERNS.find(p=>p.id===patId)||pickPattern();
+function genRound(stock,tier){
+  const pat=pickInTier(tier||'mid',stock);
   return {patternId:pat.id, patternEmo:pat.emo, path:pat.gen(stock)};
 }
 
@@ -606,16 +632,15 @@ function infoAccOf(){
 /* 다음 라운드의 패턴을 미리 뽑아두고 그에 대한 신호를 만든다. 라운드가 끝날 때만
    새로 뽑기 때문에, 탭을 옮기거나 종목을 바꿔서 좋은 신호가 뜰 때까지 돌리는 건 불가능. */
 function rollPending(){
-  const pat=pickPattern();
-  const tier=PATTERN_TIER[pat.id]||'mid';
+  const tier=PATTERN_TIER[pickPattern().id]||'mid';   // 전역 가중치가 등급 분포를 정한다
   let sig=tier;
   if(Math.random()>=infoAccOf()){
     const others=SIGNAL_TIERS.filter(t=>t!==tier);
     sig=others[Math.floor(Math.random()*others.length)];
   }
-  S.pending={patId:pat.id, sig};
+  S.pending={tier, sig};
 }
-function ensurePending(){ if(!S.pending||!S.pending.patId)rollPending(); }
+function ensurePending(){ if(!S.pending||!S.pending.tier)rollPending(); }
 /* 레버리지 청산선 — 손실이 베팅금 전액이 되는 가격.
    롱: (mult-1)*L = -1  →  mult = 1 - 1/L   (아래쪽, 1배면 0에 수렴하므로 청산 없음)
    숏: (1-mult)*L = -1  →  mult = 1 + 1/L   (위쪽, 1배도 2배에서 청산된다)
@@ -770,6 +795,8 @@ const META_UNLOCKS=[
    ds:'손실 중일 때 한 번 더 얹어 평단을 낮출 수 있어요'},
   {lv:6, need:420, id:'news',     emo:'📰', name:'장중 뉴스',
    ds:'라운드 중에 소식이 떠요 · 10번에 3번은 틀린 소식이에요'},
+  {lv:7, need:540, id:'etf',      emo:'📊', name:'코스피ETF',
+   ds:'급변 패턴이 없는 종목이에요 · 읽기 쉬운 대신 폭이 작아요'},
 ];
 function metaLv(){ let lv=1; for(const u of META_UNLOCKS) if((META.xp||0)>=u.need)lv=u.lv; return lv; }
 function metaHas(id){ const u=META_UNLOCKS.find(x=>x.id===id); return !!u&&(META.xp||0)>=u.need; }
@@ -1421,7 +1448,7 @@ function startRound(dir){
   const bet=S.betAmount;
   if(bet<MIN_BET||bet>S.cash)return;
   ensurePending();
-  const {patternId,patternEmo,path}=genRound(stock,S.pending.patId);
+  const {patternId,patternEmo,path}=genRound(stock,S.pending.tier);
   const maxLev=leverageMultOf(), minLev=minLevOf();
   const leverage=Math.min(Math.max(minLev,S.betLeverage||minLev),maxLev);
   const rankBefore=rankOf(); // 베팅금 차감 전 순위 — 결과 카드에서 변화를 보여주기 위해
@@ -1569,15 +1596,18 @@ function smoothPathD(pts){
   return d;
 }
 function renderTradeTabs(){
+  /* 종목이 넷 이상이면 한 줄에 다 못 넣는다. 가로 스크롤은 안 쓴다 —
+     ETF·동전주가 들어오면 신호를 보고 종목을 고르게 되어 매 판 바꾸는 값이 되는데,
+     그걸 매번 옆으로 굴려 찾게 할 수는 없다. 줄을 나눠서 전부 보이게 한다. */
+  const n=TRADE_STOCKS.length;
+  const cols=n<=3?n:(n===4?2:3);
+  $('stockTabs').style.gridTemplateColumns=`repeat(${cols},1fr)`;
   $('stockTabs').innerHTML=TRADE_STOCKS.map(s=>{
-    const locked=(s.id==='theme'&&!S.themeUnlocked)||(s.id==='surge'&&!S.upg.surge);
-    const lockTxt=s.id==='theme'?'Lv.3 해금':'Lv.5 해금';
-    /* 잠긴 종목은 자리만 차지하므로 자물쇠 + 해금 레벨만 좁게 */
-    if(locked)return `<div class="stock-tab locked mini"><div class="e">🔒</div>
-      <div class="n">${s.id==='theme'?'Lv.3':'Lv.5'}</div></div>`;
+    if(!stockOpen(s))return `<div class="stock-tab locked"><div class="e">🔒</div>
+      <div class="n">${s.name}</div><div class="v">${s.lock}</div></div>`;
     return `<div class="stock-tab ${s.id===S.selectedStock?'sel':''}" data-stock="${s.id}">
       <div class="e">${s.emo}</div><div class="n">${s.name}</div>
-      <div class="v">${s.id==='stable'?'낮은 변동성':s.id==='theme'?'높은 변동성':'매우 높은 변동성'}</div></div>`;
+      <div class="v">${s.ds}</div></div>`;
   }).join('');
   $('stockTabs').querySelectorAll('.stock-tab').forEach(el=>{
     if(el.classList.contains('locked'))return;
@@ -1626,7 +1656,7 @@ function renderTrade(){
     }).join('')}</div>`;
   ensurePending();
   /* 🔎 정보 확신권이 걸려 있으면 신호를 참값으로 보여준다 */
-  const sigId=(S.buffs||[]).includes('info')?(PATTERN_TIER[S.pending.patId]||'mid'):S.pending.sig;
+  const sigId=(S.buffs||[]).includes('info')?S.pending.tier:S.pending.sig;
   const sg=SIGNAL_INFO[sigId];
   const acc=Math.round(infoAccOf()*100);
   const signalRow=`<div class="signal ${sigId}">

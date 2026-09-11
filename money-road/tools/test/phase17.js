@@ -16,10 +16,10 @@ const { launch, GAME: url } = require('../lib/browser');
  console.log('=== 1. 첫 진입 안내 모달 (최초 1회) ===');
  let p=await fresh();
  L('모달', await p.evaluate(()=>({on:$('modal').classList.contains('on'),
-   본문:$('modalBox').textContent.replace(/\s+/g,' ').trim(), seenIntro:META.seenIntro})));
+   본문:$('modalBox').textContent.replace(/\s+/g,' ').trim(), introV:META.introV})));
  await p.evaluate(()=>$('mOk').click());
  await p.reload(); await p.waitForTimeout(300);
- L('재방문시', await p.evaluate(()=>({on:$('modal').classList.contains('on'), seenIntro:META.seenIntro})));
+ L('재방문시', await p.evaluate(()=>({on:$('modal').classList.contains('on'), introV:META.introV})));
  await p.close();
 
  console.log('\n=== 2. 스트립 — 필요 수익률 + 경고 단계 ===');
@@ -29,7 +29,7 @@ const { launch, GAME: url } = require('../lib/browser');
    const out=[];
    const cases=[[100000,12],[100000,8],[250000,8],[100000,5],[150000,3],[200000,1],[480000,4]];
    for(const [cash,d] of cases){ S.cash=cash; S.daysLeft=d; renderLevel();
-     const dd=document.querySelector('#repayStrip .dday');
+     const dd=$('repayChip');
      out.push({현금:fmtWon(cash), D:d, 표시:dd.textContent.trim(), 색:dd.className,
        하단:document.querySelector('#repayStrip .repay-sub').textContent.replace(/\s+/g,' ').trim()}); }
    return out;}));

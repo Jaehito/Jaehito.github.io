@@ -3,10 +3,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
 
-<!-- 아래 첫 <style>은 money-road/index.html 의 <style> 블록을 그대로 복사한 것이다.
+<!-- 아래 첫 스타일 블록은 money-road/index.html 의 style 블록을 그대로 복사한 것이다.
      목업을 실제 게임과 같은 픽셀로 그리기 위한 사본이므로 여기서 고치지 말 것 —
      게임 쪽 스타일이 바뀌면 이 블록도 다시 복사해야 화면이 거짓말을 안 한다.
-     두 번째 <style>이 이 문서에만 쓰는 크롬이고, 첫 블록의 body/#app 규칙을 덮는다. -->
+     두 번째 블록이 이 문서에만 쓰는 크롬이고, 첫 블록의 body/#app 규칙을 덮는다.
+     이미 삭제된 .rank-chip 규칙도 크롬 쪽에 남겨뒀다 — "지금" 프레임이 그려져야
+     비교가 성립하기 때문이다. -->
 <style>
 
   :root{
@@ -31,7 +33,19 @@
   .topbar .brand{font-size:18px; font-weight:800;} .topbar .brand span{color:var(--blue);}
   .top-right{display:flex; flex-direction:column; align-items:flex-end; gap:6px;}
   .top-right-row{display:flex; align-items:center; gap:8px;}
-  .rank-chip{font-size:11.5px; font-weight:800; color:var(--blue); background:var(--blue-weak); padding:5px 10px; border-radius:999px; white-space:nowrap; font-variant-numeric:tabular-nums;}
+  /* 상환 칩 — 마감은 스크롤을 내려도 보여야 한다. 탑바가 이미 sticky라
+     여기 올려두면 따라온다. 누르면 첫 판 안내(showIntroModal)가 다시 열린다. */
+  .repay-chip{display:inline-flex; align-items:center; gap:5px; border:none; cursor:pointer;
+    font-family:inherit; font-size:11.5px; font-weight:900; letter-spacing:-.02em;
+    color:var(--gray); background:var(--card); padding:5px 10px; border-radius:999px;
+    box-shadow:var(--shadow); white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .repay-chip .goal{color:var(--ink);}
+  .repay-chip .sep{color:var(--gray3); font-weight:700;}
+  .repay-chip .dd{color:var(--gray2);}
+  .repay-chip.p-warn .dd{color:var(--gold);}
+  .repay-chip.p-bad .dd{color:var(--red);}
+  .repay-chip.last{background:var(--red-weak); box-shadow:none;}
+  .repay-chip.last .dd{color:var(--red); animation:ddayPulse 1.5s ease-in-out infinite;}
   .tier-chip{font-size:11.5px; font-weight:800; color:#8a5a00; background:#fff9ec;
     padding:6px 10px; border-radius:999px; white-space:nowrap;}
   /* 난이도 선택 카드 */
@@ -97,7 +111,7 @@
   .intro-li{display:flex; gap:9px; align-items:flex-start; text-align:left; font-size:12.5px;
     font-weight:700; color:var(--gray); line-height:1.55; margin-top:9px;}
   .intro-li .e{flex-shrink:0; font-size:14px; line-height:1.4;}
-  @media (prefers-reduced-motion:reduce){ .dday.last{animation:none;} }
+  @media (prefers-reduced-motion:reduce){ .dday.last,.repay-chip.last .dd{animation:none;} }
 
   /* 잔고는 sticky 상단바에 둔다 — 히어로 카드는 스크롤하면 사라져서 정작 베팅할 때 안 보였고,
      지갑 줄·파산선 안내까지 합쳐 같은 숫자가 화면에 세 번 나왔다. */
@@ -260,9 +274,6 @@
   .rs-badge.cold{background:var(--field); color:var(--gray2);}
   .rs-sum{font-size:19px; font-weight:900; font-variant-numeric:tabular-nums;}
   .rs-sum.up{color:var(--red);} .rs-sum.down{color:var(--blue);}
-  .rs-rank{font-size:11.5px; font-weight:700; color:var(--gray2); margin-top:3px; font-variant-numeric:tabular-nums;}
-  .rs-rank b{color:var(--ink); font-weight:800;}
-  .rs-rank .up{color:var(--green); font-weight:800;} .rs-rank .down{color:var(--red); font-weight:800;}
   .rs-like{color:var(--gray3); font-weight:800; font-size:11px; margin-left:5px; white-space:nowrap;}
   /* 거래 결과 — 번 돈이 주인공, 나머지는 칩으로 분리(쩜으로 이어붙이지 않는다) */
   .rs-money{font-size:28px; font-weight:900; letter-spacing:-.04em; font-variant-numeric:tabular-nums;
@@ -276,10 +287,6 @@
   .rs-chip.grade.low{background:var(--blue-weak); color:var(--blue);}
   .rs-chip.lev{background:var(--blue-weak); color:var(--blue);}
   .rs-chip.streak{background:#fff9ec; color:#8a5a00;}
-  .rs-rankline{margin-top:10px; padding-top:10px; border-top:1px solid var(--line);
-    display:flex; justify-content:space-between; font-size:12px; font-weight:800; color:var(--gray);
-    font-variant-numeric:tabular-nums;}
-  .rs-rankline .u{color:var(--green);} .rs-rankline .d{color:var(--red);}
   .rs-box{text-align:left; max-height:56vh; overflow-y:auto; -webkit-overflow-scrolling:touch;}
   .rs-wallet{margin-top:12px; padding-top:10px; border-top:1px solid var(--line);
     font-size:12px; font-weight:700; color:var(--gray2); font-variant-numeric:tabular-nums;}
@@ -525,6 +532,15 @@ figure.frame.bad figcaption{color:var(--wb-del);}
   padding:14px; border-radius:15px; cursor:pointer;
   background:linear-gradient(135deg,#3182F6,#4c8dff);}
 .mbox .rs-box{max-height:none; overflow:visible;}
+
+/* 삭제된 랭킹 칩 — 게임에서는 없어졌지만 "지금" 프레임은 그대로 보여줘야
+   비교가 성립한다. 지워지기 직전의 규칙을 여기 옮겨둔다. */
+.rank-chip{font-size:11.5px; font-weight:800; color:var(--blue); background:var(--blue-weak);
+  padding:5px 10px; border-radius:999px; white-space:nowrap; font-variant-numeric:tabular-nums;}
+.rs-rankline{margin-top:10px; padding-top:10px; border-top:1px solid var(--line);
+  display:flex; justify-content:space-between; font-size:12px; font-weight:800; color:var(--gray);
+  font-variant-numeric:tabular-nums;}
+.rs-rankline .u{color:var(--green);} .rs-rankline .d{color:var(--red);}
 </style>
 
 <div class="wrap">
@@ -532,12 +548,13 @@ figure.frame.bad figcaption{color:var(--wb-del);}
 <header class="wb-head">
   <div class="eyebrow">머니로드 · 상단바 개편 검토</div>
   <h1>랭킹을 지우고 그 자리에 마감을 올린다</h1>
+  <p class="lede" style="color:var(--wb-new)">안 A로 구현 완료 — 아래 수치는 구현 후 실측값으로 갱신했습니다.</p>
   <p class="lede">지금은 스크롤을 조금만 내려도 <b>D-day와 상환금이 화면 밖으로 나갑니다.</b> 마감이 걸린 게임에서 마감이 안 보이는 셈입니다. 전국 순위 칩은 현금을 주지도 받지도 않는 순수 연출이라, 그 자리를 상환 정보에 내주는 게 낫다고 봅니다. 아래 폰 프레임은 게임의 실제 CSS로 그려서 색·간격·글자 크기가 지금 게임과 같습니다.</p>
   <div class="legend">
     <span><i class="swatch del"></i> 없어지는 자리</span>
     <span><i class="swatch new"></i> 새로 생기는 자리</span>
     <span><i class="swatch chg"></i> 고쳐 쓰는 자리</span>
-    <span>폰 프레임 = 390px</span>
+    <span>폰 프레임 = 390px · 수치는 390×740 실측</span>
   </div>
 </header>
 
@@ -546,7 +563,7 @@ figure.frame.bad figcaption{color:var(--wb-del);}
   <div class="spec-head">
     <div class="eyebrow">화면 01</div>
     <h2>상단바 — 칩 하나를 바꿔 끼운다</h2>
-    <p>랭킹 칩이 있던 자리에 <b>상환 칩</b>이 들어갑니다. 상환금과 D-day가 위로 올라가므로 아래 상환 스트립에서는 그 줄을 뺍니다 — <b>중복이 없고, 스트립은 48px에서 28px로 줄어듭니다.</b></p>
+    <p>랭킹 칩이 있던 자리에 <b>상환 칩</b>이 들어갑니다. 상환금과 D-day가 위로 올라가므로 아래 상환 스트립에서는 그 줄을 뺍니다 — <b>중복이 없고, 스트립은 48px에서 25px로 줄어듭니다.</b></p>
   </div>
 
   <div class="frames">
@@ -679,7 +696,7 @@ figure.frame.bad figcaption{color:var(--wb-del);}
             </div>
           </div>
         </div>
-        <div class="pinbar"><i></i> 고정 78px — 상환금·D-day가 붙어 있음</div>
+        <div class="pinbar"><i></i> 고정 87px — 상환금·D-day가 붙어 있음</div>
         <div class="scrollbox"><div class="inner">
           <div class="level-strip">
             <div class="lv-bar"><i style="width:24%"></i></div>
@@ -721,7 +738,7 @@ figure.frame.bad figcaption{color:var(--wb-del);}
           <div class="lv-bar"><i style="width:24%"></i></div>
           <div class="repay-sub"><span>9월 11일 (목) · 판당 <b>+17%</b> 필요</span></div>
         </div>
-        <div class="pinbar"><i></i> 고정 126px — 스크롤 여지 128px 중 38px을 더 먹음</div>
+        <div class="pinbar"><i></i> 고정 126px — 스크롤 여지 128px 중 39px을 더 먹음</div>
         <div class="scrollbox" style="height:262px"><div class="inner" style="margin-top:-90px">
           <div class="main-tabs">
             <button class="main-tab on">🎯 단타</button>
@@ -745,14 +762,14 @@ figure.frame.bad figcaption{color:var(--wb-del);}
       <thead><tr><th>안</th><th>고정 영역</th><th>화면 전체 높이</th><th>중복</th><th>고치는 양</th></tr></thead>
       <tbody>
         <tr><td>지금</td><td class="num">88px</td><td class="num">868px</td><td>—</td><td>—</td></tr>
-        <tr><td>안 A · 상단바 칩</td><td class="num"><b>78px</b></td><td class="num"><b>848px</b> (−20)</td><td>없음</td><td>칩 신설 + 스트립 한 줄 삭제</td></tr>
-        <tr><td>안 B · 스트립 고정</td><td class="num"><i>126px</i> (+38)</td><td class="num">848px (−20)</td><td>없음</td><td>CSS 두 줄</td></tr>
+        <tr><td>안 A · 상단바 칩</td><td class="num"><b>87px</b> (−1)</td><td class="num"><b>844px</b> (−24)</td><td>없음</td><td>칩 신설 + 스트립 한 줄 삭제</td></tr>
+        <tr><td>안 B · 스트립 고정 (추정)</td><td class="num"><i>126px</i> (+39)</td><td class="num">844px (−24)</td><td>없음</td><td>CSS 두 줄</td></tr>
       </tbody>
     </table>
   </div>
 
   <ul class="notes">
-    <li><span class="n">?</span><span><b>안 B가 더 간단하지만 38px을 더 먹습니다.</b> 스크롤 여지가 128px뿐이라 그 중 30%가 고정 영역으로 넘어갑니다. 손이 닿는 베팅 버튼이 그만큼 아래로 밀립니다. 저는 <b>안 A</b>를 추천합니다.</span></li>
+    <li><span class="n">?</span><span><b>안 B가 더 간단하지만 39px을 더 먹습니다.</b> 스크롤 여지가 128px뿐이라 그 중 30%가 고정 영역으로 넘어갑니다. 손이 닿는 베팅 버튼이 그만큼 아래로 밀립니다. 저는 <b>안 A</b>를 추천합니다.</span></li>
   </ul>
 </section>
 

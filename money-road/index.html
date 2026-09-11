@@ -30,7 +30,19 @@
   .topbar .brand{font-size:18px; font-weight:800;} .topbar .brand span{color:var(--blue);}
   .top-right{display:flex; flex-direction:column; align-items:flex-end; gap:6px;}
   .top-right-row{display:flex; align-items:center; gap:8px;}
-  .rank-chip{font-size:11.5px; font-weight:800; color:var(--blue); background:var(--blue-weak); padding:5px 10px; border-radius:999px; white-space:nowrap; font-variant-numeric:tabular-nums;}
+  /* 상환 칩 — 마감은 스크롤을 내려도 보여야 한다. 탑바가 이미 sticky라
+     여기 올려두면 따라온다. 누르면 첫 판 안내(showIntroModal)가 다시 열린다. */
+  .repay-chip{display:inline-flex; align-items:center; gap:5px; border:none; cursor:pointer;
+    font-family:inherit; font-size:11.5px; font-weight:900; letter-spacing:-.02em;
+    color:var(--gray); background:var(--card); padding:5px 10px; border-radius:999px;
+    box-shadow:var(--shadow); white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .repay-chip .goal{color:var(--ink);}
+  .repay-chip .sep{color:var(--gray3); font-weight:700;}
+  .repay-chip .dd{color:var(--gray2);}
+  .repay-chip.p-warn .dd{color:var(--gold);}
+  .repay-chip.p-bad .dd{color:var(--red);}
+  .repay-chip.last{background:var(--red-weak); box-shadow:none;}
+  .repay-chip.last .dd{color:var(--red); animation:ddayPulse 1.5s ease-in-out infinite;}
   .tier-chip{font-size:11.5px; font-weight:800; color:#8a5a00; background:#fff9ec;
     padding:6px 10px; border-radius:999px; white-space:nowrap;}
   /* 난이도 선택 카드 */
@@ -96,7 +108,7 @@
   .intro-li{display:flex; gap:9px; align-items:flex-start; text-align:left; font-size:12.5px;
     font-weight:700; color:var(--gray); line-height:1.55; margin-top:9px;}
   .intro-li .e{flex-shrink:0; font-size:14px; line-height:1.4;}
-  @media (prefers-reduced-motion:reduce){ .dday.last{animation:none;} }
+  @media (prefers-reduced-motion:reduce){ .dday.last,.repay-chip.last .dd{animation:none;} }
 
   /* 잔고는 sticky 상단바에 둔다 — 히어로 카드는 스크롤하면 사라져서 정작 베팅할 때 안 보였고,
      지갑 줄·파산선 안내까지 합쳐 같은 숫자가 화면에 세 번 나왔다. */
@@ -259,9 +271,6 @@
   .rs-badge.cold{background:var(--field); color:var(--gray2);}
   .rs-sum{font-size:19px; font-weight:900; font-variant-numeric:tabular-nums;}
   .rs-sum.up{color:var(--red);} .rs-sum.down{color:var(--blue);}
-  .rs-rank{font-size:11.5px; font-weight:700; color:var(--gray2); margin-top:3px; font-variant-numeric:tabular-nums;}
-  .rs-rank b{color:var(--ink); font-weight:800;}
-  .rs-rank .up{color:var(--green); font-weight:800;} .rs-rank .down{color:var(--red); font-weight:800;}
   .rs-like{color:var(--gray3); font-weight:800; font-size:11px; margin-left:5px; white-space:nowrap;}
   /* 거래 결과 — 번 돈이 주인공, 나머지는 칩으로 분리(쩜으로 이어붙이지 않는다) */
   .rs-money{font-size:28px; font-weight:900; letter-spacing:-.04em; font-variant-numeric:tabular-nums;
@@ -275,10 +284,6 @@
   .rs-chip.grade.low{background:var(--blue-weak); color:var(--blue);}
   .rs-chip.lev{background:var(--blue-weak); color:var(--blue);}
   .rs-chip.streak{background:#fff9ec; color:#8a5a00;}
-  .rs-rankline{margin-top:10px; padding-top:10px; border-top:1px solid var(--line);
-    display:flex; justify-content:space-between; font-size:12px; font-weight:800; color:var(--gray);
-    font-variant-numeric:tabular-nums;}
-  .rs-rankline .u{color:var(--green);} .rs-rankline .d{color:var(--red);}
   .rs-box{text-align:left; max-height:56vh; overflow-y:auto; -webkit-overflow-scrolling:touch;}
   .rs-wallet{margin-top:12px; padding-top:10px; border-top:1px solid var(--line);
     font-size:12px; font-weight:700; color:var(--gray2); font-variant-numeric:tabular-nums;}
@@ -395,7 +400,7 @@
       <div class="cash-top" id="cashView">0원</div>
     </div>
     <div class="top-right">
-      <div class="rank-chip" id="rankChip">-</div>
+      <button class="repay-chip" id="repayChip"></button>
       <div class="top-right-row">
         <div class="tier-chip hide" id="tierChip"></div>
         <div class="lv-chip" id="lvChip">Lv.1</div>
@@ -929,16 +934,16 @@ function loadMeta(){
       if(typeof META.xp!=='number')META.xp=0;
       if(typeof META.cleared!=='number')META.cleared=0;
       if(!META.dex||typeof META.dex!=='object')META.dex={};
-      if(typeof META.seenIntro!=='boolean')META.seenIntro=false;
+      if(typeof META.introV!=='number')META.introV=0;
       return;}
     /* v4까지의 레거시 포인트는 1pt = 1XP로 옮겨준다. 트리는 사라졌지만
        그때까지 쌓은 판들을 없던 일로 만들 이유는 없다. */
     const old=localStorage.getItem('moneyroad2_meta_v4');
     if(old){const o=JSON.parse(old)||{};
-      META={mute:!!o.mute, xp:Math.max(0,o.legacyPoints|0), cleared:0, dex:{}, pendingSettle:null, seenIntro:!!o.seenIntro};
+      META={mute:!!o.mute, xp:Math.max(0,o.legacyPoints|0), cleared:0, dex:{}, pendingSettle:null, introV:0};
       saveMeta(); return;}
   }catch(e){}
-  META={mute:false, xp:0, cleared:0, dex:{}, pendingSettle:null, seenIntro:false};
+  META={mute:false, xp:0, cleared:0, dex:{}, pendingSettle:null, introV:0};
 }
 function saveMeta(){try{localStorage.setItem(META_KEY,JSON.stringify(META));}catch(e){}}
 
@@ -1190,51 +1195,11 @@ function renderUnlock(){
   }).join('');
 }
 
-/* ===== 랭킹 (우측상단 · 순수 연출 — 현금은 일절 주지 않는다) =====
-   보유 현금(S.cash)을 로그 스케일로 전국 순위에 매핑한다. peakCash가 아니라 실시간
-   cash를 쓰기 때문에 베팅으로 돈이 오르내리면 등수도 그대로 오르내린다. 여기에
-   "가만히 있어도" 등수가 조금씩 흔들리도록, 실제 현금은 건드리지 않는 화면표시 전용
-   보정치(rankDrift)를 따로 두고 몇 초 단위로 소폭 상승/하락/횡보 구간을 이어붙인다 —
-   등수가 좋을수록(1위에 가까울수록) 하락 구간이 더 자주 나오게 해서, 상위권일수록
-   가만히 있으면 등수가 밀리기 쉽게 만든다(계속 단타를 해야 할 이유). */
+/* 댓글 작성자 이름 — 전국 순위 연출을 걷어내고 남은 것.
+   순위는 현금을 주지도 받지도 않으면서 탑바 한 자리를 계속 차지했다.
+   그 자리는 이제 상환 칩이 쓴다. */
 const FAKE_NAMES=['존버킹','단타의신','물타기장인','칼손절러','한강뷰거주','우량주러버','고점매수단','익절요정','풀매수맨','존리형','개미핥기','반대매매각','손절은없다','불장기원단','떡상기도중'];
 function nameFor(seed){return FAKE_NAMES[Math.abs(Math.floor(seed))%FAKE_NAMES.length];}
-const RANK1_AMOUNT=50000000000, RANK_MIN_AMOUNT=100000, RANK_WORST=13000000;
-function rankGoodness(amount){
-  const p=Math.max(1,amount);
-  return Math.min(1,Math.max(0,(Math.log10(p)-Math.log10(RANK_MIN_AMOUNT))/(Math.log10(RANK1_AMOUNT)-Math.log10(RANK_MIN_AMOUNT))));
-}
-function rankFromAmount(amount){
-  const t=rankGoodness(amount);
-  return Math.max(1,Math.round(RANK_WORST*Math.pow(1/RANK_WORST,t)));
-}
-let rankDrift=1;
-let driftSeg={start:1,target:1,t0:Date.now(),t1:Date.now()};
-function effectiveRankAmount(){return Math.max(1,S.cash*rankDrift);}
-function rankOf(){return rankFromAmount(effectiveRankAmount());}
-function rankText(){
-  const r=rankOf();
-  const pct=r/RANK_WORST*100;
-  const pctTxt=pct<1?pct.toFixed(2):Math.round(pct);
-  return `${r.toLocaleString()}위 (상위 ${pctTxt}%)`;
-}
-function updateRankDrift(now){
-  if(now>=driftSeg.t1){
-    const goodness=rankGoodness(effectiveRankAmount());
-    const declineProb=0.30+goodness*0.45, flatProb=0.25;
-    const roll=Math.random();
-    let mult;
-    if(roll<declineProb) mult=1-(0.01+Math.random()*0.035);
-    else if(roll<declineProb+flatProb) mult=1+(Math.random()-0.5)*0.01;
-    else mult=1+(0.01+Math.random()*0.03);
-    const start=rankDrift;
-    const target=Math.min(2.0,Math.max(0.5,start*mult));
-    driftSeg={start,target,t0:now,t1:now+57000+Math.random()*6000};
-  }
-  const frac=Math.min(1,(now-driftSeg.t0)/(driftSeg.t1-driftSeg.t0));
-  rankDrift=driftSeg.start+(driftSeg.target-driftSeg.start)*Math.sin(frac*Math.PI/2);
-}
-function renderRankChip(){ $('rankChip').textContent=rankText(); }
 
 /* ===== 거래 결과에 대한 사회적 반응 =====
    베팅 "중"에는 그래프와 배율만 보게 되므로 그때 띄우는 잡담은 아무도 안 본다.
@@ -1316,7 +1281,6 @@ function resultModalHTML(R){
   if(R.lev>1)chips.push(`<span class="rs-chip lev">🎚️ ${R.lev}배</span>`);
   if(R.streak>=2)chips.push(`<span class="rs-chip streak">🔥 ${R.streak}연승</span>`);
   (R.buffs||[]).forEach(b=>chips.push(`<span class="rs-chip">${BUFFS[b].emo} ${BUFFS[b].name}</span>`));
-  const moved=R.rankBefore!==R.rankAfter, better=R.rankAfter<R.rankBefore;
   const earnRow=(R.earned&&R.earned.length)?`<div class="strip-buff" style="margin-top:11px">
       <span class="e">${R.earned.map(b=>BUFFS[b].emo).join('')}</span>
       <div><div class="t">${R.streak}연승! 다음 판에 ${R.earned.map(b=>BUFFS[b].name).join(' + ')}이 걸려요</div>
@@ -1331,8 +1295,6 @@ function resultModalHTML(R){
     <div class="rs-money ${up?'up':'down'}">${up?'+':''}${fmtWon(R.profit)}</div>
     <div class="rs-sub">${sub}</div>
     <div class="rs-chips">${chips.join('')}</div>
-    <div class="rs-rankline"><span>전국 ${R.rankAfter.toLocaleString()}위</span>
-      <span class="${better?'u':'d'}">${moved?`${better?'▲':'▼'} ${Math.abs(R.rankBefore-R.rankAfter).toLocaleString()}`:'변동 없음'}</span></div>
     ${earnRow}
     <div class="cm-feed" style="margin-top:11px">${msgs}</div>
     <div class="rs-wallet">잔고 <b>${fmtWon(S.cash)}</b></div>
@@ -1447,12 +1409,14 @@ function extendDeadline(){
 function renderLevel(){
   $('lvChip').textContent=`Lv.${S.level}`;
   /* 난이도는 1단계에서 숨긴다 — 고를 것이 없던 사람에게는 있으나 마나 한 정보고,
-     탑바는 이미 잔고·순위·레벨로 꽉 차 있다. */
+     탑바는 이미 잔고·상환·레벨로 꽉 차 있다. */
   const tc=$('tierChip'), ti=tierIdx();
   tc.classList.toggle('hide', ti===0);
   if(ti>0)tc.textContent=`${tierOf().emo} ${ti+1}단계`;
-  const el=$('repayStrip');
+  const chip=$('repayChip'), el=$('repayStrip');
   if(gateDone()){
+    chip.className='repay-chip';
+    chip.innerHTML=`🏆 <span class="goal">완제</span>`;
     el.innerHTML=`<div class="lv-row"><span class="lv-name">🏆 대출 완제 <small>최고 ${fmtWon(S.peakCash)}</small></span>
       <span class="lv-pct">100%</span></div><div class="lv-bar"><i style="width:100%"></i></div>`;
     return;
@@ -1462,13 +1426,15 @@ function renderLevel(){
   const d=S.daysLeft, urgent=d<=3;
   const r=riskAt(S.cash,d);
   const canExtend=S.cash*(1-EXTEND_COST_FRAC)>=MIN_BET;
-  el.innerHTML=`<div class="lv-row">
-      <span class="lv-name">🔗 ${g.n} 상환금 <b>${fmtWon(g.goal)}</b></span>
-      <span class="dday ${r.cls}${r.last?' last':''}">${r.last?'마지막 거래일':`D-${d}`}</span>
-    </div>
-    <div class="lv-bar ${r.cls}"><i style="width:${pct}%"></i></div>
+  /* 상환금과 D-day는 탑바 칩이 들고 있다. 탑바는 sticky라 스크롤해도 남는다 —
+     마감이 걸린 게임에서 마감은 늘 보여야 한다. 그래서 스트립에서는 같은 줄을
+     빼고 진행바와 설명줄만 남긴다(관문 이름은 설명줄 앞으로 옮겼다). */
+  chip.className=`repay-chip ${r.cls}${r.last?' last':''}`;
+  chip.innerHTML=`🔗 <span class="goal">${fmtWon(g.goal)}</span><span class="sep">·</span>` +
+    `<span class="dd">${r.last?'마지막날':`D-${d}`}</span>`;
+  el.innerHTML=`<div class="lv-bar ${r.cls}"><i style="width:${pct}%"></i></div>
     <div class="repay-sub ${r.cls}">
-      <span>${dateOfDay(S.dayCount)} · 판당 <b>${r.txt}</b> 필요</span>
+      <span>${g.n} · ${dateOfDay(S.dayCount)} · 판당 <b>${r.txt}</b> 필요</span>
       ${urgent&&canExtend?`<button class="extend" id="extendBtn">기한 +${EXTEND_DAYS}일 · ${fmtWon(Math.floor(S.cash*EXTEND_COST_FRAC))}</button>`:''}
     </div>`;
   if($('extendBtn'))$('extendBtn').onclick=()=>{sfx.tap();extendDeadline();};
@@ -1560,9 +1526,8 @@ function startRound(dir){
   const {patternId,patternEmo,path,ticks}=genRound(stock,S.pending.tier);
   const maxLev=leverageMultOf(), minLev=minLevOf();
   const leverage=Math.min(Math.max(minLev,S.betLeverage||minLev),maxLev);
-  const rankBefore=rankOf(); // 베팅금 차감 전 순위 — 결과 카드에서 변화를 보여주기 위해
   S.cash-=bet;
-  S.activeRound={stockId:stock.id,bet,path,ticks,patternId,patternEmo,leverage,rankBefore,
+  S.activeRound={stockId:stock.id,bet,path,ticks,patternId,patternEmo,leverage,
     dir:(metaHas('short')&&dir<0)?-1:1,
     entry:1, bet0:bet, watered:false,   // entry = 평균 단가. 물타기로만 움직인다
     news:metaHas('news')?rollNews(path,stock.name):null,
@@ -1641,7 +1606,6 @@ function sellRound(auto){
   const lev=S.activeRound.leverage||1;
   const dir=roundDir();
   const {profit,payout}=cashOutOf(bet,mult,lev,dir,S.activeRound.entry);
-  const rankBefore=S.activeRound.rankBefore||rankOf();
   /* 매도 등급 — 그 판 "전 구간"의 최저~최고 안에서 내가 판 위치.
      매도 시점까지(본 구간)로 잡으면, 하락장에서는 매도 순간이 곧 그때까지의 최저점이라
      D가 47% 쏟아진다(실측). 전 구간으로 잡아야 "일찍 빠져나온 것"이 제대로 A/S를 받는다.
@@ -1677,7 +1641,7 @@ function sellRound(auto){
   if(grade&&grade.g==='S')T.sCount++;
   const res={mult,effMult,half,entry:R.entry||1,watered:!!R.watered,
     news:R.news?{say:R.news.say,truth:R.news.truth,text:R.news.text}:null,
-    profit:totalProfit,bet:totalBet,lev,dir,rankBefore,rankAfter:rankOf(),
+    profit:totalProfit,bet:totalBet,lev,dir,
     grade,lo,hi,streak:S.streak,prevStreak,earned,buffs,daysLeft:S.daysLeft};
   const rx=buildReactions(res);
   res.tier=rx.tier; res.list=rx.list;
@@ -2118,7 +2082,7 @@ function nextStreakTxt(st){
 function renderHero(){$('cashView').textContent=fmtWon(S.cash);}
 
 function render(){
-  renderHero();renderLevel();renderRankChip();renderStrip();
+  renderHero();renderLevel();renderStrip();
   switchMainTab(S.mainTab||'trade');
   renderTradeTabs();renderTrade();
   renderShop();renderGrowth();renderUnlock();
@@ -2138,7 +2102,12 @@ function showAwayModal(report){
   $('modal').classList.add('on');
   $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
 }
-/* 규칙을 모른 채 맞는 마감이 제일 억울하다 — 첫 판 시작 전에 한 번만 알려준다 */
+/* 규칙을 모른 채 맞는 마감이 제일 억울하다 — 첫 판 시작 전에 한 번 알려준다.
+
+   "봤다/안 봤다" 불리언이 아니라 버전을 저장한다. 불리언은 한 번 서면 영원히
+   서 있어서, 게임이 통째로 바뀌어도 예전에 한 번 본 사람은 다시 못 봤다.
+   규칙이 크게 바뀌면 INTRO_V만 올리면 모두가 한 번 더 본다. */
+const INTRO_V=2;
 function showIntroModal(){
   const g=GATES[0];
   $('modalBox').innerHTML=`<div class="emo">🔗</div><div class="tt">이 돈, 빌린 돈이에요</div>
@@ -2151,12 +2120,18 @@ function showIntroModal(){
     <div class="intro-li"><span class="e">💰</span><span>일찍 갚으면 남은 거래일 하루당 상환금의 ${Math.round(EARLY_BONUS_RATE*100)}%를 현금으로 받아요.</span></div>
     <button class="ok" id="mOk">시작하기</button>`;
   $('modal').classList.add('on');
-  META.seenIntro=true; saveMeta();
+  META.introV=INTRO_V; saveMeta();
   $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
 }
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),1600);}
 
 $('muteBtn').onclick=()=>{META.mute=!META.mute;saveMeta();$('muteBtn').textContent=META.mute?'🔇':'🔊';if(!META.mute)sfx.tap();};
+/* 규칙을 다시 볼 곳이 필요하다 — 인트로는 한 번 닫으면 끝이었다.
+   칩은 이미 탑바에 있으니 블록이 늘지 않는다. */
+$('repayChip').onclick=()=>{
+  if($('modal').classList.contains('on')||S.activeRound)return;
+  sfx.tap(); showIntroModal();
+};
 
 /* main tick — 0.05초 간격으로 라운드 진행/자동익절/파산 체크 */
 setInterval(()=>{
@@ -2177,16 +2152,14 @@ setInterval(()=>{
     checkBankrupt();
   }
 }, ROUND_TICK_MS);
-setInterval(()=>{ updateRankDrift(Date.now()); renderRankChip(); }, 1000);
 setInterval(saveRun, 3000);
 window.addEventListener('pagehide', saveRun);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveRun();});
 
-updateRankDrift(Date.now());
 render();
 if(META.pendingSettle){ showSettleModal(META.pendingSettle); }
 if(!checkBankrupt() && awayReport && awayReport.awaySec>=60) showAwayModal(awayReport);
-if(!$('modal').classList.contains('on') && !META.seenIntro && !gateDone() && S.dayCount===0) showIntroModal();
+if(!$('modal').classList.contains('on') && META.introV!==INTRO_V && !gateDone() && S.dayCount===0) showIntroModal();
 </script>
 </body>
 </html>

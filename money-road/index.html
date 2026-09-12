@@ -508,9 +508,13 @@ const TRADE_STOCKS=[
      (delaydown)이다. 완만하게 흘러가는 판이 거의 없어서 손이 쉴 틈이 없다. */
   {id:'penny',  emo:'🎲', name:'동전주',    ds:'급등 아니면 급락', pMult:1.5, noiseMult:1.7,
    open:()=>metaHas('penny'), lock:'🧬 해금',
-   patW:{spike:3, up:0.4, delayup:1.5,
-         delaydown:3, down:0.6, flat:0.2,
-         v:1.5, invv:1.5, w:0.5, m:0.5}},
+   /* patW는 등급 안에서 어떤 패턴이 나올지를 종목이 정하는 손잡이다. 예전에는
+      up/down이 완만한 축이라 0.4~0.6으로 눌러뒀는데, 이제 그 둘이 급락으로 시작하는
+      가장 격한 패턴이 됐다. 그대로 두면 동전주가 개편을 통째로 피해 간다(클리어 92%).
+      이제 눌러야 할 것은 완만한 쪽(flat·w·m)이다. */
+   patW:{spike:2.5, up:1.0, down:1.0, delayup:1.2,
+         delaydown:2.0, flat:0.15,
+         v:1.2, invv:1.5, w:0.4, m:0.4}},
   /* 🪙 유일하게 시간축이 다른 종목 — 20초다(다른 종목은 15초).
      한 판 = 하루라는 규칙은 그대로라, 코인은 "같은 하루를 더 오래 지켜보는" 종목이다.
      대신 진폭이 가장 크다. 실제 시간을 더 쓰고 게임 안의 진도를 더 빼는 맞교환이다. */
@@ -527,6 +531,22 @@ function ticksOf(st){return (st&&st.ticks)||ROUND_TICKS;}
 function noiseScale(T){return Math.sqrt(30/T);}
 
 function dev(base,mult){return Math.max(0.05,1+(base-1)*mult);}
+
+/* 전반부 급락의 바닥. 3배에서 평가손 −48%지만 청산선(0.67)은 넘지 않는다 —
+   죽지 않아야 판단할 기회가 생긴다.
+
+   왜 이렇게 바꿨나: 예전에는 강세 패턴의 저점이 전부 1.00 근처라 상승장이 한 번도
+   마이너스로 안 내려갔다. 그래서 "초반에 빠지면 던진다"가 거의 언제나 맞는 규칙이
+   됐고, 라운드 절반 전에 나오는 급등·급락이 그대로 매도 신호로 쓰였다.
+
+   이제 상승장도 하락장도 같은 얼굴로 급락한다(전반부 저점 강세 0.75 · 약세 0.72).
+   하락장은 청산선을 바로 뚫지 않고 한 번 되돌아 올라오는데, 그 반등이 탈출 창이다 —
+   거기서 털면 3배 −16%로 살고 안 털면 76%가 청산까지 간다. 갈림은 반등 이후에 온다.
+
+   결과(sim/bounce.js · 103일 기준): 어느 전략도 정답이 아니게 된다.
+     쫄보 65%→15% · 트레일링 21%→6% · 반등탈출 20%→7% · 신호믿기 2%→12%
+   조정 손잡이는 이 숫자 하나다. 올리면(0.86~0.88) 트레일링이 다시 살아난다. */
+const DIP=0.84;
 /* 여러 구간(keypoint)을 사인 이징으로 잇는 범용 경로 생성기 — 구간을 몇 개, 어떤 값으로
    두느냐에 따라 상승/하락/V자는 물론 이중 바닥(W)·이중 고점(M)·지연 반응까지 전부 표현 가능 */
 function buildMultiPhase(keypoints,noiseAmt,T){
@@ -559,17 +579,28 @@ function buildFlat(noiseAmt,driftAmt,T){
    패턴마다 요구하는 대응이 전부 달라서(즉시매도/버티기/중간에익절/초반무시 등),
    "일단 홀드"나 "일단 반응만 보고 팔기" 같은 단일 정답이 통하지 않는다. */
 const PATTERNS=[
-  {id:'up',emo:'📈',name:'상승',spark:'M2 20 L20 17 L38 12 L54 6 L70 4',weight:.12,gen:(st,T)=>{
-    const peakFrac=0.55+Math.random()*0.20, peakV=dev(1.4+Math.random()*0.7,st.pMult), endV=dev(1.15+Math.random()*0.35,st.pMult);
-    return buildMultiPhase([[peakFrac,peakV],[1,endV]],0.012*noiseScale(T)*st.noiseMult,T);
+  {id:'up',emo:'📈',name:'상승',spark:'M2 8 L14 17 L30 10 L44 14 L70 3',weight:.22,gen:(st,T)=>{
+    return buildMultiPhase([
+      [0.18+Math.random()*0.10, dev(DIP+Math.random()*0.06,st.pMult)],
+      [0.42+Math.random()*0.10, dev(DIP+0.18+Math.random()*0.12,st.pMult)],
+      [0.62+Math.random()*0.08, dev(DIP+0.10+Math.random()*0.10,st.pMult)],
+      [1,                       dev(1.70+Math.random()*0.25,st.pMult)],
+    ],0.013*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'down',emo:'📉',name:'하락',spark:'M2 4 L20 8 L38 14 L54 19 L70 20',weight:.15,gen:(st,T)=>{
-    const bottomFrac=0.5+Math.random()*0.25, botV=dev(0.4+Math.random()*0.3,st.pMult), endV=1+(botV-1)*(0.9+Math.random()*0.15);
-    return buildMultiPhase([[bottomFrac,botV],[1,endV]],0.01*noiseScale(T)*st.noiseMult,T);
+  {id:'down',emo:'📉',name:'하락',spark:'M2 7 L14 16 L30 9 L46 15 L70 21',weight:.22,gen:(st,T)=>{
+    return buildMultiPhase([
+      [0.18+Math.random()*0.10, dev(DIP-0.02+Math.random()*0.06,st.pMult)],
+      [0.42+Math.random()*0.10, dev(DIP+0.16+Math.random()*0.10,st.pMult)],
+      [0.65+Math.random()*0.08, dev(DIP+Math.random()*0.06,st.pMult)],
+      [1,                       dev(0.45+Math.random()*0.15,st.pMult)],
+    ],0.013*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'v',emo:'✅',name:'V자 반등',spark:'M2 8 L18 20 L34 17 L52 9 L70 4',weight:.12,gen:(st,T)=>{
-    const bottomFrac=0.22+Math.random()*0.16, botV=dev(0.5+Math.random()*0.25,st.pMult), endV=dev(1.05+Math.random()*0.45,st.pMult);
-    return buildMultiPhase([[bottomFrac,botV],[1,endV]],0.014*noiseScale(T)*st.noiseMult,T);
+  {id:'v',emo:'✅',name:'눌림목',spark:'M2 16 L16 6 L34 18 L50 12 L70 5',weight:.12,gen:(st,T)=>{
+    return buildMultiPhase([
+      [0.20+Math.random()*0.08, dev(1.25+Math.random()*0.20,st.pMult)],
+      [0.45+Math.random()*0.10, dev(0.80+Math.random()*0.10,st.pMult)],
+      [1,                       dev(1.15+Math.random()*0.30,st.pMult)],
+    ],0.013*noiseScale(T)*st.noiseMult,T);
   }},
   {id:'spike',emo:'🎢',name:'급등급락',spark:'M2 16 L14 3 L26 8 L44 15 L70 20',weight:.10,gen:(st,T)=>{
     const peakFrac=0.08+Math.random()*0.17, peakV=dev(1.8+Math.random()*1.7,st.pMult), endV=dev(0.5+Math.random()*0.35,st.pMult);
@@ -588,11 +619,11 @@ const PATTERNS=[
     const p1=dev(1.35+Math.random()*0.35,st.pMult), d1=dev(0.75+Math.random()*0.2,st.pMult), p2=dev(1.05+Math.random()*0.2,st.pMult), endV=dev(0.65+Math.random()*0.2,st.pMult);
     return buildMultiPhase([[0.22,p1],[0.5,d1],[0.75,p2],[1,endV]],0.013*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'delayup',emo:'⏫',name:'지연 상승',spark:'M2 13 L24 12 L40 13 L54 8 L70 3',weight:.07,gen:(st,T)=>{
+  {id:'delayup',emo:'⏫',name:'지연 상승',spark:'M2 13 L24 12 L40 13 L54 8 L70 3',weight:.04,gen:(st,T)=>{
     const flatV=dev(0.98+Math.random()*0.08,1), endV=dev(1.6+Math.random()*0.5,st.pMult);
     return buildMultiPhase([[0.55,flatV],[1,endV]],0.008*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'delaydown',emo:'⏬',name:'지연 하락',spark:'M2 11 L24 12 L40 11 L54 16 L70 21',weight:.06,gen:(st,T)=>{
+  {id:'delaydown',emo:'⏬',name:'지연 하락',spark:'M2 11 L24 12 L40 11 L54 16 L70 21',weight:.04,gen:(st,T)=>{
     const flatV=dev(0.98+Math.random()*0.08,1), endV=dev(0.4+Math.random()*0.25,st.pMult);
     return buildMultiPhase([[0.55,flatV],[1,endV]],0.008*noiseScale(T)*st.noiseMult,T);
   }},
@@ -633,8 +664,11 @@ function genRound(stock,tier){
    (패턴 힌트처럼 정답을 알려주면 게임이 무너지므로 일부러 틀릴 수 있게 둔다.)
    시뮬레이션 검증: 5배 사용 시 전액 손실률이 신호 없음 43% → 기본신호 15% → 정보력
    최대 4.6%로 떨어진다. 신호의 값어치는 수익 증가가 아니라 "사고를 줄이는 것"에 있다. */
-const PATTERN_TIER={up:'strong',spike:'strong',delayup:'strong',
-  v:'mid',w:'mid',m:'mid',invv:'mid',
+/* 급등급락(spike)은 강세에서 보통으로 내렸다. 끝값이 평균 0.67이고 강세 가중치의
+   34%를 차지했다 — 3배에서 0.67은 청산이라, 강세 신호를 믿고 들고 있으면 셋 중
+   하나꼴로 죽었다. 그래서 "강세여도 일단 빨리 털어라"가 학습됐다. */
+const PATTERN_TIER={up:'strong',delayup:'strong',
+  v:'mid',w:'mid',m:'mid',invv:'mid',spike:'mid',
   down:'weak',flat:'weak',delaydown:'weak'};
 /* 하락 가중치 — 상승/하락 패턴의 등장 비율을 옮겨 판당 기댓값을 조절하는 다이얼.
    예전에는 고정 상수(DOWN_SHIFT=0.04) 하나였다. 이제 난이도 단계가 정하므로

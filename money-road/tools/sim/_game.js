@@ -35,6 +35,7 @@ const parts = [
   slice('const ROUND_TICKS=', '\n'),
   slice('function noiseScale(T)', '\n'),
   slice('function dev(base,mult)', '\n'),
+  slice('const DIP=', '\n'),              // 전반부 급락 바닥 — 패턴 생성기가 쓴다
   slice('function buildMultiPhase(keypoints,noiseAmt,T){', '\n}'),
   slice('function buildFlat(noiseAmt,driftAmt,T){', '\n}'),
   slice('const PATTERNS=[', '\n];'),

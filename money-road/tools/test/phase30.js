@@ -8,7 +8,8 @@
      5) 패턴 강제가 genRound를 실제로 고정하는가
      6) DIP 조절이 경로에 반영되는가 · 기본값은 따로 남아 있는가
      7) 라운드 중에는 안 열린다 (15초짜리 판 위에 모달이 뜨면 그 판을 잃는다)
-     8) 판만 초기화하면 메타가 남는가 */
+     8) 초기화가 진짜로 지우는가 — reload가 pagehide→saveRun을 부르므로 잠그지
+        않으면 방금 지운 판이 되살아난다. 옛 meta_v4에서 XP가 되돌아오지도 않아야 한다. */
 const { launch, GAME: url } = require('../lib/browser');
 (async()=>{
  const b=await launch(); const errs=[];
@@ -78,11 +79,36 @@ const { launch, GAME: url } = require('../lib/browser');
    const on=$('modal').classList.contains('on');
    S.activeRound=null; render();
    return {모달:on};}));
- L('14. 판만 초기화 (메타 유지)', await p.evaluate(()=>{
-   META.xp=555; saveMeta(); saveRun();
-   const keys={run:!!localStorage.getItem(RUN_KEY), meta:!!localStorage.getItem(META_KEY)};
-   try{localStorage.removeItem(RUN_KEY);}catch(e){}
-   return {전:keys, 후:{run:!!localStorage.getItem(RUN_KEY), meta:!!localStorage.getItem(META_KEY)}};}));
+ /* 여기부터는 실제로 devWipe를 눌러 새로고침까지 간다. 직접 removeItem을 부르면
+    reload 경로(pagehide→saveRun)를 안 타서 진짜 버그를 못 잡는다. */
+ const seed=async(page)=>{ await page.evaluate(()=>{
+   localStorage.setItem('moneyroad2_meta_v4', JSON.stringify({mute:false,legacyPoints:777,seenIntro:true}));
+   META.xp=654; saveMeta();
+   S.cash=S.peakCash=88000000; S.gate=3; saveRun(); }); };
+
+ L('14. 판만 초기화 — 판은 날아가고 메타는 남는다', await (async()=>{
+   await seed(p);
+   await p.evaluate(()=>document.querySelector('[data-wipe="run"]').click());
+   await p.waitForTimeout(900);
+   await p.evaluate(()=>{ if($('modal').classList.contains('on')&&$('mOk'))$('mOk').click(); });
+   return await p.evaluate(()=>({현금:S.cash, xp:META.xp,
+     run키:!!localStorage.getItem(RUN_KEY), meta키:!!localStorage.getItem(META_KEY)}));
+ })());
+
+ L('15. 전부 초기화 — 돈도 경험치도 0에서 다시', await (async()=>{
+   for(let i=0;i<5;i++) await p.evaluate(()=>$('brandTap').click());
+   await seed(p);
+   await p.evaluate(()=>document.querySelector('[data-wipe="all"]').click());
+   await p.waitForTimeout(200);
+   await p.evaluate(()=>$('mOk').click());        // 확인 화면에서 "네, 전부 지울게요"
+   await p.waitForTimeout(1200);
+   await p.evaluate(()=>{ if($('modal').classList.contains('on')&&$('mOk'))$('mOk').click(); });
+   return await p.evaluate(()=>({
+     현금:S.cash, xp:META.xp, 상환단계:S.gate,
+     'moneyroad 키 잔존':(()=>{const a=[];for(let i=0;i<localStorage.length;i++){
+       const k=localStorage.key(i); if(/^moneyroad/.test(k))a.push(k);} return a;})()}));
+ })());
+
  await p.close();
  console.log('\n=== 오류 ==='); console.log(errs.length?errs.join('\n'):'없음');
  await b.close();

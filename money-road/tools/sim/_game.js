@@ -35,7 +35,9 @@ const parts = [
   slice('const ROUND_TICKS=', '\n'),
   slice('function noiseScale(T)', '\n'),
   slice('function dev(base,mult)', '\n'),
-  slice('const DIP=', '\n'),              // 전반부 급락 바닥 — 패턴 생성기가 쓴다
+  /* DIP는 테스트 도구가 실시간으로 밀 수 있어야 해서 let이다. const로 찾으면
+     조용히 안 깨지고 요란하게 깨진다 — 그게 낫다. */
+  slice('let DIP=', '\n'),
   slice('function buildMultiPhase(keypoints,noiseAmt,T){', '\n}'),
   slice('function buildFlat(noiseAmt,driftAmt,T){', '\n}'),
   slice('const PATTERNS=[', '\n];'),

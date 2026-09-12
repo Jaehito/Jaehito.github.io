@@ -1,0 +1,705 @@
+<title>맞추고, 뽑아서, 넘긴다</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+
+  :root{
+    --blue:#3182F6; --blue-weak:#e8f2ff; --blue-press:#1b64da;
+    --red:#f04452; --red-weak:#fdecee; --green:#00c471; --gold:#ffb020;
+    --ink:#191f28; --gray:#4e5968; --gray2:#8b95a1; --gray3:#b0b8c1;
+    --line:#f2f4f6; --bg:#f2f4f6; --card:#ffffff; --field:#f9fafb;
+    --radius:20px; --shadow:0 4px 20px rgba(0,0,0,.06);
+    --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; line-height:1.4; letter-spacing:-.02em; overflow-x:hidden;
+    overscroll-behavior-y:contain;}
+  html{overscroll-behavior-y:contain;}
+  #app{max-width:460px; margin:0 auto; min-height:100vh; position:relative; padding-bottom:calc(24px + var(--safe-b));}
+
+  .topbar{position:sticky; top:0; z-index:20; background:var(--bg); display:flex; align-items:flex-start;
+    justify-content:space-between; gap:10px; padding:12px 20px 8px;
+    box-shadow:0 6px 12px -8px rgba(0,0,0,.12);}
+  .topbar .brand{font-size:18px; font-weight:800;} .topbar .brand span{color:var(--blue);}
+  .top-right{display:flex; flex-direction:column; align-items:flex-end; gap:6px;}
+  .top-right-row{display:flex; align-items:center; gap:8px;}
+  /* 상환 칩 — 마감은 스크롤을 내려도 보여야 한다. 탑바가 이미 sticky라
+     여기 올려두면 따라온다. 누르면 첫 판 안내(showIntroModal)가 다시 열린다. */
+  .repay-chip{display:inline-flex; align-items:center; gap:5px; border:none; cursor:pointer;
+    font-family:inherit; font-size:11.5px; font-weight:900; letter-spacing:-.02em;
+    color:var(--gray); background:var(--card); padding:5px 10px; border-radius:999px;
+    box-shadow:var(--shadow); white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .repay-chip .goal{color:var(--ink);}
+  .repay-chip .sep{color:var(--gray3); font-weight:700;}
+  .repay-chip .dd{color:var(--gray2);}
+  .repay-chip.p-warn .dd{color:var(--gold);}
+  .repay-chip.p-bad .dd{color:var(--red);}
+  .repay-chip.last{background:var(--red-weak); box-shadow:none;}
+  .repay-chip.last .dd{color:var(--red); animation:ddayPulse 1.5s ease-in-out infinite;}
+  .tier-chip{font-size:11.5px; font-weight:800; color:#8a5a00; background:#fff9ec;
+    padding:6px 10px; border-radius:999px; white-space:nowrap;}
+  /* 난이도 선택 카드 */
+  .tier-list{display:flex; flex-direction:column; gap:7px; margin-top:15px; text-align:left;}
+  .diff-card{display:block; width:100%; border:2px solid var(--line); border-radius:15px;
+    padding:11px 13px; background:var(--card); text-align:left; cursor:pointer; font-family:inherit;}
+  .diff-card.sel{border-color:var(--blue); background:var(--blue-weak);}
+  .diff-card.lock{opacity:.5; cursor:default;}
+  .diff-top{display:flex; align-items:baseline; gap:8px;}
+  .diff-nm{font-size:14px; font-weight:900; color:var(--ink);}
+  .diff-clear{font-size:10.5px; font-weight:800; color:var(--green);}
+  .diff-xp{margin-left:auto; font-size:11.5px; font-weight:900; color:var(--blue);
+    font-variant-numeric:tabular-nums; flex-shrink:0;}
+  .diff-de{font-size:11.5px; font-weight:700; color:var(--gray); margin-top:4px; line-height:1.4;}
+  .diff-de.none{color:var(--gray3);}
+  .diff-card.sel .diff-de{color:#2a6ac4;}
+  .lv-chip{font-size:13px; font-weight:800; color:var(--gray); background:var(--card); padding:7px 12px; border-radius:999px; box-shadow:var(--shadow);}
+  .icon-btn{border:none; background:var(--card); color:var(--gray); width:36px; height:36px; border-radius:12px; font-size:15px; box-shadow:var(--shadow); display:grid; place-items:center; cursor:pointer;}
+
+  /* 레벨 진행바 */
+  .level-strip{margin:2px 20px 0; padding:0 2px;}
+  .lv-row{display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:5px;}
+  .lv-name{font-size:12.5px; font-weight:800; color:var(--gray); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .lv-name small{font-weight:700; color:var(--gray3); font-size:11px; margin-left:4px;}
+  .lv-pct{font-size:12.5px; font-weight:800; color:var(--green); flex-shrink:0;}
+  .lv-bar{height:5px; background:var(--line); border-radius:999px; overflow:hidden;}
+  .lv-bar>i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,var(--green),#00e5a0); transition:width .3s;}
+  .lv-name b{color:var(--ink); font-weight:900;}
+  .dday{font-size:13px; font-weight:900; color:var(--gray2); font-variant-numeric:tabular-nums; flex-shrink:0;}
+  .repay-sub{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:5px;
+    font-size:10.5px; font-weight:700; color:var(--gray3);}
+  .extend{border:none; background:var(--red-weak); color:var(--red); font-size:10.5px; font-weight:900;
+    border-radius:8px; padding:4px 9px; cursor:pointer; white-space:nowrap;}
+  /* 기한 경고 3단계 — D 숫자만 작아지면 "갑자기 마감"으로 느껴진다. 색과 문구가 같이 움직여야 다가오는 게 보인다. */
+  .dday.p-warn{color:var(--gold);}
+  .dday.p-bad{color:var(--red);}
+  .dday.last{color:var(--red); animation:ddayPulse 1.5s ease-in-out infinite;}
+  @keyframes ddayPulse{0%,100%{opacity:1} 50%{opacity:.4}}
+  .repay-sub b{font-weight:900; color:var(--gray2);}
+  .repay-sub.p-warn b{color:var(--gold);}
+  .repay-sub.p-bad b{color:var(--red);}
+  /* 진행바도 같이 물든다 — 색이 한 곳에서만 변하면 경고로 안 읽힌다 */
+  .lv-bar.p-warn>i{background:linear-gradient(90deg,#f0a500,var(--gold));}
+  .lv-bar.p-bad>i{background:linear-gradient(90deg,#d32f3c,var(--red));}
+  /* 시작 버튼 위 한 줄 — 평소엔 안 뜨고, 페이스가 위험할 때만 나온다 */
+  .pace-line{font-size:11.5px; font-weight:800; text-align:center; padding:8px; border-radius:11px; margin-bottom:9px;}
+  .pace-line.p-warn{background:#fff8e8; color:#b57800;}
+  .pace-line.p-bad{background:var(--red-weak); color:var(--red);}
+  .trade-go.danger{background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
+  /* 결과 팝업 맨 아래 장 마감 줄 */
+  .rs-close{margin-top:12px; padding:10px 12px; border-radius:12px; background:var(--field); border:1px solid var(--line);}
+  .cl-top{display:flex; justify-content:space-between; align-items:center; gap:8px;
+    font-size:11.5px; font-weight:800; color:var(--gray2);}
+  .cl-top.one{justify-content:center;}
+  .cl-dd{font-variant-numeric:tabular-nums; color:var(--gray); flex-shrink:0;}
+  .cl-dd b{font-size:14px;}
+  .rs-close.p-warn{background:#fff8e8; border-color:#ffe3ad;}
+  .rs-close.p-warn .cl-dd{color:#b57800;}
+  .rs-close.p-bad{background:var(--red-weak); border-color:#fbd2d6;}
+  .rs-close.p-bad .cl-dd{color:var(--red);}
+  .rs-close.p-done{background:#e7f9f1; border-color:#b8ecd6;}
+  .rs-close.p-done .cl-dd{color:var(--green);}
+  .intro-li{display:flex; gap:9px; align-items:flex-start; text-align:left; font-size:12.5px;
+    font-weight:700; color:var(--gray); line-height:1.55; margin-top:9px;}
+  .intro-li .e{flex-shrink:0; font-size:14px; line-height:1.4;}
+  @media (prefers-reduced-motion:reduce){ .dday.last,.repay-chip.last .dd{animation:none;} }
+
+  /* 잔고는 sticky 상단바에 둔다 — 히어로 카드는 스크롤하면 사라져서 정작 베팅할 때 안 보였고,
+     지갑 줄·파산선 안내까지 합쳐 같은 숫자가 화면에 세 번 나왔다. */
+  .tb-left{min-width:0;}
+  .cash-top{font-size:23px; font-weight:900; letter-spacing:-.04em; margin-top:1px;
+    font-variant-numeric:tabular-nums; white-space:nowrap;}
+
+  /* 메인 탭 스위처 */
+  .main-tabs{display:flex; gap:6px; margin:14px 20px 0; background:var(--card); border-radius:15px; padding:5px; box-shadow:var(--shadow);}
+  .main-tab{flex:1; text-align:center; padding:11px; border-radius:11px; font-size:14px; font-weight:800; color:var(--gray2); background:transparent; border:none; cursor:pointer;}
+  .main-tab.on{background:var(--ink); color:#fff;}
+
+  /* 단타 패널 */
+  .trade-panel{margin:12px 20px 0; background:var(--card); border-radius:20px; padding:14px 16px 16px; box-shadow:var(--shadow);}
+  .tp-head{display:flex; justify-content:flex-start; align-items:center; margin-bottom:9px;}
+  .tp-limit{font-size:11.5px; font-weight:700; color:var(--gray2); background:var(--field); padding:4px 9px; border-radius:999px;}
+  .stock-tabs{display:grid; gap:7px; margin-bottom:11px;}
+  .stock-tab{flex:1; border:2px solid var(--line); background:var(--card); border-radius:14px; padding:9px 8px; cursor:pointer; text-align:center;}
+  .stock-tab.sel{border-color:var(--blue); background:var(--blue-weak);}
+  .stock-tab.locked{opacity:.45; cursor:default;}
+  .stock-tab.mini{flex:0 0 auto; padding:9px 11px;}
+  .stock-tab.mini .n{font-size:10.5px; color:var(--gray2);}
+  .stock-tab .e{font-size:19px;}
+  .stock-tab .n{font-size:12px; font-weight:800; margin-top:2px;}
+  .stock-tab .v{font-size:10px; font-weight:700; color:var(--gray2); margin-top:1px;}
+
+  .bet-row{display:flex; align-items:center; gap:8px; background:var(--field); border-radius:14px; padding:8px 10px; margin-bottom:9px;}
+  .bet-row button{width:38px; height:38px; border:none; background:var(--card); border-radius:11px; font-size:18px; font-weight:800; color:var(--ink); box-shadow:var(--shadow); cursor:pointer;}
+  .bet-row .amt{flex:1; text-align:center; font-size:17px; font-weight:900; font-variant-numeric:tabular-nums;}
+  .bet-quicks{display:flex; gap:6px; margin-bottom:9px;}
+  .bet-quicks button{flex:1; border:none; background:var(--field); color:var(--gray); font-weight:800; font-size:12px; padding:8px 0; border-radius:10px; cursor:pointer;}
+  .bet-quicks button:active{background:var(--blue-weak); color:var(--blue);}
+  .btn-row{display:flex; gap:6px; margin-bottom:11px;}
+  .btn-row button{flex:1; border:2px solid var(--line); background:var(--card); color:var(--gray); font-weight:800; font-size:11.5px; padding:8px 0; border-radius:10px; cursor:pointer;}
+  .btn-row button.sel{border-color:var(--blue); background:var(--blue-weak); color:var(--blue);}
+  .lev-row button{padding:7px 0 6px; line-height:1.15;}
+  .lev-row button small{display:block; font-size:9.5px; font-weight:700; color:var(--gray3); margin-top:2px;}
+  .lev-row button.sel small{color:var(--blue); opacity:.8;}
+  .trade-go{width:100%; border:none; border-radius:14px; padding:14px; font-size:15.5px; font-weight:900; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 8px 20px rgba(49,130,246,.3);}
+  .trade-go:disabled{background:var(--line); color:var(--gray3); box-shadow:none; cursor:default;}
+  /* 공매도 — 시작 버튼을 좌우로 쪼갠다. 색은 손익 규칙 그대로 상승=빨강 / 하락=파랑. */
+  .split-row{display:flex; gap:8px;}
+  .split-row .trade-go{flex:1; padding:12px 8px;}
+  .trade-go small{display:block; font-size:10.5px; font-weight:800; opacity:.85; margin-top:2px;}
+  .trade-go.go-long{background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
+  .trade-go.go-short{background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 8px 20px rgba(49,130,246,.3);}
+  .rs-chip.short{background:var(--blue-weak); color:var(--blue);}
+  .rs-chip.split{background:var(--field); color:var(--gray);}
+  .trade-note{font-size:11.5px; color:var(--gray3); font-weight:600; text-align:center; margin-top:9px; line-height:1.5;}
+
+  /* 진행중인 라운드 */
+  .round-view{text-align:center;}
+  .round-timer{font-size:11.5px; font-weight:800; color:var(--gray2); font-variant-numeric:tabular-nums;
+    display:flex; justify-content:space-between; gap:8px;}
+  .round-timer .rt-r{transition:color .2s;}
+  .round-timer .rt-r.warn{color:var(--red);}
+  .round-mult{font-size:40px; font-weight:900; letter-spacing:-.03em; margin:4px 0; font-variant-numeric:tabular-nums;
+    transition:transform .12s cubic-bezier(.2,1.6,.4,1), color .18s;}
+  .round-mult.up{color:var(--red);} .round-mult.down{color:var(--blue);} .round-mult.flat{color:var(--gray2);}
+  .round-chartbox{position:relative; margin:4px 0 10px; border-radius:12px;}
+  .round-chart{width:100%; height:150px; display:block; background:var(--field); border-radius:12px;}
+  .round-view.tense .round-chartbox{animation:rvEdge .5s ease-in-out infinite alternate;}
+  @keyframes rvEdge{ from{box-shadow:inset 0 0 0 0 rgba(240,68,82,0);} to{box-shadow:inset 0 0 0 2px var(--red);} }
+  .round-count{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:56px; font-weight:900; color:var(--red); opacity:0; pointer-events:none;
+    font-variant-numeric:tabular-nums;}
+  .round-count.on{animation:rvCnt .95s ease-out;}
+  @keyframes rvCnt{ 0%{opacity:.5; transform:scale(.7);} 70%{opacity:.16;} 100%{opacity:0; transform:scale(1.4);} }
+  .rv-txt{stroke:var(--field); stroke-width:2.5px; paint-order:stroke fill; stroke-linejoin:round;}
+  .rv-pulse{transform-box:fill-box; transform-origin:center; animation:rvPulse 1.15s ease-out infinite;}
+  @keyframes rvPulse{ 0%{transform:scale(1); opacity:.5;} 100%{transform:scale(3.4); opacity:0;} }
+  @media(prefers-reduced-motion:reduce){
+    .rv-pulse,.round-view.tense .round-chartbox,.round-count.on{animation:none;}
+    .round-mult{transition:none;}
+  }
+  .round-pnl{font-size:13px; font-weight:800; margin-bottom:8px;}
+  .round-pnl.up{color:var(--red);} .round-pnl.down{color:var(--blue);}
+  .round-bar{height:3px; background:var(--line); border-radius:2px; margin-bottom:12px; overflow:hidden;}
+  .round-bar i{display:block; height:100%; width:0%; background:var(--gray3);}
+  .round-view.tense .round-bar i{background:var(--red);}
+  .sell-btn{width:100%; border:none; border-radius:14px; padding:13px; font-size:16px; font-weight:900; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
+  /* ✂️ 분할 매도 — 매도 버튼을 좌우로 쪼갠다. 절반 쪽은 "덜 센 선택"으로 읽히게 톤을 낮춘다. */
+  /* 📰 장중 뉴스 — 상단 줄을 3초간 빌려 쓴다. 그래프를 가리지 않고 블록도 안 는다.
+     한 줄을 넘기면 레이아웃이 흔들리므로 넘치는 건 자른다. */
+  .round-timer .rt-l{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  /* 💧 물타기 — 매도 버튼 위 한 줄. 판당 한 번이라 쓰고 나면 사라진다. */
+  .water{display:flex; align-items:center; gap:8px; background:#eef6ff; border:1.5px solid #3182F633;
+    border-radius:12px; padding:9px 11px; margin-bottom:9px; font-size:12px; font-weight:800;
+    color:var(--blue); cursor:pointer;}
+  .water b{font-weight:900;}
+  .water .r{margin-left:auto; font-size:10.5px; font-weight:700; color:var(--gray2);}
+  .water.off{background:var(--field); border-color:var(--line); color:var(--gray3); cursor:default;}
+  .water.off .r{color:var(--gray3);}
+  .rs-chip.water{background:#eef6ff; color:var(--blue);}
+  .sell-row{display:flex; gap:8px;}
+  .sell-row .sell-btn{flex:1;}
+  .sell-btn small{display:block; font-size:11.5px; font-weight:800; opacity:.85; margin-top:2px;
+    font-variant-numeric:tabular-nums;}
+  .sell-btn.sell-half{background:var(--field); color:var(--gray); box-shadow:none;
+    border:2px solid var(--line);}
+
+  /* 연승/오늘의 기록 스트립 */
+  .strip{margin:9px 20px 0; background:var(--card); border-radius:16px; padding:10px 14px;
+    box-shadow:var(--shadow); cursor:pointer;}
+  .strip-row{display:flex; align-items:center; gap:10px; font-size:12px; font-weight:800; color:var(--gray);}
+  .strip-row .fire{color:var(--red); font-weight:900;}
+  .strip-row .cv{margin-left:auto; color:var(--gray3); font-weight:900; font-size:11px;}
+  .strip-buff{display:flex; align-items:center; gap:8px; background:#fff9ec; border:2px solid #ffb02040;
+    border-radius:12px; padding:8px 11px; margin-top:9px;}
+  .strip-buff .e{font-size:17px;}
+  .strip-buff .t{font-size:11.5px; font-weight:900; color:#8a5a00;}
+  .strip-buff .d{font-size:10.5px; font-weight:700; color:var(--gray2); margin-top:1px;}
+  .rec-grid{display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:10px;}
+  .rec{background:var(--field); border-radius:11px; padding:8px 10px;}
+  .rec .k{font-size:10px; font-weight:700; color:var(--gray2);}
+  .rec .v{font-size:14px; font-weight:900; margin-top:1px; font-variant-numeric:tabular-nums;}
+  .main-tab.locked{opacity:.35;}
+
+  .section-title{font-size:13.5px; font-weight:800; color:var(--gray2); margin:18px 20px 8px;}
+
+  .biz{display:flex; align-items:center; gap:12px; background:var(--card); border-radius:16px; padding:12px 14px; margin:0 20px 8px; box-shadow:var(--shadow);}
+  .biz .logo{width:42px; height:42px; border-radius:13px; background:var(--field); display:grid; place-items:center; font-size:21px; flex-shrink:0;}
+  .biz .mid{flex:1; min-width:0;}
+  .biz .nm{font-size:14.5px; font-weight:800; display:flex; align-items:center; gap:6px;}
+  .biz .cnt{font-size:11px; font-weight:800; color:var(--blue); background:var(--blue-weak); padding:1px 7px; border-radius:999px;}
+  .biz .ds{font-size:12px; color:var(--gray2); font-weight:650; margin-top:2px;}
+  .biz-buy{flex-shrink:0; border:none; border-radius:13px; padding:11px 14px; font-size:13px; font-weight:800; cursor:pointer; text-align:right; min-width:92px;}
+  .biz-buy.can{background:var(--ink); color:#fff;}
+  .biz-buy.cant{background:var(--field); color:var(--gray3);}
+  .biz-buy .p{display:block; font-size:13.5px; font-weight:900;}
+  .biz-buy .l{display:block; font-size:10.5px; font-weight:700; opacity:.75; margin-top:1px;}
+
+  /* 장세 신호 */
+  .signal{display:flex; align-items:center; gap:10px; border-radius:14px; padding:9px 12px; margin-bottom:10px; border:2px solid transparent;}
+  .signal.strong{background:#e9f9f0; border-color:#00c47133;}
+  .signal.mid{background:#fff6e5; border-color:#ffb02033;}
+  .signal.weak{background:var(--red-weak); border-color:#f0445233;}
+  .signal .sg-left{display:flex; align-items:center; gap:5px; flex-shrink:0;}
+  .signal .sg-emo{font-size:16px;}
+  .signal .sg-name{font-size:13.5px; font-weight:900;}
+  .signal.strong .sg-name{color:#00a862;} .signal.mid .sg-name{color:#c98600;} .signal.weak .sg-name{color:var(--red);}
+  .signal .sg-mid{min-width:0;}
+  .signal .sg-ds{font-size:11.5px; font-weight:700; color:var(--gray);}
+  .signal .sg-acc{font-size:10.5px; font-weight:700; color:var(--gray3); margin-top:1px;}
+  .liq-note{font-size:11px; font-weight:700; color:var(--gray2); background:var(--field); border-radius:10px; padding:7px 10px; margin-bottom:11px;}
+  .liq-note b{color:var(--red); font-weight:900;}
+
+  /* 거래 결과 카드 */
+  .rs-badge{font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px;}
+  .rs-badge.hot{background:var(--red-weak); color:var(--red);}
+  .rs-badge.cold{background:var(--field); color:var(--gray2);}
+  .rs-sum{font-size:19px; font-weight:900; font-variant-numeric:tabular-nums;}
+  .rs-sum.up{color:var(--red);} .rs-sum.down{color:var(--blue);}
+  .rs-like{color:var(--gray3); font-weight:800; font-size:11px; margin-left:5px; white-space:nowrap;}
+  /* 거래 결과 — 번 돈이 주인공, 나머지는 칩으로 분리(쩜으로 이어붙이지 않는다) */
+  .rs-money{font-size:28px; font-weight:900; letter-spacing:-.04em; font-variant-numeric:tabular-nums;
+    line-height:1.15; margin-top:2px;}
+  .rs-money.up{color:var(--red);} .rs-money.down{color:var(--blue);}
+  .rs-sub{font-size:12.5px; font-weight:700; color:var(--gray2); margin-top:2px;}
+  .rs-chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:11px;}
+  .rs-chip{font-size:11px; font-weight:800; border-radius:9px; padding:5px 9px;
+    background:var(--field); color:var(--gray);}
+  .rs-chip.grade{background:#e9f9f0; color:#00a862;}
+  .rs-chip.grade.low{background:var(--blue-weak); color:var(--blue);}
+  .rs-chip.lev{background:var(--blue-weak); color:var(--blue);}
+  .rs-chip.streak{background:#fff9ec; color:#8a5a00;}
+  .rs-box{text-align:left; max-height:56vh; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .rs-wallet{margin-top:12px; padding-top:10px; border-top:1px solid var(--line);
+    font-size:12px; font-weight:700; color:var(--gray2); font-variant-numeric:tabular-nums;}
+  .rs-wallet b{color:var(--ink); font-weight:900;}
+  /* 최소 베팅/빚 안내 */
+  .min-note{font-size:11px; font-weight:700; color:var(--gray2); background:var(--field);
+    border-radius:10px; padding:7px 10px; margin-bottom:9px;}
+  .min-note b{color:var(--ink); font-weight:900;}
+  .opt-row{display:flex; gap:6px; margin-bottom:9px;}
+  .opt{flex:1; border:none; background:var(--field); border-radius:10px; padding:8px 10px;
+    font-size:11px; font-weight:800; color:var(--gray2); text-align:left; cursor:pointer;
+    display:flex; align-items:center; gap:5px;}
+  .opt b{color:var(--blue); font-weight:900; margin-left:auto;}
+  .opt.open{background:var(--blue-weak);}
+  /* 방향 토글 — 좌우로 쪼갠 시작 버튼은 탭 한 번을 아끼려다 오발을 샀다.
+     3배에서 방향을 잘못 누르면 베팅금이 통째로 날아가고 되돌릴 수가 없다.
+     고르는 행위와 확정하는 행위를 떼어 놓는다. */
+  .dir-toggle{flex:1; display:flex; gap:3px; background:var(--field); border-radius:10px; padding:3px;}
+  .dir-toggle button{flex:1; border:none; background:transparent; font-family:inherit;
+    font-size:11.5px; font-weight:800; color:var(--gray2); padding:5px 4px; border-radius:8px;
+    cursor:pointer; white-space:nowrap;}
+  .dir-toggle button.sel{background:var(--card); color:var(--red); box-shadow:var(--shadow);}
+  .dir-toggle button.sel.short{color:var(--blue);}
+  .opt.need{color:var(--gray); font-weight:800; justify-content:center; gap:5px;}
+  .opt.need b{color:var(--ink); font-weight:900;}
+  .opt.room{flex:0 0 auto; cursor:default; font-variant-numeric:tabular-nums;}
+  .buff-line{display:flex; align-items:center; gap:7px; background:#fff9ec; border:1.5px solid #ffb02040;
+    border-radius:10px; padding:7px 10px; margin-bottom:9px; font-size:11px; font-weight:800;
+    color:#8a5a00;}
+  .rv-wallet{font-size:11px; font-weight:700; color:var(--gray3); margin-bottom:8px;
+    font-variant-numeric:tabular-nums;}
+  .rv-wallet b{color:var(--gray); font-weight:800;}
+  .debt-note{font-size:11px; font-weight:700; color:#8a5a00; background:#fff9ec;
+    border-radius:10px; padding:7px 10px; margin-bottom:9px;}
+  /* 판이 끝난 뒤 경험치 정산 */
+  .xp-tbl{text-align:left; margin-top:15px; display:flex; flex-direction:column; gap:5px;
+    font-size:13px; font-weight:700; color:var(--gray);}
+  .xp-tbl>div{display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+    font-variant-numeric:tabular-nums;}
+  .xp-tbl b{font-weight:800; color:var(--ink); flex-shrink:0;}
+  .xp-tbl .pen, .xp-tbl .pen b{color:var(--red);}
+  .xp-tbl .sum{border-top:1px solid var(--line); padding-top:7px; margin-top:2px;
+    color:var(--ink); font-weight:900; font-size:15px;}
+  .xp-head{display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+    margin-top:17px; text-align:left; font-size:13.5px; font-weight:900;}
+  .xp-head small{font-size:11px; font-weight:700; color:var(--gray2); flex-shrink:0;}
+  .xp-bar{height:9px; background:var(--line); border-radius:999px; overflow:hidden; margin-top:6px;}
+  .xp-bar>i{display:block; height:100%; border-radius:999px;
+    background:linear-gradient(90deg,var(--blue),#6aa9ff); transition:width .5s ease-out;}
+  .unlock-pop{display:flex; align-items:center; gap:10px; background:var(--blue-weak);
+    border-radius:13px; padding:11px 13px; margin-top:10px; text-align:left;
+    animation:pop .35s cubic-bezier(.2,1.2,.4,1);}
+  .unlock-pop .e{font-size:22px; flex-shrink:0;}
+  .unlock-pop .t{display:block; font-size:12.5px; font-weight:900; color:var(--blue);}
+  .unlock-pop .d{display:block; font-size:11px; font-weight:700; color:var(--gray2); margin-top:1px;}
+  .retire-btn{display:block; width:calc(100% - 40px); margin:14px 20px 0; border:none; border-radius:15px;
+    padding:14px; font-size:14.5px; font-weight:900; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,#4e5968,#191f28);}
+
+  /* 해금 태그 */
+  .unlock-tag{flex-shrink:0; border-radius:13px; padding:10px 12px; font-size:11.5px; font-weight:800; text-align:center; min-width:92px;}
+  .unlock-tag.open{background:var(--green); color:#fff;}
+  .unlock-tag.closed{background:var(--field); color:var(--gray3);}
+
+  /* 거래 결과 오버레이 내부 */
+  .cm-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .cm-title{font-size:13.5px; font-weight:800;}
+  .cm-feed{display:flex; flex-direction:column; gap:7px; min-height:21px;}
+  .cm-msg{display:flex; align-items:flex-start; gap:7px; font-size:12px; font-weight:650; color:var(--gray); line-height:1.35; animation:cmIn .3s ease-out;}
+  .cm-msg .av{width:21px; height:21px; border-radius:7px; background:var(--field); display:grid; place-items:center; font-size:12px; flex-shrink:0;}
+  .cm-msg b{color:var(--ink); font-weight:800;}
+  @keyframes cmIn{from{opacity:0; transform:translateY(-4px);}to{opacity:1; transform:none;}}
+
+  /* 📋 패턴 도감 */
+  .dex-btn{margin-left:auto; flex-shrink:0; border:none; background:rgba(255,255,255,.75);
+    border-radius:9px; width:28px; height:28px; font-size:14px; cursor:pointer;
+    display:grid; place-items:center;}
+  .dex-note{font-size:11px; font-weight:700; color:var(--gray2); background:var(--field);
+    border-radius:10px; padding:8px 10px; margin:10px 0 4px; text-align:left; line-height:1.45;}
+  .dex-note b{color:var(--ink); font-weight:900;}
+  .scroller{max-height:52vh; overflow-y:auto; -webkit-overflow-scrolling:touch; text-align:left;}
+  .dex-sec{margin-top:12px;}
+  .dex-head{font-size:12.5px; font-weight:900; padding:6px 9px; border-radius:9px;}
+  .dex-head small{font-weight:700; font-size:10.5px; opacity:.75; margin-left:5px;}
+  .dex-head.strong{background:#e9f9f0; color:#00a862;}
+  .dex-head.mid{background:#fff6e5; color:#c98600;}
+  .dex-head.weak{background:var(--red-weak); color:var(--red);}
+  .dex-grid{display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:7px;}
+  .dex{background:var(--field); border-radius:12px; padding:8px 10px;}
+  .dex.unseen{opacity:.55;}
+  .dex.none{opacity:.35;}
+  .dex-top{display:flex; align-items:baseline; gap:6px;}
+  .dex-nm{font-size:12px; font-weight:900;}
+  .dex-pct{margin-left:auto; font-size:11px; font-weight:900; color:var(--gray2);
+    font-variant-numeric:tabular-nums;}
+  .dex svg{display:block; margin-top:4px;}
+  .dex-st{font-size:10px; font-weight:700; color:var(--gray2); margin-top:3px;
+    font-variant-numeric:tabular-nums;}
+
+  .hide{display:none !important;}
+  /* display를 정한 클래스(.water의 flex 등)가 UA의 [hidden]{display:none}을 이겨서
+     hidden을 걸어도 그대로 보인다. 한 줄로 막아둔다. */
+  [hidden]{display:none !important;}
+
+  .modal{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:28px; background:rgba(0,0,0,.5);} .modal.on{display:flex;}
+  .modal .box{width:100%; max-width:360px; background:var(--card); border-radius:26px; padding:30px 24px 22px; text-align:center; animation:pop .3s cubic-bezier(.2,1.2,.4,1);}
+  @keyframes pop{from{transform:scale(.85);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .modal .emo{font-size:56px;}
+  .modal .tt{font-size:21px; font-weight:900; margin:12px 0 6px;} .modal .dc{font-size:14.5px; color:var(--gray); font-weight:600; line-height:1.5;}
+  .modal .ok{margin-top:18px; width:100%; border:none; color:#fff; font-size:16px; font-weight:800; padding:15px; border-radius:15px; cursor:pointer; background:linear-gradient(135deg,#3182F6,#4c8dff);}
+  .modal .ok.bankrupt{background:linear-gradient(135deg,#4e5968,#191f28);}
+  .stat-grid{display:flex; gap:10px; margin:16px 0 4px;} .stat-grid .s{flex:1; background:var(--field); border-radius:14px; padding:12px 6px;} .stat-grid .s .k{font-size:11px; color:var(--gray2); font-weight:700;} .stat-grid .s .v{font-size:15px; font-weight:800; margin-top:3px;}
+  .lv-gain{margin-top:9px; font-size:13.5px; font-weight:700; color:var(--gray); background:var(--field); border-radius:12px; padding:10px 12px; text-align:left;} .lv-gain b{color:var(--blue); font-weight:800;}
+  /* 조기 상환 보너스는 레벨 보상과 나란히 뜨므로 금색으로 갈라둔다 — 현금이 들어온 줄이다 */
+  .lv-gain.early{background:#fff9ec;} .lv-gain.early b{color:#8a5a00;}
+
+  /* 🛠 테스트 도구 — 상단 로고를 5번 연타하면 열린다. 평소엔 아무 흔적이 없다. */
+  .dv-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:10px;}
+  .dv-title{font-size:16px; font-weight:900; color:var(--ink);}
+  .dv-ver{font-size:10.5px; font-weight:700; color:var(--gray3); font-variant-numeric:tabular-nums;}
+  .dv-scroll{max-height:56vh; overflow-y:auto; -webkit-overflow-scrolling:touch; text-align:left;}
+  .dv-sec{font-size:10.5px; font-weight:800; color:var(--gray3); letter-spacing:.04em; margin:12px 0 6px;}
+  .dv-sec:first-child{margin-top:0;}
+  .dv-row{display:flex; gap:5px; align-items:center; margin-bottom:5px;}
+  .dv-row.wrap{flex-wrap:wrap;}
+  .dv-btn{flex:1; border:1px solid var(--line); background:var(--field); color:var(--gray);
+    font-family:inherit; font-size:11.5px; font-weight:800; padding:8px 6px; border-radius:9px;
+    cursor:pointer; white-space:nowrap;}
+  .dv-btn.sm{flex:0 0 auto; padding:6px 9px; font-size:11px;}
+  .dv-btn.sel{border-color:var(--blue); background:var(--blue-weak); color:var(--blue);}
+  .dv-btn.danger{border-color:var(--red); background:var(--red-weak); color:var(--red);}
+  .dv-lab{font-size:11px; font-weight:800; color:var(--gray3); flex-shrink:0; margin-right:3px;}
+  .dv-val{flex:1; text-align:center; font-size:14px; font-weight:900; color:var(--ink); font-variant-numeric:tabular-nums;}
+  .dv-val small{display:block; font-size:10px; font-weight:700; color:var(--gray3);}
+  .dv-hint{font-weight:800; color:var(--blue); margin-left:6px;}
+  .dv-pn{flex:1; font-size:11px; font-weight:800; color:var(--gray); white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;}
+  .dv-wv{width:34px; text-align:center; font-size:11.5px; font-weight:900; color:var(--ink);
+    font-variant-numeric:tabular-nums;}
+  .dv-wp{width:40px; text-align:right; font-size:10.5px; font-weight:800; color:var(--gray3);
+    font-variant-numeric:tabular-nums;}
+  .dv-note{font-size:10.5px; font-weight:700; color:var(--gray3); margin-top:6px; line-height:1.5;}
+  .modal .ok.dark{background:linear-gradient(135deg,#4e5968,#191f28);}
+  .modal .ok.danger{background:linear-gradient(135deg,#f04452,#ff6b78);}
+  .modal .ok.ghost{margin-top:8px; background:var(--field); color:var(--gray); box-shadow:none;}
+  .brand{cursor:pointer;}
+  .toast{position:fixed; left:50%; bottom:28px; translate:-50% 0; background:rgba(25,31,40,.92); color:#fff; font-size:13.5px; font-weight:700; padding:11px 18px; border-radius:14px; z-index:70; opacity:0; transition:.25s; pointer-events:none; max-width:88%; text-align:center;} .toast.on{opacity:1;}
+</style>
+
+<style>
+
+/* ================= 목업 전용 크롬 (게임 CSS 아님) ================= */
+:root{
+  --wb-bg:#0f1216; --wb-ink:#e8ecf2; --wb-mut:#8b95a6; --wb-line:#242a33;
+  --wb-mark:#ffbc4d; --wb-mark-line:#a06c1a; --wb-new:#4fd3a0; --wb-del:#ff7a85;
+}
+body{background:var(--wb-bg); color:var(--wb-ink);
+  font-family:'Noto Sans KR',system-ui,-apple-system,sans-serif; line-height:1.6; letter-spacing:0;}
+.wrap{max-width:1340px; margin:0 auto; padding:0 16px; padding-block:0 72px;}
+.wrap *{user-select:auto;}
+.wb-head{border-bottom:1px solid var(--wb-line); padding-block:44px 26px; margin-bottom:30px;}
+.eyebrow{font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--wb-mut);}
+.wb-head h1{font-size:clamp(27px,5vw,40px); font-weight:900; letter-spacing:-.02em; margin:10px 0 0;
+  text-wrap:balance; line-height:1.15;}
+.wb-head .lede{font-size:15.5px; color:var(--wb-mut); max-width:66ch; margin:14px 0 0; font-weight:400;}
+.wb-head .lede b{color:var(--wb-ink); font-weight:700;}
+.rule{margin-top:20px; display:inline-flex; flex-wrap:wrap; gap:0 26px; padding:13px 18px;
+  border:1px solid var(--wb-line); border-radius:12px; background:#141920;
+  font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--wb-mut);}
+.rule b{color:var(--wb-new); font-weight:600;}
+.spec{padding-block:32px; border-top:1px solid var(--wb-line);}
+.spec:first-of-type{border-top:none;}
+.spec-head{max-width:72ch;}
+.spec-head h2{font-size:23px; font-weight:800; letter-spacing:-.02em; margin:7px 0 0;}
+.spec-head p{font-size:14.5px; color:var(--wb-mut); margin:9px 0 0;}
+.spec-head p b{color:var(--wb-ink); font-weight:700;}
+.frames{display:flex; flex-wrap:wrap; gap:24px; margin-top:24px; align-items:flex-start;}
+figure.frame{margin:0; display:flex; flex-direction:column; gap:10px;}
+figure.frame figcaption{font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px;
+  font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--wb-mut);
+  display:flex; align-items:center; gap:9px; flex-wrap:wrap;}
+figure.frame figcaption em{font-style:normal; font-family:'Noto Sans KR',sans-serif; letter-spacing:0;
+  text-transform:none; font-size:12px; font-weight:400; opacity:.85;}
+figure.frame.hit figcaption{color:var(--wb-del);}
+figure.frame.after figcaption{color:var(--wb-new);}
+.phone{width:min(360px,92vw); background:var(--bg); color:var(--ink);
+  font-family:'Noto Sans KR',system-ui,sans-serif; line-height:1.4; letter-spacing:-.02em;
+  border-radius:24px; overflow:hidden; padding:16px; border:1px solid var(--wb-line);
+  box-shadow:0 18px 44px -20px rgba(10,20,40,.42);}
+.phone.modal-only{padding:22px 16px; background:#8f96a3;}
+.mbox{width:100%; max-width:330px; margin:0 auto; background:var(--card); border-radius:26px;
+  padding:26px 22px 20px; text-align:center; color:var(--ink); letter-spacing:-.02em; line-height:1.4;}
+.mbox .emo{font-size:46px; line-height:1.1;}
+.mbox .tt{font-size:19px; font-weight:900; margin:10px 0 6px;}
+.mbox .dc{font-size:13.5px; color:var(--gray); font-weight:600; line-height:1.5;}
+.mbox .ok{margin-top:16px; width:100%; border:none; color:#fff; font-size:15.5px; font-weight:800;
+  padding:14px; border-radius:15px; cursor:pointer; background:linear-gradient(135deg,#3182F6,#4c8dff);}
+.mbox .rs-box{max-height:none; overflow:visible;}
+
+/* ===== 제안하는 새 요소 ===== */
+.sell-btn.halted{background:var(--field); color:var(--gray2); box-shadow:none; cursor:not-allowed;}
+.sell-btn.halted small{color:var(--gray3); opacity:1;}
+.halt-tag{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:900;
+  color:var(--red); background:var(--red-weak); border-radius:999px; padding:3px 9px;}
+.stock-tab{position:relative;}
+.stock-tab .halt-mark{position:absolute; top:5px; right:6px; font-size:9.5px; font-weight:800;
+  color:var(--red); opacity:.8; letter-spacing:-.5px;}
+.rs-chip.halt{background:var(--red-weak); color:var(--red);}
+
+.mk{position:relative; outline:2px dashed var(--wb-mark-line); outline-offset:3px; border-radius:12px;}
+.mk.nw{outline:2px solid var(--wb-new);}
+.tag{position:absolute; top:-10px; left:-19px; z-index:3; min-width:19px; height:19px; padding:0 5px;
+  border-radius:999px; background:var(--wb-mark); color:#fff; font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px; font-weight:600; display:grid; place-items:center; line-height:1;
+  box-shadow:0 0 0 2px var(--card), 0 2px 5px rgba(0,0,0,.2);}
+.mk.nw>.tag{background:var(--wb-new);}
+.notes{list-style:none; margin:22px 0 0; padding:0; display:grid; gap:9px; max-width:80ch;}
+.notes li{display:flex; gap:11px; align-items:flex-start; font-size:14px; color:var(--wb-mut);}
+.notes li b{color:var(--wb-ink); font-weight:700;}
+.notes .n{flex-shrink:0; min-width:19px; height:19px; padding:0 5px; border-radius:999px; margin-top:3px;
+  background:var(--wb-mark); color:#0f1216; font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px; font-weight:700; display:grid; place-items:center; line-height:1;}
+.notes .n.nw{background:var(--wb-new);} .notes .n.q{background:var(--wb-del);}
+.tbl{margin-top:22px; border:1px solid var(--wb-line); border-radius:14px; overflow-x:auto;}
+.tbl table{width:100%; border-collapse:collapse; font-size:13.5px; min-width:520px;}
+.tbl th,.tbl td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--wb-line);}
+.tbl th{font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--wb-mut); background:#141920;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl td{color:var(--wb-mut);} .tbl td:first-child{color:var(--wb-ink); font-weight:700;}
+.tbl td b{color:var(--wb-new); font-weight:800;} .tbl td i{font-style:normal; color:var(--wb-del);}
+.tbl .num{font-variant-numeric:tabular-nums; font-family:'IBM Plex Mono',monospace; font-size:12.5px;}
+@media (max-width:820px){ .frames{gap:28px;} }
+
+/* ===== 제안하는 테스트 도구 v2 ===== */
+.dv-top{display:flex; align-items:center; gap:8px; padding-bottom:9px;
+  border-bottom:1px solid var(--line);}
+.dv-title{font-size:15px; font-weight:900; color:var(--ink);}
+.dv-state{flex:1; font-size:10.5px; font-weight:700; color:var(--gray3);
+  font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;}
+.dv-wipe{border:none; background:var(--red-weak); color:var(--red); font-size:13px;
+  width:28px; height:28px; border-radius:9px; cursor:pointer; flex-shrink:0;}
+.dv-tabs{display:grid; grid-template-columns:repeat(5,1fr); gap:3px; margin:9px 0 10px;
+  background:var(--field); border-radius:11px; padding:3px;}
+.dv-tab{border:none; background:transparent; font-family:inherit; font-size:10.5px;
+  font-weight:800; color:var(--gray2); padding:7px 2px; border-radius:8px; cursor:pointer;
+  line-height:1.25;}
+.dv-tab b{display:block; font-size:13px; font-weight:400;}
+.dv-tab.on{background:var(--card); color:var(--ink); box-shadow:var(--shadow);}
+.dv-scroll{max-height:none; overflow:visible; text-align:left;}
+.dv-sec{font-size:10.5px; font-weight:800; color:var(--gray3); margin:11px 0 6px;}
+.dv-sec:first-child{margin-top:0;}
+.dv-row{display:flex; gap:5px; align-items:center; margin-bottom:5px;}
+.dv-row.wrap{flex-wrap:wrap;}
+.dv-btn{flex:1; border:1px solid var(--line); background:var(--field); color:var(--gray);
+  font-family:inherit; font-size:11.5px; font-weight:800; padding:8px 6px; border-radius:9px;
+  cursor:pointer; white-space:nowrap;}
+.dv-btn.sm{flex:0 0 auto; padding:6px 9px; font-size:11px;}
+.dv-btn.sel{border-color:var(--blue); background:var(--blue-weak); color:var(--blue);}
+.dv-btn.danger{border-color:var(--red); background:var(--red-weak); color:var(--red);}
+.dv-lab{font-size:11px; font-weight:800; color:var(--gray3); flex-shrink:0;}
+.dv-val{flex:1; text-align:center; font-size:14px; font-weight:900; color:var(--ink);
+  font-variant-numeric:tabular-nums;}
+.dv-val small{display:block; font-size:10px; font-weight:700; color:var(--gray3);}
+.dv-note{font-size:10.5px; font-weight:700; color:var(--gray3); margin-top:7px; line-height:1.55;}
+
+/* 패턴 탭 */
+.dv-mix{display:flex; gap:5px; margin-bottom:9px;}
+.dv-mix span{flex:1; text-align:center; font-size:10.5px; font-weight:800; padding:6px 2px;
+  border-radius:8px; font-variant-numeric:tabular-nums;}
+.dv-mix .s{background:#e9f9f0; color:#00a862;}
+.dv-mix .m{background:#fff9ec; color:#8a5a00;}
+.dv-mix .k{background:var(--red-weak); color:var(--red);}
+.dv-mix .e{background:var(--blue-weak); color:var(--blue);}
+.pat-row{display:flex; gap:8px; align-items:center; padding:6px; border-radius:11px;
+  border:1px solid var(--line); background:var(--card); margin-bottom:5px; cursor:pointer;}
+.pat-row.forced{border-color:var(--blue); background:var(--blue-weak);}
+.pat-chart{width:76px; height:40px; flex-shrink:0; background:var(--field); border-radius:7px;}
+.pat-mid{flex:1; min-width:0;}
+.pat-nm{font-size:12px; font-weight:900; color:var(--ink); white-space:nowrap;}
+.pat-nm em{font-style:normal; font-size:10px; font-weight:800; margin-left:4px;}
+.pat-nm em.s{color:#00a862;} .pat-nm em.m{color:#c98600;} .pat-nm em.k{color:var(--red);}
+.pat-sub{font-size:10px; font-weight:700; color:var(--gray3); margin-top:2px;
+  font-variant-numeric:tabular-nums;}
+.pat-sub b{color:var(--blue);}
+.pat-w{display:flex; align-items:center; gap:3px; flex-shrink:0;}
+.pat-w button{border:1px solid var(--line); background:var(--field); color:var(--gray);
+  font-family:inherit; font-size:12px; font-weight:900; width:24px; height:24px;
+  border-radius:7px; cursor:pointer; padding:0;}
+.pat-w span{width:32px; text-align:center; font-size:11.5px; font-weight:900; color:var(--ink);
+  font-variant-numeric:tabular-nums;}
+.pat-prob{width:44px; text-align:right; font-size:12px; font-weight:900; color:var(--gray);
+  font-variant-numeric:tabular-nums; flex-shrink:0;}
+.modal .ok.dark{background:linear-gradient(135deg,#4e5968,#191f28);}
+.mbox .ok.dark{background:linear-gradient(135deg,#4e5968,#191f28);}
+
+/* ===== v3에서 더해지는 것 ===== */
+.dv-foot{display:flex; gap:5px; margin-top:11px; padding-top:9px;
+  border-top:1px solid var(--line);}
+.dv-foot .dv-btn{font-size:11px; padding:9px 6px;}
+.dv-foot .go{border-color:var(--blue); background:var(--blue-weak); color:var(--blue);}
+.dv-tplbox{width:100%; height:132px; border:1px solid var(--line); border-radius:10px;
+  background:var(--field); color:var(--gray); font-family:'IBM Plex Mono',monospace;
+  font-size:9.5px; line-height:1.5; padding:9px 10px; resize:none; margin-top:6px;
+  user-select:text; -webkit-user-select:text;}
+.dv-slot{display:flex; gap:5px; align-items:center; margin-bottom:5px;}
+.dv-slot .nm{flex:1; font-size:11.5px; font-weight:800; color:var(--ink);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.dv-slot .nm small{display:block; font-size:9.5px; font-weight:700; color:var(--gray3);
+  font-variant-numeric:tabular-nums;}
+.dv-slot.empty .nm{color:var(--gray3); font-weight:700;}
+.dv-hd{display:flex; align-items:center; gap:8px; padding-bottom:9px;
+  border-bottom:1px solid var(--line); margin-bottom:10px;}
+.dv-hd .bk{border:none; background:var(--field); color:var(--gray); font-size:13px;
+  width:28px; height:28px; border-radius:9px; cursor:pointer; flex-shrink:0;}
+</style>
+
+<div class="wrap">
+
+<header class="wb-head">
+  <div class="eyebrow">머니로드 · 테스트 도구 v3</div>
+  <h1>맞추고, 뽑아서, 넘긴다</h1>
+  <p class="lede">앱에서 값을 맞추고 → <b>템플릿으로 뽑아</b> → 그대로 넘겨주시면 코드에 박습니다. 지금까지는 제가 시뮬로 더듬어 값을 정하고 배포한 뒤 손님이 체감을 말해주는 왕복이었는데, 그 고리가 <b>손으로 맞춘 값 하나</b>로 줄어듭니다.</p>
+  <div class="rule"><span>탭마다 <b>↺ 기본값 · ▶ 재시작</b> · 헤더에 <b>📋 템플릿</b></span></div>
+</header>
+
+<section class="spec" style="border-top:none">
+  <div class="spec-head">
+    <div class="eyebrow">추가 01</div>
+    <h2>탭마다 바닥에 두 버튼</h2>
+    <p>값을 만지면 <b>다음 판부터</b> 듣는 것과 <b>새 판이라야</b> 듣는 것이 섞여 있습니다(시작 현금·거래일은 후자). 그래서 재시작이 늘 손 닿는 곳에 있어야 합니다.</p>
+  </div>
+  <div class="frames">
+    <figure class="frame after"><figcaption>탭 바닥</figcaption><div class="phone modal-only"><div class="mbox"><div class="dv-top"><span class="dv-title">🛠 테스트 도구</span><span class="dv-state">XP 0 · 1차 · D-13</span><button class="dv-wipe">📋</button><button class="dv-wipe">🧹</button></div><div class="dv-tabs"><button class="dv-tab on"><b>📊</b>패턴</button><button class="dv-tab"><b>🧬</b>메타</button><button class="dv-tab"><b>🎬</b>시작</button><button class="dv-tab"><b>💸</b>파산</button><button class="dv-tab"><b>⚖️</b>밸런스</button></div><div class="dv-scroll"><div class="dv-mix"><span class="s">강세 23%</span><span class="m">보통 46%</span><span class="k">약세 30%</span><span class="e">초반↑ 14%</span></div><div class="pat-row"><svg class="pat-chart" viewBox="0 0 76 40"><line x1="0" x2="76" y1="26.7" y2="26.7" stroke="#b0b8c1" stroke-width="1" stroke-dasharray="2 2" opacity=".6"/><polyline points="0.0,26.7 1.5,27.1 3.0,27.6 4.6,27.9 6.1,28.1 7.6,28.6 9.1,28.7 10.6,29.0 12.2,29.4 13.7,29.6 15.2,29.8 16.7,30.0 18.2,30.0 19.8,29.9 21.3,29.8 22.8,28.6 24.3,28.0 25.8,27.5 27.4,27.0 28.9,26.3 30.4,25.7 31.9,25.4 33.4,25.1 35.0,24.6 36.5,24.5 38.0,24.3 39.5,24.6 41.0,25.3 42.6,26.1 44.1,26.5 45.6,27.1 47.1,27.5 48.6,27.4 50.2,27.7 51.7,26.1 53.2,23.8 54.7,21.7 56.2,19.5 57.8,17.6 59.3,15.6 60.8,13.3 62.3,11.8 63.8,10.1 65.4,8.8 66.9,7.5 68.4,6.3 69.9,5.4 71.4,4.5 73.0,4.1 74.5,3.8 76.0,3.5" fill="none" stroke="#00a862" stroke-width="1.6" stroke-linejoin="round" opacity="0.95"/><polyline points="0.0,26.7 1.5,27.0 3.0,27.3 4.6,27.5 6.1,27.9 7.6,28.2 9.1,28.5 10.6,28.6 12.2,28.6 13.7,29.0 15.2,29.4 16.7,29.4 18.2,29.2 19.8,29.1 21.3,28.5 22.8,27.4 24.3,26.7 25.8,25.9 27.4,25.2 28.9,24.6 30.4,24.0 31.9,23.7 33.4,23.5 35.0,23.5 36.5,24.4 38.0,25.1 39.5,25.7 41.0,26.3 42.6,26.7 44.1,27.0 45.6,27.3 47.1,27.5 48.6,26.7 50.2,25.1 51.7,23.3 53.2,21.6 54.7,19.7 56.2,18.4 57.8,16.9 59.3,15.5 60.8,14.1 62.3,12.9 63.8,11.8 65.4,10.8 66.9,9.7 68.4,8.9 69.9,8.3 71.4,8.0 73.0,7.7 74.5,7.1 76.0,7.1" fill="none" stroke="#00a862" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/><polyline points="0.0,26.7 1.5,27.1 3.0,27.4 4.6,27.8 6.1,28.3 7.6,28.5 9.1,28.8 10.6,28.9 12.2,29.3 13.7,29.4 15.2,29.5 16.7,29.7 18.2,29.8 19.8,29.1 21.3,28.3 22.8,27.6 24.3,27.2 25.8,26.7 27.4,26.3 28.9,25.8 30.4,25.5 31.9,25.0 33.4,24.8 35.0,24.8 36.5,24.8 38.0,24.7 39.5,25.4 41.0,25.4 42.6,26.0 44.1,26.2 45.6,26.6 47.1,26.7 48.6,26.9 50.2,27.1 51.7,27.2 53.2,26.9 54.7,24.5 56.2,22.0 57.8,19.7 59.3,17.5 60.8,15.5 62.3,13.5 63.8,11.6 65.4,10.0 66.9,8.2 68.4,7.2 69.9,6.1 71.4,5.3 73.0,4.6 74.5,4.4 76.0,4.4" fill="none" stroke="#00a862" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/></svg><div class="pat-mid"><div class="pat-nm">📈 상승<em class="s">강세</em></div><div class="pat-sub">초반↑ 0%</div></div><div class="pat-w"><button>−</button><span>0.22</span><button>+</button></div><div class="pat-prob">19.6%</div></div><div class="pat-row"><svg class="pat-chart" viewBox="0 0 76 40"><line x1="0" x2="76" y1="26.7" y2="26.7" stroke="#b0b8c1" stroke-width="1" stroke-dasharray="2 2" opacity=".6"/><polyline points="0.0,26.7 1.5,27.2 3.0,27.8 4.6,28.4 6.1,29.0 7.6,29.1 9.1,29.7 10.6,30.1 12.2,30.2 13.7,30.6 15.2,30.5 16.7,30.1 18.2,29.5 19.8,28.9 21.3,28.3 22.8,27.6 24.3,27.3 25.8,26.8 27.4,26.4 28.9,26.0 30.4,25.8 31.9,25.6 33.4,25.6 35.0,25.9 36.5,26.3 38.0,26.9 39.5,27.5 41.0,27.7 42.6,28.2 44.1,28.6 45.6,28.8 47.1,28.8 48.6,29.4 50.2,29.7 51.7,29.6 53.2,29.9 54.7,30.5 56.2,31.3 57.8,32.1 59.3,33.1 60.8,33.8 62.3,34.4 63.8,35.0 65.4,35.8 66.9,36.5 68.4,36.9 69.9,37.2 71.4,37.5 73.0,37.6 74.5,37.8 76.0,37.9" fill="none" stroke="#f04452" stroke-width="1.6" stroke-linejoin="round" opacity="0.95"/><polyline points="0.0,26.7 1.5,27.1 3.0,27.4 4.6,27.7 6.1,27.9 7.6,28.3 9.1,28.3 10.6,28.8 12.2,29.3 13.7,29.1 15.2,29.4 16.7,29.3 18.2,29.4 19.8,29.6 21.3,29.5 22.8,28.7 24.3,27.8 25.8,26.9 27.4,26.4 28.9,25.6 30.4,25.2 31.9,24.8 33.4,24.7 35.0,24.4 36.5,25.0 38.0,25.8 39.5,26.7 41.0,27.2 42.6,28.0 44.1,28.7 45.6,29.0 47.1,29.2 48.6,29.8 50.2,29.9 51.7,30.4 53.2,31.2 54.7,32.1 56.2,32.9 57.8,33.8 59.3,34.6 60.8,35.1 62.3,35.8 63.8,36.4 65.4,37.0 66.9,37.7 68.4,38.1 69.9,38.4 71.4,38.5 73.0,38.8 74.5,39.0 76.0,39.1" fill="none" stroke="#f04452" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/><polyline points="0.0,26.7 1.5,27.2 3.0,27.9 4.6,28.4 6.1,28.8 7.6,29.2 9.1,29.8 10.6,30.0 12.2,30.0 13.7,29.9 15.2,29.6 16.7,29.4 18.2,28.8 19.8,28.4 21.3,28.1 22.8,27.7 24.3,27.3 25.8,26.9 27.4,26.6 28.9,26.6 30.4,26.3 31.9,26.2 33.4,25.9 35.0,25.8 36.5,25.8 38.0,25.9 39.5,26.5 41.0,26.9 42.6,27.3 44.1,28.0 45.6,28.5 47.1,28.7 48.6,28.9 50.2,29.1 51.7,29.5 53.2,30.5 54.7,31.5 56.2,32.5 57.8,33.5 59.3,34.6 60.8,35.3 62.3,36.2 63.8,36.8 65.4,37.6 66.9,38.1 68.4,38.7 69.9,39.1 71.4,39.4 73.0,39.5 74.5,39.8 76.0,39.9" fill="none" stroke="#f04452" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/></svg><div class="pat-mid"><div class="pat-nm">📉 하락<em class="k">약세</em></div><div class="pat-sub">초반↑ 0%</div></div><div class="pat-w"><button>−</button><span>0.22</span><button>+</button></div><div class="pat-prob">19.6%</div></div><div class="pat-row"><svg class="pat-chart" viewBox="0 0 76 40"><line x1="0" x2="76" y1="26.7" y2="26.7" stroke="#b0b8c1" stroke-width="1" stroke-dasharray="2 2" opacity=".6"/><polyline points="0.0,26.7 1.5,26.8 3.0,27.1 4.6,27.3 6.1,27.8 7.6,27.8 9.1,28.1 10.6,28.2 12.2,28.3 13.7,28.4 15.2,28.4 16.7,28.5 18.2,28.6 19.8,28.4 21.3,27.4 22.8,26.2 24.3,25.4 25.8,24.4 27.4,23.6 28.9,22.7 30.4,22.3 31.9,21.8 33.4,21.4 35.0,21.0 36.5,20.8 38.0,21.5 39.5,22.1 41.0,23.2 42.6,23.7 44.1,24.4 45.6,24.6 47.1,25.3 48.6,25.7 50.2,26.1 51.7,26.2 53.2,26.6 54.7,25.9 56.2,25.1 57.8,24.5 59.3,23.5 60.8,22.9 62.3,22.1 63.8,21.3 65.4,20.7 66.9,19.8 68.4,19.4 69.9,19.0 71.4,18.7 73.0,18.6 74.5,18.5 76.0,18.4" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.95"/><polyline points="0.0,26.7 1.5,26.8 3.0,27.0 4.6,27.3 6.1,27.3 7.6,27.5 9.1,27.6 10.6,27.7 12.2,27.9 13.7,27.9 15.2,28.2 16.7,28.2 18.2,28.3 19.8,28.1 21.3,27.8 22.8,26.6 24.3,25.3 25.8,24.3 27.4,23.1 28.9,22.1 30.4,21.5 31.9,20.2 33.4,19.9 35.0,19.4 36.5,19.1 38.0,18.8 39.5,19.6 41.0,20.7 42.6,21.9 44.1,22.8 45.6,23.7 47.1,24.5 48.6,25.0 50.2,25.9 51.7,26.1 53.2,26.3 54.7,26.3 56.2,25.2 57.8,24.1 59.3,23.2 60.8,22.2 62.3,21.4 63.8,20.3 65.4,19.7 66.9,19.1 68.4,18.4 69.9,17.7 71.4,17.4 73.0,17.1 74.5,17.0 76.0,16.9" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/><polyline points="0.0,26.7 1.5,26.8 3.0,27.2 4.6,27.5 6.1,27.7 7.6,28.0 9.1,28.1 10.6,28.1 12.2,28.4 13.7,28.6 15.2,28.7 16.7,28.7 18.2,28.2 19.8,27.0 21.3,26.2 22.8,25.0 24.3,24.0 25.8,22.9 27.4,22.2 28.9,21.5 30.4,20.9 31.9,20.5 33.4,19.7 35.0,19.8 36.5,19.6 38.0,19.8 39.5,20.6 41.0,21.4 42.6,21.6 44.1,22.5 45.6,22.8 47.1,23.6 48.6,24.0 50.2,24.5 51.7,24.5 53.2,24.9 54.7,25.1 56.2,25.1 57.8,24.9 59.3,23.7 60.8,22.8 62.3,21.9 63.8,20.9 65.4,19.9 66.9,19.2 68.4,18.4 69.9,17.8 71.4,17.4 73.0,17.0 74.5,17.0 76.0,16.7" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/></svg><div class="pat-mid"><div class="pat-nm">✅ 눌림목<em class="m">보통</em></div><div class="pat-sub">초반↑ <b>15%</b></div></div><div class="pat-w"><button>−</button><span>0.12</span><button>+</button></div><div class="pat-prob">10.7%</div></div><div class="pat-row"><svg class="pat-chart" viewBox="0 0 76 40"><line x1="0" x2="76" y1="26.7" y2="26.7" stroke="#b0b8c1" stroke-width="1" stroke-dasharray="2 2" opacity=".6"/><polyline points="0.0,26.7 1.5,26.9 3.0,27.4 4.6,27.6 6.1,27.2 7.6,27.6 9.1,27.9 10.6,28.2 12.2,28.1 13.7,28.2 15.2,28.6 16.7,28.5 18.2,28.5 19.8,29.1 21.3,28.7 22.8,28.5 24.3,21.9 25.8,15.4 27.4,9.4 28.9,3.4 30.4,0.0 31.9,0.0 33.4,0.0 35.0,0.0 36.5,0.0 38.0,0.0 39.5,0.0 41.0,0.0 42.6,0.0 44.1,0.0 45.6,0.0 47.1,0.0 48.6,0.0 50.2,2.0 51.7,5.3 53.2,8.7 54.7,12.2 56.2,15.3 57.8,18.0 59.3,20.8 60.8,23.4 62.3,25.9 63.8,28.2 65.4,30.0 66.9,32.0 68.4,33.5 69.9,34.4 71.4,35.2 73.0,36.1 74.5,36.2 76.0,36.8" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.95"/><polyline points="0.0,26.7 1.5,26.9 3.0,27.1 4.6,27.7 6.1,27.8 7.6,27.8 9.1,28.2 10.6,28.5 12.2,28.6 13.7,29.0 15.2,29.0 16.7,29.0 18.2,29.5 19.8,29.4 21.3,29.5 22.8,26.5 24.3,21.3 25.8,16.2 27.4,12.0 28.9,8.2 30.4,5.8 31.9,4.0 33.4,2.7 35.0,4.6 36.5,6.4 38.0,8.2 39.5,9.9 41.0,11.6 42.6,13.3 44.1,15.0 45.6,16.4 47.1,18.2 48.6,19.7 50.2,21.0 51.7,22.8 53.2,24.1 54.7,25.3 56.2,26.2 57.8,27.5 59.3,28.8 60.8,29.8 62.3,30.5 63.8,31.3 65.4,32.0 66.9,32.6 68.4,33.4 69.9,33.7 71.4,34.0 73.0,34.1 74.5,34.8 76.0,34.5" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/><polyline points="0.0,26.7 1.5,27.4 3.0,27.3 4.6,27.6 6.1,27.5 7.6,27.6 9.1,28.3 10.6,28.0 12.2,28.6 13.7,28.3 15.2,28.4 16.7,28.4 18.2,28.9 19.8,28.8 21.3,29.0 22.8,28.4 24.3,23.1 25.8,17.1 27.4,10.6 28.9,5.1 30.4,0.0 31.9,0.0 33.4,0.0 35.0,0.0 36.5,0.0 38.0,0.0 39.5,0.0 41.0,0.0 42.6,0.0 44.1,0.0 45.6,0.0 47.1,0.0 48.6,0.0 50.2,3.3 51.7,6.6 53.2,9.7 54.7,13.4 56.2,16.1 57.8,19.5 59.3,21.8 60.8,24.5 62.3,26.6 63.8,29.0 65.4,30.7 66.9,32.1 68.4,33.4 69.9,34.7 71.4,35.8 73.0,36.5 74.5,37.3 76.0,37.0" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/></svg><div class="pat-mid"><div class="pat-nm">🎢 급등급락<em class="m">보통</em></div><div class="pat-sub">초반↑ <b>55%</b></div></div><div class="pat-w"><button>−</button><span>0.10</span><button>+</button></div><div class="pat-prob">8.9%</div></div><div class="dv-note">…나머지 6종</div></div><div class="dv-foot"><button class="dv-btn">↺ 이 탭 기본값</button><button class="dv-btn go">▶ 재시작</button></div><button class="ok dark">닫기</button></div></div></figure>
+    <figure class="frame"><figcaption>두 버튼이 하는 일</figcaption>
+      <div class="phone" style="padding:18px 16px">
+        <div style="font-size:13px; line-height:1.8; color:var(--gray)">
+          <b style="color:var(--ink)">↺ 이 탭 기본값</b><br>
+          <b>그 탭의 값만</b> 되돌립니다. 패턴 탭이면 가중치 10종만, 밸런스 탭이면 MID_DIP·DIP·적중률만. 다른 탭에서 맞춰둔 건 안 건드립니다.<br><br>
+          <b style="color:var(--ink)">▶ 재시작</b><br>
+          <b>지금 설정 그대로 새 판</b>을 엽니다. 경험치와 해금은 남고 판만 처음부터입니다. 시작 현금·레버리지·거래일을 바꿨으면 이걸 눌러야 반영됩니다.<br><br>
+          <span style="color:var(--gray3)">둘 다 확인 없이 즉시 실행합니다 — 되돌릴 수 있는 동작이라서요.</span>
+        </div>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<section class="spec">
+  <div class="spec-head">
+    <div class="eyebrow">추가 02</div>
+    <h2>📋 템플릿 — 이게 우리 작업 고리입니다</h2>
+    <p>헤더의 📋를 누르면 열립니다. 지금 값 전부가 <b>JSON 한 덩이</b>로 나오고, 길게 눌러 복사해서 넘겨주시면 제가 코드에 박고 시뮬로 검증한 뒤 배포합니다.</p>
+  </div>
+  <div class="frames">
+    <figure class="frame after"><figcaption>템플릿 화면</figcaption><div class="phone modal-only"><div class="mbox"><div class="dv-top"><span class="dv-title">🛠 테스트 도구</span><span class="dv-state">XP 0 · 1차 · D-13</span><button class="dv-wipe">📋</button><button class="dv-wipe">🧹</button></div><div class="dv-scroll"><div class="dv-hd"><button class="bk">←</button><span class="dv-title">📋 템플릿</span></div><div class="dv-sec">지금 설정</div><textarea class="dv-tplbox" readonly>{
+ "v": 1,
+ "패턴": {
+  "up": 0.22,
+  "down": 0.22,
+  "v": 0.12,
+  "spike": 0.1,
+  "flat": 0.08,
+  "invv": 0.1,
+  "w": 0.1,
+  "m": 0.1,
+  "delayup": 0.04,
+  "delaydown": 0.04
+ },
+ "MID_DIP": 0.6,
+ "DIP": 0.86,
+ "신호적중률": 0.55,
+ "조기상환": 0.1,
+ "레버리지": {
+  "최소": 3,
+  "최대": 3
+ },
+ "시작현금": 100000,
+ "거래일": [
+  13,
+  13,
+  13,
+  15,
+  15,
+  17,
+  17
+ ]
+}</textarea><div class="dv-row"><button class="dv-btn go">전체 선택</button><button class="dv-btn">불러오기</button></div><div class="dv-note">길게 눌러 복사한 뒤 그대로 넘겨주시면 코드에 박아 드려요.</div><div class="dv-sec">저장 슬롯</div><div class="dv-slot"><span class="nm">초반급등 줄인안<small>MID_DIP 0.6 · DIP 0.86 · 9/12 01:20</small></span><button class="dv-btn sm">불러오기</button><button class="dv-btn sm danger">✕</button></div><div class="dv-slot"><span class="nm">쉬운안<small>MID_DIP 0.3 · DIP 0.88 · 9/12 00:55</small></span><button class="dv-btn sm">불러오기</button><button class="dv-btn sm danger">✕</button></div><div class="dv-slot empty"><span class="nm">빈 슬롯</span><button class="dv-btn sm">지금 설정 저장</button></div><div class="dv-note">슬롯은 <b>전부 초기화에도 안 지워져요</b> — 맞춰둔 값을 잃으면 안 되니까요.</div></div><button class="ok dark">닫기</button></div></div></figure>
+    <figure class="frame"><figcaption>고리가 이렇게 돕니다</figcaption>
+      <div class="phone" style="padding:18px 16px">
+        <div style="font-size:13px; line-height:1.85; color:var(--gray)">
+          <b style="color:var(--ink)">1.</b> 앱에서 값을 만진다<br>
+          <b style="color:var(--ink)">2.</b> ▶ 재시작으로 몇 판 굴려본다<br>
+          <b style="color:var(--ink)">3.</b> 마음에 들면 슬롯에 이름 붙여 저장<br>
+          <b style="color:var(--ink)">4.</b> 📋에서 JSON 복사해서 넘김<br>
+          <b style="color:var(--ink)">5.</b> 제가 코드에 박고 <b>시뮬로 재보고</b> 배포<br><br>
+          <span style="color:var(--gray3)">지금까지는 2·3번을 제가 시뮬로 대신하고 있었습니다. 손으로 굴려본 값이 훨씬 낫습니다 — 시뮬의 플레이어는 기계적이라 사람이 느끼는 걸 못 잽니다.</span>
+        </div>
+      </div>
+    </figure>
+  </div>
+  <ul class="notes">
+    <li><span class="n nw">1</span><span><b>JSON은 설정만 담습니다.</b> 측정값(초반↑ 몇 % 같은 것)은 넣지 않습니다 — 제가 받아서 직접 다시 재는 쪽이 안전합니다.</span></li>
+    <li><span class="n nw">2</span><span><b>슬롯은 전부 초기화에도 안 지워집니다.</b> 저장 키를 <code>_devtpl</code>로 따로 두고 초기화 대상에서 뺍니다. 맞춰둔 값을 실수로 잃으면 그 시간이 통째로 날아갑니다.</span></li>
+    <li><span class="n nw">3</span><span><b>불러오기는 붙여넣기로도 됩니다.</b> 제가 "이 값 한번 써보세요" 하고 JSON을 드리면 그대로 넣어보실 수 있습니다 — 양방향입니다.</span></li>
+    <li><span class="n">4</span><span>복사는 <b>클립보드 API 대신 전체 선택</b>으로 갑니다. 모바일에서 클립보드 권한이 막히는 경우가 있어서, 선택해두면 길게 눌러 복사가 확실합니다.</span></li>
+  </ul>
+</section>
+
+<section class="spec">
+  <div class="spec-head">
+    <div class="eyebrow">담기는 값</div>
+    <h2>템플릿에 무엇이 들어가나</h2>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>탭</th><th>값</th></tr></thead>
+    <tbody>
+      <tr><td>📊 패턴</td><td>10종 가중치</td></tr>
+      <tr><td>🎬 시작</td><td>시작 현금 · 최소/최대 레버리지 · 거래일 7개</td></tr>
+      <tr><td>⚖️ 밸런스</td><td>MID_DIP · DIP · 신호 적중률 · 조기 상환 보너스</td></tr>
+      <tr><td>🧬 메타</td><td><i>안 담음</i> — XP·해금은 테스트용 상태지 밸런스가 아님</td></tr>
+      <tr><td>💸 파산</td><td><i>안 담음</i> — 화면 확인용 동작뿐</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+</div>

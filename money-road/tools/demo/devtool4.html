@@ -1,0 +1,887 @@
+<title>이름값을 하는 다섯 탭</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    --blue:#3182F6; --blue-weak:#e8f2ff; --blue-press:#1b64da;
+    --red:#f04452; --red-weak:#fdecee; --green:#00c471; --gold:#ffb020;
+    --ink:#191f28; --gray:#4e5968; --gray2:#8b95a1; --gray3:#b0b8c1;
+    --line:#f2f4f6; --bg:#f2f4f6; --card:#ffffff; --field:#f9fafb;
+    --radius:20px; --shadow:0 4px 20px rgba(0,0,0,.06);
+    --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; line-height:1.4; letter-spacing:-.02em; overflow-x:hidden;
+    overscroll-behavior-y:contain;}
+  html{overscroll-behavior-y:contain;}
+  #app{max-width:460px; margin:0 auto; min-height:100vh; position:relative; padding-bottom:calc(24px + var(--safe-b));}
+
+  .topbar{position:sticky; top:0; z-index:20; background:var(--bg); display:flex; align-items:flex-start;
+    justify-content:space-between; gap:10px; padding:12px 20px 8px;
+    box-shadow:0 6px 12px -8px rgba(0,0,0,.12);}
+  .topbar .brand{font-size:18px; font-weight:800;} .topbar .brand span{color:var(--blue);}
+  .top-right{display:flex; flex-direction:column; align-items:flex-end; gap:6px;}
+  .top-right-row{display:flex; align-items:center; gap:8px;}
+  /* 상환 칩 — 마감은 스크롤을 내려도 보여야 한다. 탑바가 이미 sticky라
+     여기 올려두면 따라온다. 누르면 첫 판 안내(showIntroModal)가 다시 열린다. */
+  .repay-chip{display:inline-flex; align-items:center; gap:5px; border:none; cursor:pointer;
+    font-family:inherit; font-size:11.5px; font-weight:900; letter-spacing:-.02em;
+    color:var(--gray); background:var(--card); padding:5px 10px; border-radius:999px;
+    box-shadow:var(--shadow); white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .repay-chip .goal{color:var(--ink);}
+  .repay-chip .sep{color:var(--gray3); font-weight:700;}
+  .repay-chip .dd{color:var(--gray2);}
+  .repay-chip.p-warn .dd{color:var(--gold);}
+  .repay-chip.p-bad .dd{color:var(--red);}
+  .repay-chip.last{background:var(--red-weak); box-shadow:none;}
+  .repay-chip.last .dd{color:var(--red); animation:ddayPulse 1.5s ease-in-out infinite;}
+  .tier-chip{font-size:11.5px; font-weight:800; color:#8a5a00; background:#fff9ec;
+    padding:6px 10px; border-radius:999px; white-space:nowrap;}
+  /* 난이도 선택 카드 */
+  .tier-list{display:flex; flex-direction:column; gap:7px; margin-top:15px; text-align:left;}
+  .diff-card{display:block; width:100%; border:2px solid var(--line); border-radius:15px;
+    padding:11px 13px; background:var(--card); text-align:left; cursor:pointer; font-family:inherit;}
+  .diff-card.sel{border-color:var(--blue); background:var(--blue-weak);}
+  .diff-card.lock{opacity:.5; cursor:default;}
+  .diff-top{display:flex; align-items:baseline; gap:8px;}
+  .diff-nm{font-size:14px; font-weight:900; color:var(--ink);}
+  .diff-clear{font-size:10.5px; font-weight:800; color:var(--green);}
+  .diff-xp{margin-left:auto; font-size:11.5px; font-weight:900; color:var(--blue);
+    font-variant-numeric:tabular-nums; flex-shrink:0;}
+  .diff-de{font-size:11.5px; font-weight:700; color:var(--gray); margin-top:4px; line-height:1.4;}
+  .diff-de.none{color:var(--gray3);}
+  .diff-card.sel .diff-de{color:#2a6ac4;}
+  .lv-chip{font-size:13px; font-weight:800; color:var(--gray); background:var(--card); padding:7px 12px; border-radius:999px; box-shadow:var(--shadow);}
+  .icon-btn{border:none; background:var(--card); color:var(--gray); width:36px; height:36px; border-radius:12px; font-size:15px; box-shadow:var(--shadow); display:grid; place-items:center; cursor:pointer;}
+
+  /* 레벨 진행바 */
+  .level-strip{margin:2px 20px 0; padding:0 2px;}
+  .lv-row{display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:5px;}
+  .lv-name{font-size:12.5px; font-weight:800; color:var(--gray); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .lv-name small{font-weight:700; color:var(--gray3); font-size:11px; margin-left:4px;}
+  .lv-pct{font-size:12.5px; font-weight:800; color:var(--green); flex-shrink:0;}
+  .lv-bar{height:5px; background:var(--line); border-radius:999px; overflow:hidden;}
+  .lv-bar>i{display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,var(--green),#00e5a0); transition:width .3s;}
+  .lv-name b{color:var(--ink); font-weight:900;}
+  .dday{font-size:13px; font-weight:900; color:var(--gray2); font-variant-numeric:tabular-nums; flex-shrink:0;}
+  .repay-sub{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:5px;
+    font-size:10.5px; font-weight:700; color:var(--gray3);}
+  .extend{border:none; background:var(--red-weak); color:var(--red); font-size:10.5px; font-weight:900;
+    border-radius:8px; padding:4px 9px; cursor:pointer; white-space:nowrap;}
+  /* 기한 경고 3단계 — D 숫자만 작아지면 "갑자기 마감"으로 느껴진다. 색과 문구가 같이 움직여야 다가오는 게 보인다. */
+  .dday.p-warn{color:var(--gold);}
+  .dday.p-bad{color:var(--red);}
+  .dday.last{color:var(--red); animation:ddayPulse 1.5s ease-in-out infinite;}
+  @keyframes ddayPulse{0%,100%{opacity:1} 50%{opacity:.4}}
+  .repay-sub b{font-weight:900; color:var(--gray2);}
+  .repay-sub.p-warn b{color:var(--gold);}
+  .repay-sub.p-bad b{color:var(--red);}
+  /* 진행바도 같이 물든다 — 색이 한 곳에서만 변하면 경고로 안 읽힌다 */
+  .lv-bar.p-warn>i{background:linear-gradient(90deg,#f0a500,var(--gold));}
+  .lv-bar.p-bad>i{background:linear-gradient(90deg,#d32f3c,var(--red));}
+  /* 시작 버튼 위 한 줄 — 평소엔 안 뜨고, 페이스가 위험할 때만 나온다 */
+  .pace-line{font-size:11.5px; font-weight:800; text-align:center; padding:8px; border-radius:11px; margin-bottom:9px;}
+  .pace-line.p-warn{background:#fff8e8; color:#b57800;}
+  .pace-line.p-bad{background:var(--red-weak); color:var(--red);}
+  .trade-go.danger{background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
+  /* 결과 팝업 맨 아래 장 마감 줄 */
+  .rs-close{margin-top:12px; padding:10px 12px; border-radius:12px; background:var(--field); border:1px solid var(--line);}
+  .cl-top{display:flex; justify-content:space-between; align-items:center; gap:8px;
+    font-size:11.5px; font-weight:800; color:var(--gray2);}
+  .cl-top.one{justify-content:center;}
+  .cl-dd{font-variant-numeric:tabular-nums; color:var(--gray); flex-shrink:0;}
+  .cl-dd b{font-size:14px;}
+  .rs-close.p-warn{background:#fff8e8; border-color:#ffe3ad;}
+  .rs-close.p-warn .cl-dd{color:#b57800;}
+  .rs-close.p-bad{background:var(--red-weak); border-color:#fbd2d6;}
+  .rs-close.p-bad .cl-dd{color:var(--red);}
+  .rs-close.p-done{background:#e7f9f1; border-color:#b8ecd6;}
+  .rs-close.p-done .cl-dd{color:var(--green);}
+  .intro-li{display:flex; gap:9px; align-items:flex-start; text-align:left; font-size:12.5px;
+    font-weight:700; color:var(--gray); line-height:1.55; margin-top:9px;}
+  .intro-li .e{flex-shrink:0; font-size:14px; line-height:1.4;}
+  @media (prefers-reduced-motion:reduce){ .dday.last,.repay-chip.last .dd{animation:none;} }
+
+  /* 잔고는 sticky 상단바에 둔다 — 히어로 카드는 스크롤하면 사라져서 정작 베팅할 때 안 보였고,
+     지갑 줄·파산선 안내까지 합쳐 같은 숫자가 화면에 세 번 나왔다. */
+  .tb-left{min-width:0;}
+  .cash-top{font-size:23px; font-weight:900; letter-spacing:-.04em; margin-top:1px;
+    font-variant-numeric:tabular-nums; white-space:nowrap;}
+
+  /* 메인 탭 스위처 */
+  .main-tabs{display:flex; gap:6px; margin:14px 20px 0; background:var(--card); border-radius:15px; padding:5px; box-shadow:var(--shadow);}
+  .main-tab{flex:1; text-align:center; padding:11px; border-radius:11px; font-size:14px; font-weight:800; color:var(--gray2); background:transparent; border:none; cursor:pointer;}
+  .main-tab.on{background:var(--ink); color:#fff;}
+
+  /* 단타 패널 */
+  .trade-panel{margin:12px 20px 0; background:var(--card); border-radius:20px; padding:14px 16px 16px; box-shadow:var(--shadow);}
+  .tp-head{display:flex; justify-content:flex-start; align-items:center; margin-bottom:9px;}
+  .tp-limit{font-size:11.5px; font-weight:700; color:var(--gray2); background:var(--field); padding:4px 9px; border-radius:999px;}
+  .stock-tabs{display:grid; gap:7px; margin-bottom:11px;}
+  .stock-tab{flex:1; border:2px solid var(--line); background:var(--card); border-radius:14px; padding:9px 8px; cursor:pointer; text-align:center;}
+  .stock-tab.sel{border-color:var(--blue); background:var(--blue-weak);}
+  .stock-tab.locked{opacity:.45; cursor:default;}
+  .stock-tab.mini{flex:0 0 auto; padding:9px 11px;}
+  .stock-tab.mini .n{font-size:10.5px; color:var(--gray2);}
+  .stock-tab .e{font-size:19px;}
+  .stock-tab .n{font-size:12px; font-weight:800; margin-top:2px;}
+  .stock-tab .v{font-size:10px; font-weight:700; color:var(--gray2); margin-top:1px;}
+
+  .bet-row{display:flex; align-items:center; gap:8px; background:var(--field); border-radius:14px; padding:8px 10px; margin-bottom:9px;}
+  .bet-row button{width:38px; height:38px; border:none; background:var(--card); border-radius:11px; font-size:18px; font-weight:800; color:var(--ink); box-shadow:var(--shadow); cursor:pointer;}
+  .bet-row .amt{flex:1; text-align:center; font-size:17px; font-weight:900; font-variant-numeric:tabular-nums;}
+  .bet-quicks{display:flex; gap:6px; margin-bottom:9px;}
+  .bet-quicks button{flex:1; border:none; background:var(--field); color:var(--gray); font-weight:800; font-size:12px; padding:8px 0; border-radius:10px; cursor:pointer;}
+  .bet-quicks button:active{background:var(--blue-weak); color:var(--blue);}
+  .btn-row{display:flex; gap:6px; margin-bottom:11px;}
+  .btn-row button{flex:1; border:2px solid var(--line); background:var(--card); color:var(--gray); font-weight:800; font-size:11.5px; padding:8px 0; border-radius:10px; cursor:pointer;}
+  .btn-row button.sel{border-color:var(--blue); background:var(--blue-weak); color:var(--blue);}
+  .lev-row button{padding:7px 0 6px; line-height:1.15;}
+  .lev-row button small{display:block; font-size:9.5px; font-weight:700; color:var(--gray3); margin-top:2px;}
+  .lev-row button.sel small{color:var(--blue); opacity:.8;}
+  .trade-go{width:100%; border:none; border-radius:14px; padding:14px; font-size:15.5px; font-weight:900; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 8px 20px rgba(49,130,246,.3);}
+  .trade-go:disabled{background:var(--line); color:var(--gray3); box-shadow:none; cursor:default;}
+  /* 공매도 — 시작 버튼을 좌우로 쪼갠다. 색은 손익 규칙 그대로 상승=빨강 / 하락=파랑. */
+  .split-row{display:flex; gap:8px;}
+  .split-row .trade-go{flex:1; padding:12px 8px;}
+  .trade-go small{display:block; font-size:10.5px; font-weight:800; opacity:.85; margin-top:2px;}
+  .trade-go.go-long{background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
+  .trade-go.go-short{background:linear-gradient(135deg,#3182F6,#4c8dff); box-shadow:0 8px 20px rgba(49,130,246,.3);}
+  .rs-chip.short{background:var(--blue-weak); color:var(--blue);}
+  .rs-chip.split{background:var(--field); color:var(--gray);}
+  .trade-note{font-size:11.5px; color:var(--gray3); font-weight:600; text-align:center; margin-top:9px; line-height:1.5;}
+
+  /* 진행중인 라운드 */
+  .round-view{text-align:center;}
+  .round-timer{font-size:11.5px; font-weight:800; color:var(--gray2); font-variant-numeric:tabular-nums;
+    display:flex; justify-content:space-between; gap:8px;}
+  .round-timer .rt-r{transition:color .2s;}
+  .round-timer .rt-r.warn{color:var(--red);}
+  .round-mult{font-size:40px; font-weight:900; letter-spacing:-.03em; margin:4px 0; font-variant-numeric:tabular-nums;
+    transition:transform .12s cubic-bezier(.2,1.6,.4,1), color .18s;}
+  .round-mult.up{color:var(--red);} .round-mult.down{color:var(--blue);} .round-mult.flat{color:var(--gray2);}
+  .round-chartbox{position:relative; margin:4px 0 10px; border-radius:12px;}
+  .round-chart{width:100%; height:150px; display:block; background:var(--field); border-radius:12px;}
+  .round-view.tense .round-chartbox{animation:rvEdge .5s ease-in-out infinite alternate;}
+  @keyframes rvEdge{ from{box-shadow:inset 0 0 0 0 rgba(240,68,82,0);} to{box-shadow:inset 0 0 0 2px var(--red);} }
+  .round-count{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:56px; font-weight:900; color:var(--red); opacity:0; pointer-events:none;
+    font-variant-numeric:tabular-nums;}
+  .round-count.on{animation:rvCnt .95s ease-out;}
+  @keyframes rvCnt{ 0%{opacity:.5; transform:scale(.7);} 70%{opacity:.16;} 100%{opacity:0; transform:scale(1.4);} }
+  .rv-txt{stroke:var(--field); stroke-width:2.5px; paint-order:stroke fill; stroke-linejoin:round;}
+  .rv-pulse{transform-box:fill-box; transform-origin:center; animation:rvPulse 1.15s ease-out infinite;}
+  @keyframes rvPulse{ 0%{transform:scale(1); opacity:.5;} 100%{transform:scale(3.4); opacity:0;} }
+  @media(prefers-reduced-motion:reduce){
+    .rv-pulse,.round-view.tense .round-chartbox,.round-count.on{animation:none;}
+    .round-mult{transition:none;}
+  }
+  .round-pnl{font-size:13px; font-weight:800; margin-bottom:8px;}
+  .round-pnl.up{color:var(--red);} .round-pnl.down{color:var(--blue);}
+  .round-bar{height:3px; background:var(--line); border-radius:2px; margin-bottom:12px; overflow:hidden;}
+  .round-bar i{display:block; height:100%; width:0%; background:var(--gray3);}
+  .round-view.tense .round-bar i{background:var(--red);}
+  .sell-btn{width:100%; border:none; border-radius:14px; padding:13px; font-size:16px; font-weight:900; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,#f04452,#ff6b78); box-shadow:0 8px 20px rgba(240,68,82,.3);}
+  /* ✂️ 분할 매도 — 매도 버튼을 좌우로 쪼갠다. 절반 쪽은 "덜 센 선택"으로 읽히게 톤을 낮춘다. */
+  /* 📰 장중 뉴스 — 상단 줄을 3초간 빌려 쓴다. 그래프를 가리지 않고 블록도 안 는다.
+     한 줄을 넘기면 레이아웃이 흔들리므로 넘치는 건 자른다. */
+  .round-timer .rt-l{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  /* 💧 물타기 — 매도 버튼 위 한 줄. 판당 한 번이라 쓰고 나면 사라진다. */
+  .water{display:flex; align-items:center; gap:8px; background:#eef6ff; border:1.5px solid #3182F633;
+    border-radius:12px; padding:9px 11px; margin-bottom:9px; font-size:12px; font-weight:800;
+    color:var(--blue); cursor:pointer;}
+  .water b{font-weight:900;}
+  .water .r{margin-left:auto; font-size:10.5px; font-weight:700; color:var(--gray2);}
+  .water.off{background:var(--field); border-color:var(--line); color:var(--gray3); cursor:default;}
+  .water.off .r{color:var(--gray3);}
+  .rs-chip.water{background:#eef6ff; color:var(--blue);}
+  .sell-row{display:flex; gap:8px;}
+  .sell-row .sell-btn{flex:1;}
+  .sell-btn small{display:block; font-size:11.5px; font-weight:800; opacity:.85; margin-top:2px;
+    font-variant-numeric:tabular-nums;}
+  .sell-btn.sell-half{background:var(--field); color:var(--gray); box-shadow:none;
+    border:2px solid var(--line);}
+
+  /* 연승/오늘의 기록 스트립 */
+  .strip{margin:9px 20px 0; background:var(--card); border-radius:16px; padding:10px 14px;
+    box-shadow:var(--shadow); cursor:pointer;}
+  .strip-row{display:flex; align-items:center; gap:10px; font-size:12px; font-weight:800; color:var(--gray);}
+  .strip-row .fire{color:var(--red); font-weight:900;}
+  .strip-row .cv{margin-left:auto; color:var(--gray3); font-weight:900; font-size:11px;}
+  .strip-buff{display:flex; align-items:center; gap:8px; background:#fff9ec; border:2px solid #ffb02040;
+    border-radius:12px; padding:8px 11px; margin-top:9px;}
+  .strip-buff .e{font-size:17px;}
+  .strip-buff .t{font-size:11.5px; font-weight:900; color:#8a5a00;}
+  .strip-buff .d{font-size:10.5px; font-weight:700; color:var(--gray2); margin-top:1px;}
+  .rec-grid{display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:10px;}
+  .rec{background:var(--field); border-radius:11px; padding:8px 10px;}
+  .rec .k{font-size:10px; font-weight:700; color:var(--gray2);}
+  .rec .v{font-size:14px; font-weight:900; margin-top:1px; font-variant-numeric:tabular-nums;}
+  .main-tab.locked{opacity:.35;}
+
+  .section-title{font-size:13.5px; font-weight:800; color:var(--gray2); margin:18px 20px 8px;}
+
+  .biz{display:flex; align-items:center; gap:12px; background:var(--card); border-radius:16px; padding:12px 14px; margin:0 20px 8px; box-shadow:var(--shadow);}
+  .biz .logo{width:42px; height:42px; border-radius:13px; background:var(--field); display:grid; place-items:center; font-size:21px; flex-shrink:0;}
+  .biz .mid{flex:1; min-width:0;}
+  .biz .nm{font-size:14.5px; font-weight:800; display:flex; align-items:center; gap:6px;}
+  .biz .cnt{font-size:11px; font-weight:800; color:var(--blue); background:var(--blue-weak); padding:1px 7px; border-radius:999px;}
+  .biz .ds{font-size:12px; color:var(--gray2); font-weight:650; margin-top:2px;}
+  .biz-buy{flex-shrink:0; border:none; border-radius:13px; padding:11px 14px; font-size:13px; font-weight:800; cursor:pointer; text-align:right; min-width:92px;}
+  .biz-buy.can{background:var(--ink); color:#fff;}
+  .biz-buy.cant{background:var(--field); color:var(--gray3);}
+  .biz-buy .p{display:block; font-size:13.5px; font-weight:900;}
+  .biz-buy .l{display:block; font-size:10.5px; font-weight:700; opacity:.75; margin-top:1px;}
+
+  /* 장세 신호 */
+  .signal{display:flex; align-items:center; gap:10px; border-radius:14px; padding:9px 12px; margin-bottom:10px; border:2px solid transparent;}
+  .signal.strong{background:#e9f9f0; border-color:#00c47133;}
+  .signal.mid{background:#fff6e5; border-color:#ffb02033;}
+  .signal.weak{background:var(--red-weak); border-color:#f0445233;}
+  .signal .sg-left{display:flex; align-items:center; gap:5px; flex-shrink:0;}
+  .signal .sg-emo{font-size:16px;}
+  .signal .sg-name{font-size:13.5px; font-weight:900;}
+  .signal.strong .sg-name{color:#00a862;} .signal.mid .sg-name{color:#c98600;} .signal.weak .sg-name{color:var(--red);}
+  .signal .sg-mid{min-width:0;}
+  .signal .sg-ds{font-size:11.5px; font-weight:700; color:var(--gray);}
+  .signal .sg-acc{font-size:10.5px; font-weight:700; color:var(--gray3); margin-top:1px;}
+  .liq-note{font-size:11px; font-weight:700; color:var(--gray2); background:var(--field); border-radius:10px; padding:7px 10px; margin-bottom:11px;}
+  .liq-note b{color:var(--red); font-weight:900;}
+
+  /* 거래 결과 카드 */
+  .rs-badge{font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px;}
+  .rs-badge.hot{background:var(--red-weak); color:var(--red);}
+  .rs-badge.cold{background:var(--field); color:var(--gray2);}
+  .rs-sum{font-size:19px; font-weight:900; font-variant-numeric:tabular-nums;}
+  .rs-sum.up{color:var(--red);} .rs-sum.down{color:var(--blue);}
+  .rs-like{color:var(--gray3); font-weight:800; font-size:11px; margin-left:5px; white-space:nowrap;}
+  /* 거래 결과 — 번 돈이 주인공, 나머지는 칩으로 분리(쩜으로 이어붙이지 않는다) */
+  .rs-money{font-size:28px; font-weight:900; letter-spacing:-.04em; font-variant-numeric:tabular-nums;
+    line-height:1.15; margin-top:2px;}
+  .rs-money.up{color:var(--red);} .rs-money.down{color:var(--blue);}
+  .rs-sub{font-size:12.5px; font-weight:700; color:var(--gray2); margin-top:2px;}
+  .rs-chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:11px;}
+  .rs-chip{font-size:11px; font-weight:800; border-radius:9px; padding:5px 9px;
+    background:var(--field); color:var(--gray);}
+  .rs-chip.grade{background:#e9f9f0; color:#00a862;}
+  .rs-chip.grade.low{background:var(--blue-weak); color:var(--blue);}
+  .rs-chip.lev{background:var(--blue-weak); color:var(--blue);}
+  .rs-chip.streak{background:#fff9ec; color:#8a5a00;}
+  .rs-box{text-align:left; max-height:56vh; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .rs-wallet{margin-top:12px; padding-top:10px; border-top:1px solid var(--line);
+    font-size:12px; font-weight:700; color:var(--gray2); font-variant-numeric:tabular-nums;}
+  .rs-wallet b{color:var(--ink); font-weight:900;}
+  /* 최소 베팅/빚 안내 */
+  .min-note{font-size:11px; font-weight:700; color:var(--gray2); background:var(--field);
+    border-radius:10px; padding:7px 10px; margin-bottom:9px;}
+  .min-note b{color:var(--ink); font-weight:900;}
+  .opt-row{display:flex; gap:6px; margin-bottom:9px;}
+  .opt{flex:1; border:none; background:var(--field); border-radius:10px; padding:8px 10px;
+    font-size:11px; font-weight:800; color:var(--gray2); text-align:left; cursor:pointer;
+    display:flex; align-items:center; gap:5px;}
+  .opt b{color:var(--blue); font-weight:900; margin-left:auto;}
+  .opt.open{background:var(--blue-weak);}
+  /* 방향 토글 — 좌우로 쪼갠 시작 버튼은 탭 한 번을 아끼려다 오발을 샀다.
+     3배에서 방향을 잘못 누르면 베팅금이 통째로 날아가고 되돌릴 수가 없다.
+     고르는 행위와 확정하는 행위를 떼어 놓는다. */
+  .dir-toggle{flex:1; display:flex; gap:3px; background:var(--field); border-radius:10px; padding:3px;}
+  .dir-toggle button{flex:1; border:none; background:transparent; font-family:inherit;
+    font-size:11.5px; font-weight:800; color:var(--gray2); padding:5px 4px; border-radius:8px;
+    cursor:pointer; white-space:nowrap;}
+  .dir-toggle button.sel{background:var(--card); color:var(--red); box-shadow:var(--shadow);}
+  .dir-toggle button.sel.short{color:var(--blue);}
+  .opt.need{color:var(--gray); font-weight:800; justify-content:center; gap:5px;}
+  .opt.need b{color:var(--ink); font-weight:900;}
+  .opt.room{flex:0 0 auto; cursor:default; font-variant-numeric:tabular-nums;}
+  .buff-line{display:flex; align-items:center; gap:7px; background:#fff9ec; border:1.5px solid #ffb02040;
+    border-radius:10px; padding:7px 10px; margin-bottom:9px; font-size:11px; font-weight:800;
+    color:#8a5a00;}
+  .rv-wallet{font-size:11px; font-weight:700; color:var(--gray3); margin-bottom:8px;
+    font-variant-numeric:tabular-nums;}
+  .rv-wallet b{color:var(--gray); font-weight:800;}
+  .debt-note{font-size:11px; font-weight:700; color:#8a5a00; background:#fff9ec;
+    border-radius:10px; padding:7px 10px; margin-bottom:9px;}
+  /* 판이 끝난 뒤 경험치 정산 */
+  .xp-tbl{text-align:left; margin-top:15px; display:flex; flex-direction:column; gap:5px;
+    font-size:13px; font-weight:700; color:var(--gray);}
+  .xp-tbl>div{display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+    font-variant-numeric:tabular-nums;}
+  .xp-tbl b{font-weight:800; color:var(--ink); flex-shrink:0;}
+  .xp-tbl .pen, .xp-tbl .pen b{color:var(--red);}
+  .xp-tbl .sum{border-top:1px solid var(--line); padding-top:7px; margin-top:2px;
+    color:var(--ink); font-weight:900; font-size:15px;}
+  .xp-head{display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+    margin-top:17px; text-align:left; font-size:13.5px; font-weight:900;}
+  .xp-head small{font-size:11px; font-weight:700; color:var(--gray2); flex-shrink:0;}
+  .xp-bar{height:9px; background:var(--line); border-radius:999px; overflow:hidden; margin-top:6px;}
+  .xp-bar>i{display:block; height:100%; border-radius:999px;
+    background:linear-gradient(90deg,var(--blue),#6aa9ff); transition:width .5s ease-out;}
+  .unlock-pop{display:flex; align-items:center; gap:10px; background:var(--blue-weak);
+    border-radius:13px; padding:11px 13px; margin-top:10px; text-align:left;
+    animation:pop .35s cubic-bezier(.2,1.2,.4,1);}
+  .unlock-pop .e{font-size:22px; flex-shrink:0;}
+  .unlock-pop .t{display:block; font-size:12.5px; font-weight:900; color:var(--blue);}
+  .unlock-pop .d{display:block; font-size:11px; font-weight:700; color:var(--gray2); margin-top:1px;}
+  .retire-btn{display:block; width:calc(100% - 40px); margin:14px 20px 0; border:none; border-radius:15px;
+    padding:14px; font-size:14.5px; font-weight:900; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,#4e5968,#191f28);}
+
+  /* 해금 태그 */
+  .unlock-tag{flex-shrink:0; border-radius:13px; padding:10px 12px; font-size:11.5px; font-weight:800; text-align:center; min-width:92px;}
+  .unlock-tag.open{background:var(--green); color:#fff;}
+  .unlock-tag.closed{background:var(--field); color:var(--gray3);}
+
+  /* 거래 결과 오버레이 내부 */
+  .cm-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .cm-title{font-size:13.5px; font-weight:800;}
+  .cm-feed{display:flex; flex-direction:column; gap:7px; min-height:21px;}
+  .cm-msg{display:flex; align-items:flex-start; gap:7px; font-size:12px; font-weight:650; color:var(--gray); line-height:1.35; animation:cmIn .3s ease-out;}
+  .cm-msg .av{width:21px; height:21px; border-radius:7px; background:var(--field); display:grid; place-items:center; font-size:12px; flex-shrink:0;}
+  .cm-msg b{color:var(--ink); font-weight:800;}
+  @keyframes cmIn{from{opacity:0; transform:translateY(-4px);}to{opacity:1; transform:none;}}
+
+  /* 📋 패턴 도감 */
+  .dex-btn{margin-left:auto; flex-shrink:0; border:none; background:rgba(255,255,255,.75);
+    border-radius:9px; width:28px; height:28px; font-size:14px; cursor:pointer;
+    display:grid; place-items:center;}
+  .dex-note{font-size:11px; font-weight:700; color:var(--gray2); background:var(--field);
+    border-radius:10px; padding:8px 10px; margin:10px 0 4px; text-align:left; line-height:1.45;}
+  .dex-note b{color:var(--ink); font-weight:900;}
+  .scroller{max-height:52vh; overflow-y:auto; -webkit-overflow-scrolling:touch; text-align:left;}
+  .dex-sec{margin-top:12px;}
+  .dex-head{font-size:12.5px; font-weight:900; padding:6px 9px; border-radius:9px;}
+  .dex-head small{font-weight:700; font-size:10.5px; opacity:.75; margin-left:5px;}
+  .dex-head.strong{background:#e9f9f0; color:#00a862;}
+  .dex-head.mid{background:#fff6e5; color:#c98600;}
+  .dex-head.weak{background:var(--red-weak); color:var(--red);}
+  .dex-grid{display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:7px;}
+  .dex{background:var(--field); border-radius:12px; padding:8px 10px;}
+  .dex.unseen{opacity:.55;}
+  .dex.none{opacity:.35;}
+  .dex-top{display:flex; align-items:baseline; gap:6px;}
+  .dex-nm{font-size:12px; font-weight:900;}
+  .dex-pct{margin-left:auto; font-size:11px; font-weight:900; color:var(--gray2);
+    font-variant-numeric:tabular-nums;}
+  .dex svg{display:block; margin-top:4px;}
+  .dex-st{font-size:10px; font-weight:700; color:var(--gray2); margin-top:3px;
+    font-variant-numeric:tabular-nums;}
+
+  .hide{display:none !important;}
+  /* display를 정한 클래스(.water의 flex 등)가 UA의 [hidden]{display:none}을 이겨서
+     hidden을 걸어도 그대로 보인다. 한 줄로 막아둔다. */
+  [hidden]{display:none !important;}
+
+  .modal{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:28px; background:rgba(0,0,0,.5);} .modal.on{display:flex;}
+  .modal .box{width:100%; max-width:360px; background:var(--card); border-radius:26px; padding:30px 24px 22px; text-align:center; animation:pop .3s cubic-bezier(.2,1.2,.4,1);}
+  @keyframes pop{from{transform:scale(.85);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .modal .emo{font-size:56px;}
+  .modal .tt{font-size:21px; font-weight:900; margin:12px 0 6px;} .modal .dc{font-size:14.5px; color:var(--gray); font-weight:600; line-height:1.5;}
+  .modal .ok{margin-top:18px; width:100%; border:none; color:#fff; font-size:16px; font-weight:800; padding:15px; border-radius:15px; cursor:pointer; background:linear-gradient(135deg,#3182F6,#4c8dff);}
+  .modal .ok.bankrupt{background:linear-gradient(135deg,#4e5968,#191f28);}
+  .stat-grid{display:flex; gap:10px; margin:16px 0 4px;} .stat-grid .s{flex:1; background:var(--field); border-radius:14px; padding:12px 6px;} .stat-grid .s .k{font-size:11px; color:var(--gray2); font-weight:700;} .stat-grid .s .v{font-size:15px; font-weight:800; margin-top:3px;}
+  .lv-gain{margin-top:9px; font-size:13.5px; font-weight:700; color:var(--gray); background:var(--field); border-radius:12px; padding:10px 12px; text-align:left;} .lv-gain b{color:var(--blue); font-weight:800;}
+  /* 조기 상환 보너스는 레벨 보상과 나란히 뜨므로 금색으로 갈라둔다 — 현금이 들어온 줄이다 */
+  .lv-gain.early{background:#fff9ec;} .lv-gain.early b{color:#8a5a00;}
+
+  /* 🛠 테스트 도구 — 상단 로고를 2번 연타하면 열린다. 평소엔 아무 흔적이 없다. */
+  .dv-top{display:flex; align-items:center; gap:8px; padding-bottom:9px;
+    border-bottom:1px solid var(--line);}
+  .dv-title{font-size:15px; font-weight:900; color:var(--ink);}
+  .dv-state{flex:1; font-size:10.5px; font-weight:700; color:var(--gray3);
+    font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;}
+  .dv-wipe{border:none; background:var(--red-weak); color:var(--red); font-size:13px;
+    width:28px; height:28px; border-radius:9px; cursor:pointer; flex-shrink:0;}
+  .dv-tabs{display:grid; grid-template-columns:repeat(5,1fr); gap:3px; margin:9px 0 10px;
+    background:var(--field); border-radius:11px; padding:3px;}
+  .dv-tab{border:none; background:transparent; font-family:inherit; font-size:10.5px;
+    font-weight:800; color:var(--gray2); padding:7px 2px; border-radius:8px; cursor:pointer;
+    line-height:1.25;}
+  .dv-tab b{display:block; font-size:13px; font-weight:400;}
+  .dv-tab.on{background:var(--card); color:var(--ink); box-shadow:var(--shadow);}
+  .dv-scroll{max-height:50vh; overflow-y:auto; -webkit-overflow-scrolling:touch; text-align:left;}
+  .dv-sec{font-size:10.5px; font-weight:800; color:var(--gray3); margin:11px 0 6px;}
+  .dv-sec:first-child{margin-top:0;}
+  .dv-row{display:flex; gap:5px; align-items:center; margin-bottom:5px;}
+  .dv-row.wrap{flex-wrap:wrap;}
+  .dv-btn{flex:1; border:1px solid var(--line); background:var(--field); color:var(--gray);
+    font-family:inherit; font-size:11.5px; font-weight:800; padding:8px 6px; border-radius:9px;
+    cursor:pointer; white-space:nowrap;}
+  .dv-btn.sm{flex:0 0 auto; padding:6px 9px; font-size:11px;}
+  .dv-btn.sel{border-color:var(--blue); background:var(--blue-weak); color:var(--blue);}
+  .dv-btn.danger{border-color:var(--red); background:var(--red-weak); color:var(--red);}
+  .dv-lab{font-size:11px; font-weight:800; color:var(--gray3); flex-shrink:0;}
+  .dv-val{flex:1; text-align:center; font-size:14px; font-weight:900; color:var(--ink);
+    font-variant-numeric:tabular-nums;}
+  .dv-val small{display:block; font-size:10px; font-weight:700; color:var(--gray3);}
+  .dv-note{font-size:10.5px; font-weight:700; color:var(--gray3); margin-top:7px; line-height:1.55;}
+  .dv-note b{color:var(--blue);}
+  /* 탭 바닥 — 값을 만져도 새 판이라야 듣는 것이 있어서 재시작이 늘 손 닿는 곳에 있어야 한다 */
+  .dv-foot{display:flex; gap:5px; margin-top:11px; padding-top:9px;
+    border-top:1px solid var(--line);}
+  .dv-foot .dv-btn{font-size:11px; padding:9px 6px;}
+  .dv-foot .go{border-color:var(--blue); background:var(--blue-weak); color:var(--blue);}
+  /* 패턴 탭 */
+  .dv-mix{display:flex; gap:5px; margin-bottom:9px;}
+  .dv-mix span{flex:1; text-align:center; font-size:10.5px; font-weight:800; padding:6px 2px;
+    border-radius:8px; font-variant-numeric:tabular-nums;}
+  .dv-mix .s{background:#e9f9f0; color:#00a862;}
+  .dv-mix .m{background:#fff9ec; color:#8a5a00;}
+  .dv-mix .k{background:var(--red-weak); color:var(--red);}
+  .dv-mix .e{background:var(--blue-weak); color:var(--blue);}
+  .pat-row{display:flex; gap:8px; align-items:center; padding:6px; border-radius:11px;
+    border:1px solid var(--line); background:var(--card); margin-bottom:5px; cursor:pointer;}
+  .pat-row.forced{border-color:var(--blue); background:var(--blue-weak);}
+  .pat-chart{width:62px; height:38px; flex-shrink:0; background:var(--field); border-radius:7px;}
+  .pat-mid{flex:1; min-width:0;}
+  .pat-nm{font-size:12px; font-weight:900; color:var(--ink); white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;}
+  .pat-nm em{font-style:normal; font-size:10px; font-weight:800; margin-left:4px;}
+  .pat-nm em.s{color:#00a862;} .pat-nm em.m{color:#c98600;} .pat-nm em.k{color:var(--red);}
+  .pat-w{display:flex; align-items:center; gap:3px; margin-top:3px;}
+  .pat-w button{border:1px solid var(--line); background:var(--field); color:var(--gray);
+    font-family:inherit; font-size:11px; font-weight:900; width:21px; height:21px;
+    border-radius:6px; cursor:pointer; padding:0; flex-shrink:0;}
+  .pat-w span{width:30px; text-align:center; font-size:11px; font-weight:900; color:var(--ink);
+    font-variant-numeric:tabular-nums;}
+  .pat-w span.pat-early{width:auto; text-align:left; font-size:10px; font-weight:700;
+    color:var(--gray3); margin-left:5px; white-space:nowrap;}
+  .pat-early b{color:var(--blue);}
+  .pat-prob{width:44px; text-align:right; font-size:12px; font-weight:900; color:var(--gray);
+    font-variant-numeric:tabular-nums; flex-shrink:0;}
+  /* 📋 템플릿 화면 */
+  .dv-hd{display:flex; align-items:center; gap:8px; padding-bottom:9px;
+    border-bottom:1px solid var(--line); margin-bottom:10px;}
+  .dv-hd .bk{border:none; background:var(--field); color:var(--gray); font-size:13px;
+    width:28px; height:28px; border-radius:9px; cursor:pointer; flex-shrink:0;}
+  .dv-tplbox{width:100%; height:132px; border:1px solid var(--line); border-radius:10px;
+    background:var(--field); color:var(--gray); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:9.5px; line-height:1.5; padding:9px 10px; resize:none; margin-top:6px;
+    user-select:text; -webkit-user-select:text;}
+  .dv-tplbox.edit{border-color:var(--blue); background:var(--card); color:var(--ink);}
+  .dv-slot{display:flex; gap:5px; align-items:center; margin-bottom:5px;}
+  .dv-slot .nm{flex:1; font-size:11.5px; font-weight:800; color:var(--ink);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .dv-slot .nm small{display:block; font-size:9.5px; font-weight:700; color:var(--gray3);
+    font-variant-numeric:tabular-nums;}
+  .dv-slot.empty .nm{color:var(--gray3); font-weight:700;}
+  .modal .ok.dark{background:linear-gradient(135deg,#4e5968,#191f28);}
+  .modal .ok.danger{background:linear-gradient(135deg,#f04452,#ff6b78);}
+  .modal .ok.ghost{margin-top:8px; background:var(--field); color:var(--gray); box-shadow:none;}
+  /* 2번 탭으로 도구를 여는 이상, 브라우저의 더블탭 확대와 겹친다. 확대만 막는다. */
+  .brand{cursor:pointer; touch-action:manipulation; -webkit-user-select:none; user-select:none;}
+  .toast{position:fixed; left:50%; bottom:28px; translate:-50% 0; background:rgba(25,31,40,.92); color:#fff; font-size:13.5px; font-weight:700; padding:11px 18px; border-radius:14px; z-index:70; opacity:0; transition:.25s; pointer-events:none; max-width:88%; text-align:center;} .toast.on{opacity:1;}
+</style>
+<style>
+/* ================= 목업 전용 크롬 (게임 CSS 아님) ================= */
+:root{
+  --wb-bg:#0f1216; --wb-ink:#e8ecf2; --wb-mut:#8b95a6; --wb-line:#242a33;
+  --wb-mark:#ffbc4d; --wb-mark-line:#a06c1a; --wb-new:#4fd3a0; --wb-del:#ff7a85;
+}
+body{background:var(--wb-bg); color:var(--wb-ink);
+  font-family:'Noto Sans KR',system-ui,-apple-system,sans-serif; line-height:1.6; letter-spacing:0;}
+.wrap{max-width:1340px; margin:0 auto; padding:0 16px; padding-block:0 72px;}
+.wrap *{user-select:auto;}
+.wb-head{border-bottom:1px solid var(--wb-line); padding-block:44px 26px; margin-bottom:30px;}
+.eyebrow{font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--wb-mut);}
+.wb-head h1{font-size:clamp(27px,5vw,40px); font-weight:900; letter-spacing:-.02em; margin:10px 0 0;
+  text-wrap:balance; line-height:1.15;}
+.wb-head .lede{font-size:15.5px; color:var(--wb-mut); max-width:66ch; margin:14px 0 0; font-weight:400;}
+.wb-head .lede b{color:var(--wb-ink); font-weight:700;}
+.rule{margin-top:20px; display:inline-flex; flex-wrap:wrap; gap:0 26px; padding:13px 18px;
+  border:1px solid var(--wb-line); border-radius:12px; background:#141920;
+  font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--wb-mut);}
+.rule b{color:var(--wb-new); font-weight:600;}
+.spec{padding-block:32px; border-top:1px solid var(--wb-line);}
+.spec:first-of-type{border-top:none;}
+.spec-head{max-width:72ch;}
+.spec-head h2{font-size:23px; font-weight:800; letter-spacing:-.02em; margin:7px 0 0;}
+.spec-head p{font-size:14.5px; color:var(--wb-mut); margin:9px 0 0;}
+.spec-head p b{color:var(--wb-ink); font-weight:700;}
+.frames{display:flex; flex-wrap:wrap; gap:24px; margin-top:24px; align-items:flex-start;}
+figure.frame{margin:0; display:flex; flex-direction:column; gap:10px;}
+figure.frame figcaption{font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px;
+  font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--wb-mut);
+  display:flex; align-items:center; gap:9px; flex-wrap:wrap;}
+figure.frame figcaption em{font-style:normal; font-family:'Noto Sans KR',sans-serif; letter-spacing:0;
+  text-transform:none; font-size:12px; font-weight:400; opacity:.85;}
+figure.frame.hit figcaption{color:var(--wb-del);}
+figure.frame.after figcaption{color:var(--wb-new);}
+.phone{width:min(360px,92vw); background:var(--bg); color:var(--ink);
+  font-family:'Noto Sans KR',system-ui,sans-serif; line-height:1.4; letter-spacing:-.02em;
+  border-radius:24px; overflow:hidden; padding:16px; border:1px solid var(--wb-line);
+  box-shadow:0 18px 44px -20px rgba(10,20,40,.42);}
+.phone.modal-only{padding:22px 16px; background:#8f96a3;}
+.mbox{width:100%; max-width:330px; margin:0 auto; background:var(--card); border-radius:26px;
+  padding:26px 22px 20px; text-align:center; color:var(--ink); letter-spacing:-.02em; line-height:1.4;}
+.mbox .emo{font-size:46px; line-height:1.1;}
+.mbox .tt{font-size:19px; font-weight:900; margin:10px 0 6px;}
+.mbox .dc{font-size:13.5px; color:var(--gray); font-weight:600; line-height:1.5;}
+.mbox .ok{margin-top:16px; width:100%; border:none; color:#fff; font-size:15.5px; font-weight:800;
+  padding:14px; border-radius:15px; cursor:pointer; background:linear-gradient(135deg,#3182F6,#4c8dff);}
+.mbox .rs-box{max-height:none; overflow:visible;}
+
+/* ===== 제안하는 새 요소 ===== */
+.sell-btn.halted{background:var(--field); color:var(--gray2); box-shadow:none; cursor:not-allowed;}
+.sell-btn.halted small{color:var(--gray3); opacity:1;}
+.halt-tag{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:900;
+  color:var(--red); background:var(--red-weak); border-radius:999px; padding:3px 9px;}
+.stock-tab{position:relative;}
+.stock-tab .halt-mark{position:absolute; top:5px; right:6px; font-size:9.5px; font-weight:800;
+  color:var(--red); opacity:.8; letter-spacing:-.5px;}
+.rs-chip.halt{background:var(--red-weak); color:var(--red);}
+
+.mk{position:relative; outline:2px dashed var(--wb-mark-line); outline-offset:3px; border-radius:12px;}
+.mk.nw{outline:2px solid var(--wb-new);}
+.tag{position:absolute; top:-10px; left:-19px; z-index:3; min-width:19px; height:19px; padding:0 5px;
+  border-radius:999px; background:var(--wb-mark); color:#fff; font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px; font-weight:600; display:grid; place-items:center; line-height:1;
+  box-shadow:0 0 0 2px var(--card), 0 2px 5px rgba(0,0,0,.2);}
+.mk.nw>.tag{background:var(--wb-new);}
+.notes{list-style:none; margin:22px 0 0; padding:0; display:grid; gap:9px; max-width:80ch;}
+.notes li{display:flex; gap:11px; align-items:flex-start; font-size:14px; color:var(--wb-mut);}
+.notes li b{color:var(--wb-ink); font-weight:700;}
+.notes .n{flex-shrink:0; min-width:19px; height:19px; padding:0 5px; border-radius:999px; margin-top:3px;
+  background:var(--wb-mark); color:#0f1216; font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px; font-weight:700; display:grid; place-items:center; line-height:1;}
+.notes .n.nw{background:var(--wb-new);} .notes .n.q{background:var(--wb-del);}
+.tbl{margin-top:22px; border:1px solid var(--wb-line); border-radius:14px; overflow-x:auto;}
+.tbl table{width:100%; border-collapse:collapse; font-size:13.5px; min-width:520px;}
+.tbl th,.tbl td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--wb-line);}
+.tbl th{font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--wb-mut); background:#141920;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl td{color:var(--wb-mut);} .tbl td:first-child{color:var(--wb-ink); font-weight:700;}
+.tbl td b{color:var(--wb-new); font-weight:800;} .tbl td i{font-style:normal; color:var(--wb-del);}
+.tbl .num{font-variant-numeric:tabular-nums; font-family:'IBM Plex Mono',monospace; font-size:12.5px;}
+@media (max-width:820px){ .frames{gap:28px;} }
+
+/* ===== 제안하는 테스트 도구 v2 ===== */
+.dv-top{display:flex; align-items:center; gap:8px; padding-bottom:9px;
+  border-bottom:1px solid var(--line);}
+.dv-title{font-size:15px; font-weight:900; color:var(--ink);}
+.dv-state{flex:1; font-size:10.5px; font-weight:700; color:var(--gray3);
+  font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;}
+.dv-wipe{border:none; background:var(--red-weak); color:var(--red); font-size:13px;
+  width:28px; height:28px; border-radius:9px; cursor:pointer; flex-shrink:0;}
+.dv-tabs{display:grid; grid-template-columns:repeat(5,1fr); gap:3px; margin:9px 0 10px;
+  background:var(--field); border-radius:11px; padding:3px;}
+.dv-tab{border:none; background:transparent; font-family:inherit; font-size:10.5px;
+  font-weight:800; color:var(--gray2); padding:7px 2px; border-radius:8px; cursor:pointer;
+  line-height:1.25;}
+.dv-tab b{display:block; font-size:13px; font-weight:400;}
+.dv-tab.on{background:var(--card); color:var(--ink); box-shadow:var(--shadow);}
+.dv-scroll{max-height:none; overflow:visible; text-align:left;}
+.dv-sec{font-size:10.5px; font-weight:800; color:var(--gray3); margin:11px 0 6px;}
+.dv-sec:first-child{margin-top:0;}
+.dv-row{display:flex; gap:5px; align-items:center; margin-bottom:5px;}
+.dv-row.wrap{flex-wrap:wrap;}
+.dv-btn{flex:1; border:1px solid var(--line); background:var(--field); color:var(--gray);
+  font-family:inherit; font-size:11.5px; font-weight:800; padding:8px 6px; border-radius:9px;
+  cursor:pointer; white-space:nowrap;}
+.dv-btn.sm{flex:0 0 auto; padding:6px 9px; font-size:11px;}
+.dv-btn.sel{border-color:var(--blue); background:var(--blue-weak); color:var(--blue);}
+.dv-btn.danger{border-color:var(--red); background:var(--red-weak); color:var(--red);}
+.dv-lab{font-size:11px; font-weight:800; color:var(--gray3); flex-shrink:0;}
+.dv-val{flex:1; text-align:center; font-size:14px; font-weight:900; color:var(--ink);
+  font-variant-numeric:tabular-nums;}
+.dv-val small{display:block; font-size:10px; font-weight:700; color:var(--gray3);}
+.dv-note{font-size:10.5px; font-weight:700; color:var(--gray3); margin-top:7px; line-height:1.55;}
+
+/* 패턴 탭 */
+.dv-mix{display:flex; gap:5px; margin-bottom:9px;}
+.dv-mix span{flex:1; text-align:center; font-size:10.5px; font-weight:800; padding:6px 2px;
+  border-radius:8px; font-variant-numeric:tabular-nums;}
+.dv-mix .s{background:#e9f9f0; color:#00a862;}
+.dv-mix .m{background:#fff9ec; color:#8a5a00;}
+.dv-mix .k{background:var(--red-weak); color:var(--red);}
+.dv-mix .e{background:var(--blue-weak); color:var(--blue);}
+.pat-row{display:flex; gap:8px; align-items:center; padding:6px; border-radius:11px;
+  border:1px solid var(--line); background:var(--card); margin-bottom:5px; cursor:pointer;}
+.pat-row.forced{border-color:var(--blue); background:var(--blue-weak);}
+.pat-chart{width:76px; height:40px; flex-shrink:0; background:var(--field); border-radius:7px;}
+.pat-mid{flex:1; min-width:0;}
+.pat-nm{font-size:12px; font-weight:900; color:var(--ink); white-space:nowrap;}
+.pat-nm em{font-style:normal; font-size:10px; font-weight:800; margin-left:4px;}
+.pat-nm em.s{color:#00a862;} .pat-nm em.m{color:#c98600;} .pat-nm em.k{color:var(--red);}
+.pat-sub{font-size:10px; font-weight:700; color:var(--gray3); margin-top:2px;
+  font-variant-numeric:tabular-nums;}
+.pat-sub b{color:var(--blue);}
+.pat-w{display:flex; align-items:center; gap:3px; flex-shrink:0;}
+.pat-w button{border:1px solid var(--line); background:var(--field); color:var(--gray);
+  font-family:inherit; font-size:12px; font-weight:900; width:24px; height:24px;
+  border-radius:7px; cursor:pointer; padding:0;}
+.pat-w span{width:32px; text-align:center; font-size:11.5px; font-weight:900; color:var(--ink);
+  font-variant-numeric:tabular-nums;}
+.pat-prob{width:44px; text-align:right; font-size:12px; font-weight:900; color:var(--gray);
+  font-variant-numeric:tabular-nums; flex-shrink:0;}
+.modal .ok.dark{background:linear-gradient(135deg,#4e5968,#191f28);}
+.mbox .ok.dark{background:linear-gradient(135deg,#4e5968,#191f28);}
+
+
+/* ================= 목업 전용 크롬 (게임 CSS 아님) ================= */
+:root{
+  --wb-bg:#0f1216; --wb-ink:#e8ecf2; --wb-mut:#8b95a6; --wb-line:#242a33;
+  --wb-mark:#ffbc4d; --wb-mark-line:#a06c1a; --wb-new:#4fd3a0; --wb-del:#ff7a85;
+}
+body{background:var(--wb-bg); color:var(--wb-ink);
+  font-family:'Noto Sans KR',system-ui,-apple-system,sans-serif; line-height:1.6; letter-spacing:0;}
+.wrap{max-width:1340px; margin:0 auto; padding:0 16px; padding-block:0 72px;}
+.wrap *{user-select:auto;}
+.wb-head{border-bottom:1px solid var(--wb-line); padding-block:44px 26px; margin-bottom:30px;}
+.eyebrow{font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--wb-mut);}
+.wb-head h1{font-size:clamp(27px,5vw,40px); font-weight:900; letter-spacing:-.02em; margin:10px 0 0;
+  text-wrap:balance; line-height:1.15;}
+.wb-head .lede{font-size:15.5px; color:var(--wb-mut); max-width:66ch; margin:14px 0 0; font-weight:400;}
+.wb-head .lede b{color:var(--wb-ink); font-weight:700;}
+.rule{margin-top:20px; display:inline-flex; flex-wrap:wrap; gap:0 26px; padding:13px 18px;
+  border:1px solid var(--wb-line); border-radius:12px; background:#141920;
+  font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--wb-mut);}
+.rule b{color:var(--wb-new); font-weight:600;}
+.spec{padding-block:32px; border-top:1px solid var(--wb-line);}
+.spec:first-of-type{border-top:none;}
+.spec-head{max-width:72ch;}
+.spec-head h2{font-size:23px; font-weight:800; letter-spacing:-.02em; margin:7px 0 0;}
+.spec-head p{font-size:14.5px; color:var(--wb-mut); margin:9px 0 0;}
+.spec-head p b{color:var(--wb-ink); font-weight:700;}
+.frames{display:flex; flex-wrap:wrap; gap:24px; margin-top:24px; align-items:flex-start;}
+figure.frame{margin:0; display:flex; flex-direction:column; gap:10px;}
+figure.frame figcaption{font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px;
+  font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--wb-mut);
+  display:flex; align-items:center; gap:9px; flex-wrap:wrap;}
+figure.frame figcaption em{font-style:normal; font-family:'Noto Sans KR',sans-serif; letter-spacing:0;
+  text-transform:none; font-size:12px; font-weight:400; opacity:.85;}
+figure.frame.hit figcaption{color:var(--wb-del);}
+figure.frame.after figcaption{color:var(--wb-new);}
+.phone{width:min(360px,92vw); background:var(--bg); color:var(--ink);
+  font-family:'Noto Sans KR',system-ui,sans-serif; line-height:1.4; letter-spacing:-.02em;
+  border-radius:24px; overflow:hidden; padding:16px; border:1px solid var(--wb-line);
+  box-shadow:0 18px 44px -20px rgba(10,20,40,.42);}
+.phone.modal-only{padding:22px 16px; background:#8f96a3;}
+.mbox{width:100%; max-width:330px; margin:0 auto; background:var(--card); border-radius:26px;
+  padding:26px 22px 20px; text-align:center; color:var(--ink); letter-spacing:-.02em; line-height:1.4;}
+.mbox .emo{font-size:46px; line-height:1.1;}
+.mbox .tt{font-size:19px; font-weight:900; margin:10px 0 6px;}
+.mbox .dc{font-size:13.5px; color:var(--gray); font-weight:600; line-height:1.5;}
+.mbox .ok{margin-top:16px; width:100%; border:none; color:#fff; font-size:15.5px; font-weight:800;
+  padding:14px; border-radius:15px; cursor:pointer; background:linear-gradient(135deg,#3182F6,#4c8dff);}
+.mbox .rs-box{max-height:none; overflow:visible;}
+
+/* ===== 제안하는 새 요소 ===== */
+.sell-btn.halted{background:var(--field); color:var(--gray2); box-shadow:none; cursor:not-allowed;}
+.sell-btn.halted small{color:var(--gray3); opacity:1;}
+.halt-tag{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:900;
+  color:var(--red); background:var(--red-weak); border-radius:999px; padding:3px 9px;}
+.stock-tab{position:relative;}
+.stock-tab .halt-mark{position:absolute; top:5px; right:6px; font-size:9.5px; font-weight:800;
+  color:var(--red); opacity:.8; letter-spacing:-.5px;}
+.rs-chip.halt{background:var(--red-weak); color:var(--red);}
+
+.mk{position:relative; outline:2px dashed var(--wb-mark-line); outline-offset:3px; border-radius:12px;}
+.mk.nw{outline:2px solid var(--wb-new);}
+.tag{position:absolute; top:-10px; left:-19px; z-index:3; min-width:19px; height:19px; padding:0 5px;
+  border-radius:999px; background:var(--wb-mark); color:#fff; font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px; font-weight:600; display:grid; place-items:center; line-height:1;
+  box-shadow:0 0 0 2px var(--card), 0 2px 5px rgba(0,0,0,.2);}
+.mk.nw>.tag{background:var(--wb-new);}
+.notes{list-style:none; margin:22px 0 0; padding:0; display:grid; gap:9px; max-width:80ch;}
+.notes li{display:flex; gap:11px; align-items:flex-start; font-size:14px; color:var(--wb-mut);}
+.notes li b{color:var(--wb-ink); font-weight:700;}
+.notes .n{flex-shrink:0; min-width:19px; height:19px; padding:0 5px; border-radius:999px; margin-top:3px;
+  background:var(--wb-mark); color:#0f1216; font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px; font-weight:700; display:grid; place-items:center; line-height:1;}
+.notes .n.nw{background:var(--wb-new);} .notes .n.q{background:var(--wb-del);}
+.tbl{margin-top:22px; border:1px solid var(--wb-line); border-radius:14px; overflow-x:auto;}
+.tbl table{width:100%; border-collapse:collapse; font-size:13.5px; min-width:520px;}
+.tbl th,.tbl td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--wb-line);}
+.tbl th{font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--wb-mut); background:#141920;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl td{color:var(--wb-mut);} .tbl td:first-child{color:var(--wb-ink); font-weight:700;}
+.tbl td b{color:var(--wb-new); font-weight:800;} .tbl td i{font-style:normal; color:var(--wb-del);}
+.tbl .num{font-variant-numeric:tabular-nums; font-family:'IBM Plex Mono',monospace; font-size:12.5px;}
+@media (max-width:820px){ .frames{gap:28px;} }
+
+/* ===== 제안하는 테스트 도구 v2 ===== */
+.dv-top{display:flex; align-items:center; gap:8px; padding-bottom:9px;
+  border-bottom:1px solid var(--line);}
+.dv-title{font-size:15px; font-weight:900; color:var(--ink);}
+.dv-state{flex:1; font-size:10.5px; font-weight:700; color:var(--gray3);
+  font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;}
+.dv-wipe{border:none; background:var(--red-weak); color:var(--red); font-size:13px;
+  width:28px; height:28px; border-radius:9px; cursor:pointer; flex-shrink:0;}
+.dv-tabs{display:grid; grid-template-columns:repeat(5,1fr); gap:3px; margin:9px 0 10px;
+  background:var(--field); border-radius:11px; padding:3px;}
+.dv-tab{border:none; background:transparent; font-family:inherit; font-size:10.5px;
+  font-weight:800; color:var(--gray2); padding:7px 2px; border-radius:8px; cursor:pointer;
+  line-height:1.25;}
+.dv-tab b{display:block; font-size:13px; font-weight:400;}
+.dv-tab.on{background:var(--card); color:var(--ink); box-shadow:var(--shadow);}
+.dv-scroll{max-height:none; overflow:visible; text-align:left;}
+.dv-sec{font-size:10.5px; font-weight:800; color:var(--gray3); margin:11px 0 6px;}
+.dv-sec:first-child{margin-top:0;}
+.dv-row{display:flex; gap:5px; align-items:center; margin-bottom:5px;}
+.dv-row.wrap{flex-wrap:wrap;}
+.dv-btn{flex:1; border:1px solid var(--line); background:var(--field); color:var(--gray);
+  font-family:inherit; font-size:11.5px; font-weight:800; padding:8px 6px; border-radius:9px;
+  cursor:pointer; white-space:nowrap;}
+.dv-btn.sm{flex:0 0 auto; padding:6px 9px; font-size:11px;}
+.dv-btn.sel{border-color:var(--blue); background:var(--blue-weak); color:var(--blue);}
+.dv-btn.danger{border-color:var(--red); background:var(--red-weak); color:var(--red);}
+.dv-lab{font-size:11px; font-weight:800; color:var(--gray3); flex-shrink:0;}
+.dv-val{flex:1; text-align:center; font-size:14px; font-weight:900; color:var(--ink);
+  font-variant-numeric:tabular-nums;}
+.dv-val small{display:block; font-size:10px; font-weight:700; color:var(--gray3);}
+.dv-note{font-size:10.5px; font-weight:700; color:var(--gray3); margin-top:7px; line-height:1.55;}
+
+/* 패턴 탭 */
+.dv-mix{display:flex; gap:5px; margin-bottom:9px;}
+.dv-mix span{flex:1; text-align:center; font-size:10.5px; font-weight:800; padding:6px 2px;
+  border-radius:8px; font-variant-numeric:tabular-nums;}
+.dv-mix .s{background:#e9f9f0; color:#00a862;}
+.dv-mix .m{background:#fff9ec; color:#8a5a00;}
+.dv-mix .k{background:var(--red-weak); color:var(--red);}
+.dv-mix .e{background:var(--blue-weak); color:var(--blue);}
+.pat-row{display:flex; gap:8px; align-items:center; padding:6px; border-radius:11px;
+  border:1px solid var(--line); background:var(--card); margin-bottom:5px; cursor:pointer;}
+.pat-row.forced{border-color:var(--blue); background:var(--blue-weak);}
+.pat-chart{width:76px; height:40px; flex-shrink:0; background:var(--field); border-radius:7px;}
+.pat-mid{flex:1; min-width:0;}
+.pat-nm{font-size:12px; font-weight:900; color:var(--ink); white-space:nowrap;}
+.pat-nm em{font-style:normal; font-size:10px; font-weight:800; margin-left:4px;}
+.pat-nm em.s{color:#00a862;} .pat-nm em.m{color:#c98600;} .pat-nm em.k{color:var(--red);}
+.pat-sub{font-size:10px; font-weight:700; color:var(--gray3); margin-top:2px;
+  font-variant-numeric:tabular-nums;}
+.pat-sub b{color:var(--blue);}
+.pat-w{display:flex; align-items:center; gap:3px; flex-shrink:0;}
+.pat-w button{border:1px solid var(--line); background:var(--field); color:var(--gray);
+  font-family:inherit; font-size:12px; font-weight:900; width:24px; height:24px;
+  border-radius:7px; cursor:pointer; padding:0;}
+.pat-w span{width:32px; text-align:center; font-size:11.5px; font-weight:900; color:var(--ink);
+  font-variant-numeric:tabular-nums;}
+.pat-prob{width:44px; text-align:right; font-size:12px; font-weight:900; color:var(--gray);
+  font-variant-numeric:tabular-nums; flex-shrink:0;}
+.modal .ok.dark{background:linear-gradient(135deg,#4e5968,#191f28);}
+.mbox .ok.dark{background:linear-gradient(135deg,#4e5968,#191f28);}
+
+/* ===== v3에서 더해지는 것 ===== */
+.dv-foot{display:flex; gap:5px; margin-top:11px; padding-top:9px;
+  border-top:1px solid var(--line);}
+.dv-foot .dv-btn{font-size:11px; padding:9px 6px;}
+.dv-foot .go{border-color:var(--blue); background:var(--blue-weak); color:var(--blue);}
+.dv-tplbox{width:100%; height:132px; border:1px solid var(--line); border-radius:10px;
+  background:var(--field); color:var(--gray); font-family:'IBM Plex Mono',monospace;
+  font-size:9.5px; line-height:1.5; padding:9px 10px; resize:none; margin-top:6px;
+  user-select:text; -webkit-user-select:text;}
+.dv-slot{display:flex; gap:5px; align-items:center; margin-bottom:5px;}
+.dv-slot .nm{flex:1; font-size:11.5px; font-weight:800; color:var(--ink);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.dv-slot .nm small{display:block; font-size:9.5px; font-weight:700; color:var(--gray3);
+  font-variant-numeric:tabular-nums;}
+.dv-slot.empty .nm{color:var(--gray3); font-weight:700;}
+.dv-hd{display:flex; align-items:center; gap:8px; padding-bottom:9px;
+  border-bottom:1px solid var(--line); margin-bottom:10px;}
+.dv-hd .bk{border:none; background:var(--field); color:var(--gray); font-size:13px;
+  width:28px; height:28px; border-radius:9px; cursor:pointer; flex-shrink:0;}
+
+/* v4에서 더해지는 것 */
+.dv-tabs{grid-template-columns:repeat(5,1fr);}
+.dv-help{font-size:10.5px; font-weight:700; color:var(--gray3); line-height:1.55;
+  background:var(--field); border-radius:10px; padding:8px 10px; margin:-2px 0 8px;}
+.dv-help b{color:var(--ink);}
+.dv-help .up{color:var(--red); font-weight:800;}
+.dv-help .dn{color:var(--blue); font-weight:800;}
+.dv-prev{font-size:10.5px; font-weight:700; color:var(--gray); background:var(--blue-weak);
+  border-radius:10px; padding:8px 10px; margin-top:7px; line-height:1.6;
+  font-variant-numeric:tabular-nums;}
+.dv-prev b{color:var(--blue); font-weight:900;}
+.dv-prev .hd{display:block; font-size:9.5px; font-weight:800; color:var(--gray2);
+  letter-spacing:.03em; margin-bottom:3px;}
+.dv-gate{display:flex; gap:5px; align-items:center; margin-bottom:4px;}
+.dv-gate .nm{flex:1; font-size:11px; font-weight:800; color:var(--gray); white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;}
+.dv-gate button{border:1px solid var(--line); background:var(--field); color:var(--gray);
+  font-family:inherit; font-size:11px; font-weight:900; width:21px; height:21px;
+  border-radius:6px; cursor:pointer; padding:0; flex-shrink:0;}
+.dv-gate .vv{width:36px; text-align:center; font-size:11px; font-weight:900; color:var(--ink);
+  font-variant-numeric:tabular-nums;}
+.dv-gate .rn{width:42px; text-align:right; font-size:10.5px; font-weight:800; color:var(--blue);
+  font-variant-numeric:tabular-nums;}
+
+.tbl{width:100%; border-collapse:collapse; margin-top:16px; font-size:13.5px;}
+.tbl th,.tbl td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--wb-line);}
+.tbl th{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--wb-mut); background:#141920;}
+.tbl td{color:var(--wb-mut);} .tbl td:first-child{color:var(--wb-ink); font-weight:700;}
+.tbl td b{color:var(--wb-new); font-weight:800;}
+</style>
+<div class="wrap">
+<header class="wb-head">
+  <div class="eyebrow">머니로드 · 테스트 도구 v4</div>
+  <h1>무엇을 만지는 탭인지 이름값을 하게</h1>
+  <p class="lede">메타 탭이 <b>XP를 넣는 치트</b>였지 <b>메타 성장을 고치는 곳</b>이 아니었습니다.
+  그건 시작 탭 일이고, 메타 탭은 <b>XP 공식·해금 문턱</b>을 맡아야 합니다.
+  파산 탭도 버튼만 있었는데 숫자를 냅니다. 그리고 값마다 <b>무엇인지·어느 쪽이 어려워지는지</b>를 써 둡니다.</p>
+  <div class="rule"><span>📊 패턴 <b>그림 설명 추가</b></span><span>🧬 메타 <b>완전 교체</b></span>
+    <span>🎬 시작 <b>+ 옛 메타</b></span><span>💸 파산 <b>+ 숫자</b></span><span>⚖️ 밸런스 <b>+ 설명</b></span></div>
+</header>
+
+<section class="spec">
+  <div class="spec-head"><div class="eyebrow">고침 01</div>
+    <h2>📊 그림 3개가 뭔지 화면에 쓴다</h2>
+    <p>같은 패턴도 판마다 다르게 열려서(<b>MID_DIP</b>) 대표 그림 한 장은 거짓말이 됩니다.
+    그래서 3번 뽑아 겹쳐 그리는데, 그 설명이 목록 <b>맨 아래</b> 묻혀 있었습니다.
+    요약 바로 밑으로 올리고 버튼 이름도 고칩니다.</p></div>
+  <div class="frames">
+    <figure class="frame hit"><figcaption>지금 <em>설명이 맨 아래</em></figcaption><div class="phone modal-only"><div class="mbox"><div class="dv-top"><span class="dv-title">🛠 테스트 도구</span><span class="dv-state">XP 0 · 1차 · D-13</span><button class="dv-wipe">📋</button><button class="dv-wipe">🧹</button></div><div class="dv-tabs"><button class="dv-tab on"><b>📊</b>패턴</button><button class="dv-tab "><b>🧬</b>메타</button><button class="dv-tab "><b>🎬</b>시작</button><button class="dv-tab "><b>💸</b>파산</button><button class="dv-tab "><b>⚖️</b>밸런스</button></div><div class="dv-scroll"><div class="dv-mix"><span class="s">강세 23%</span><span class="m">보통 46%</span><span class="k">약세 30%</span><span class="e">초반↑ 14%</span></div><div class="pat-row"><svg class="pat-chart" viewBox="0 0 62 38" preserveAspectRatio="none"><line x1="0" x2="62" y1="29.8" y2="29.8" stroke="#b0b8c1" stroke-width="1" stroke-dasharray="2 2" opacity=".6"/><polyline points="0.0,29.8 1.2,30.4 2.4,30.9 3.6,31.6 4.9,32.5 6.1,32.9 7.3,33.2 8.5,33.7 9.7,34.7 10.9,34.3 12.2,34.6 13.4,34.4 14.6,33.6 15.8,33.0 17.0,31.4 18.2,30.3 19.5,29.3 20.7,28.3 21.9,28.0 23.1,27.0 24.3,26.4 25.5,25.8 26.7,25.6 28.0,25.4 29.2,25.5 30.4,26.0 31.6,26.6 32.8,27.0 34.0,27.5 35.3,28.0 36.5,28.3 37.7,28.4 38.9,28.6 40.1,28.6 41.3,26.7 42.5,24.5 43.8,22.5 45.0,20.4 46.2,18.8 47.4,17.3 48.6,15.4 49.8,13.9 51.1,12.1 52.3,10.8 53.5,9.5 54.7,8.3 55.9,7.4 57.1,6.7 58.4,6.3 59.6,5.7 60.8,5.4 62.0,5.2" fill="none" stroke="#00a862" stroke-width="1.6" stroke-linejoin="round" opacity="0.95"/><polyline points="0.0,29.8 1.2,30.5 2.4,31.2 3.6,31.9 4.9,32.2 6.1,32.7 7.3,33.3 8.5,34.1 9.7,34.1 10.9,34.3 12.2,34.6 13.4,34.0 14.6,33.2 15.8,32.9 17.0,31.9 18.2,31.0 19.5,30.5 20.7,30.1 21.9,29.4 23.1,28.8 24.3,28.3 25.5,28.0 26.7,27.7 28.0,27.5 29.2,27.3 30.4,27.4 31.6,27.8 32.8,28.5 34.0,29.0 35.3,29.1 36.5,29.7 37.7,30.0 38.9,29.7 40.1,29.3 41.3,27.1 42.5,25.0 43.8,22.5 45.0,20.2 46.2,18.5 47.4,16.7 48.6,14.8 49.8,12.6 51.1,11.1 52.3,9.4 53.5,8.0 54.7,6.7 55.9,6.0 57.1,5.4 58.4,4.4 59.6,3.7 60.8,3.5 62.0,3.5" fill="none" stroke="#00a862" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/><polyline points="0.0,29.8 1.2,30.6 2.4,31.2 3.6,31.8 4.9,32.5 6.1,32.9 7.3,33.5 8.5,34.0 9.7,34.3 10.9,34.6 12.2,35.0 13.4,35.4 14.6,35.3 15.8,34.9 17.0,33.8 18.2,32.5 19.5,31.8 20.7,30.3 21.9,29.7 23.1,28.4 24.3,28.0 25.5,27.1 26.7,26.7 28.0,26.5 29.2,25.9 30.4,25.7 31.6,25.3 32.8,26.2 34.0,27.3 35.3,28.1 36.5,28.8 37.7,29.3 38.9,29.7 40.1,29.7 41.3,28.6 42.5,26.1 43.8,23.4 45.0,21.2 46.2,19.0 47.4,17.2 48.6,14.9 49.8,12.8 51.1,11.0 52.3,9.5 53.5,8.0 54.7,6.4 55.9,5.2 57.1,4.3 58.4,3.5 59.6,2.9 60.8,2.7 62.0,2.6" fill="none" stroke="#00a862" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/></svg><div class="pat-mid"><div class="pat-nm">📈 상승<em class="s">강세</em></div><div class="pat-w"><button>−</button><span>0.22</span><button>+</button><span class="pat-early">초반↑ 0%</span></div></div><div class="pat-prob">19.6%</div></div><div class="pat-row"><svg class="pat-chart" viewBox="0 0 62 38" preserveAspectRatio="none"><line x1="0" x2="62" y1="7.0" y2="7.0" stroke="#b0b8c1" stroke-width="1" stroke-dasharray="2 2" opacity=".6"/><polyline points="0.0,7.0 1.2,8.3 2.4,8.6 3.6,10.4 4.9,11.1 6.1,11.8 7.3,12.9 8.5,14.0 9.7,14.7 10.9,15.2 12.2,15.2 13.4,16.0 14.6,16.1 15.8,15.5 17.0,13.5 18.2,11.5 19.5,9.9 20.7,8.2 21.9,6.5 23.1,5.7 24.3,4.4 25.5,4.2 26.7,3.9 28.0,4.9 29.2,6.3 30.4,8.3 31.6,9.8 32.8,11.4 34.0,12.5 35.3,13.6 36.5,14.2 37.7,14.7 38.9,15.5 40.1,15.7 41.3,16.3 42.5,17.9 43.8,19.0 45.0,21.2 46.2,22.7 47.4,23.8 48.6,25.4 49.8,26.6 51.1,27.8 52.3,28.9 53.5,30.2 54.7,31.6 55.9,32.0 57.1,32.2 58.4,33.0 59.6,33.6 60.8,33.5 62.0,33.5" fill="none" stroke="#f04452" stroke-width="1.6" stroke-linejoin="round" opacity="0.95"/><polyline points="0.0,7.0 1.2,8.2 2.4,9.2 3.6,10.1 4.9,10.8 6.1,12.4 7.3,12.5 8.5,13.0 9.7,14.1 10.9,14.2 12.2,14.7 13.4,14.9 14.6,13.3 15.8,11.8 17.0,10.4 18.2,8.9 19.5,6.9 20.7,5.8 21.9,4.9 23.1,3.4 24.3,3.0 25.5,2.7 26.7,2.6 28.0,3.6 29.2,5.3 30.4,7.5 31.6,8.6 32.8,10.2 34.0,11.3 35.3,12.4 36.5,13.1 37.7,13.4 38.9,14.4 40.1,14.5 41.3,15.8 42.5,17.3 43.8,19.5 45.0,21.4 46.2,23.1 47.4,24.4 48.6,25.9 49.8,27.3 51.1,29.9 52.3,30.7 53.5,31.4 54.7,32.8 55.9,33.3 57.1,34.5 58.4,34.5 59.6,35.0 60.8,35.3 62.0,35.4" fill="none" stroke="#f04452" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/><polyline points="0.0,7.0 1.2,8.1 2.4,9.2 3.6,10.4 4.9,11.7 6.1,13.0 7.3,13.8 8.5,14.8 9.7,15.7 10.9,16.7 12.2,16.8 13.4,17.3 14.6,17.3 15.8,15.8 17.0,14.1 18.2,12.9 19.5,10.8 20.7,8.5 21.9,6.7 23.1,5.8 24.3,5.0 25.5,4.5 26.7,3.6 28.0,5.2 29.2,6.7 30.4,7.7 31.6,8.8 32.8,9.9 34.0,10.9 35.3,12.3 36.5,12.6 37.7,13.3 38.9,14.1 40.1,14.6 41.3,15.3 42.5,16.0 43.8,16.5 45.0,17.5 46.2,19.1 47.4,21.0 48.6,22.9 49.8,24.3 51.1,26.3 52.3,27.4 53.5,28.6 54.7,30.3 55.9,31.4 57.1,31.6 58.4,32.6 59.6,33.1 60.8,33.7 62.0,34.1" fill="none" stroke="#f04452" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/></svg><div class="pat-mid"><div class="pat-nm">📉 하락<em class="k">약세</em></div><div class="pat-w"><button>−</button><span>0.22</span><button>+</button><span class="pat-early">초반↑ 0%</span></div></div><div class="pat-prob">19.6%</div></div><div class="pat-row"><svg class="pat-chart" viewBox="0 0 62 38" preserveAspectRatio="none"><line x1="0" x2="62" y1="28.9" y2="28.9" stroke="#b0b8c1" stroke-width="1" stroke-dasharray="2 2" opacity=".6"/><polyline points="0.0,28.9 1.2,29.9 2.4,30.2 3.6,30.7 4.9,31.5 6.1,31.7 7.3,32.5 8.5,33.2 9.7,33.4 10.9,34.1 12.2,34.5 13.4,34.9 14.6,35.3 15.8,35.3 17.0,35.4 18.2,34.0 19.5,31.4 20.7,28.9 21.9,25.8 23.1,23.6 24.3,21.9 25.5,19.2 26.7,18.0 28.0,16.7 29.2,15.7 30.4,14.8 31.6,13.8 32.8,14.6 34.0,16.1 35.3,18.2 36.5,19.8 37.7,20.9 38.9,21.8 40.1,22.9 41.3,23.8 42.5,24.6 43.8,25.2 45.0,25.1 46.2,23.2 47.4,20.9 48.6,18.7 49.8,16.9 51.1,15.1 52.3,13.1 53.5,12.1 54.7,10.7 55.9,9.4 57.1,8.8 58.4,7.6 59.6,7.1 60.8,7.0 62.0,7.4" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.95"/><polyline points="0.0,28.9 1.2,29.3 2.4,29.8 3.6,30.0 4.9,31.0 6.1,31.8 7.3,31.3 8.5,32.4 9.7,32.1 10.9,32.3 12.2,32.0 13.4,32.2 14.6,32.7 15.8,31.8 17.0,29.6 18.2,27.4 19.5,24.5 20.7,22.7 21.9,20.2 23.1,18.6 24.3,17.4 25.5,16.0 26.7,15.4 28.0,15.0 29.2,15.3 30.4,16.4 31.6,17.4 32.8,18.7 34.0,20.3 35.3,21.9 36.5,22.5 37.7,23.8 38.9,24.8 40.1,25.6 41.3,26.0 42.5,26.7 43.8,27.2 45.0,27.5 46.2,26.0 47.4,23.6 48.6,20.5 49.8,17.8 51.1,15.2 52.3,12.8 53.5,10.3 54.7,7.9 55.9,6.5 57.1,5.1 58.4,3.9 59.6,3.4 60.8,3.0 62.0,2.6" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/><polyline points="0.0,28.9 1.2,29.2 2.4,30.0 3.6,30.3 4.9,31.0 6.1,31.2 7.3,32.1 8.5,32.5 9.7,32.4 10.9,32.9 12.2,33.5 13.4,34.0 14.6,34.4 15.8,34.2 17.0,34.1 18.2,33.8 19.5,31.8 20.7,28.7 21.9,25.3 23.1,21.8 24.3,19.3 25.5,15.7 26.7,14.3 28.0,11.9 29.2,9.4 30.4,9.4 31.6,8.1 32.8,7.9 34.0,10.0 35.3,13.2 36.5,16.1 37.7,19.0 38.9,21.3 40.1,23.0 41.3,24.9 42.5,26.0 43.8,26.4 45.0,23.8 46.2,22.5 47.4,21.1 48.6,18.9 49.8,17.6 51.1,15.0 52.3,14.3 53.5,13.0 54.7,12.0 55.9,10.6 57.1,9.5 58.4,8.8 59.6,8.8 60.8,8.3 62.0,8.0" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/></svg><div class="pat-mid"><div class="pat-nm">✅ 눌림목<em class="m">보통</em></div><div class="pat-w"><button>−</button><span>0.12</span><button>+</button><span class="pat-early">초반↑ <b>15%</b></span></div></div><div class="pat-prob">10.7%</div></div><div class="pat-row"><svg class="pat-chart" viewBox="0 0 62 38" preserveAspectRatio="none"><line x1="0" x2="62" y1="27.7" y2="27.7" stroke="#b0b8c1" stroke-width="1" stroke-dasharray="2 2" opacity=".6"/><polyline points="0.0,27.7 1.2,26.8 2.4,25.8 3.6,25.2 4.9,24.4 6.1,23.7 7.3,23.4 8.5,23.0 9.7,22.5 10.9,22.1 12.2,21.9 13.4,20.6 14.6,18.3 15.8,16.7 17.0,14.4 18.2,12.5 19.5,10.7 20.7,9.2 21.9,8.5 23.1,7.4 24.3,7.0 25.5,6.6 26.7,7.9 28.0,9.4 29.2,10.4 30.4,11.8 31.6,13.0 32.8,14.1 34.0,15.6 35.3,16.8 36.5,17.9 37.7,19.2 38.9,20.2 40.1,21.0 41.3,22.0 42.5,23.0 43.8,24.2 45.0,25.2 46.2,26.1 47.4,26.8 48.6,27.3 49.8,28.1 51.1,28.7 52.3,29.4 53.5,30.0 54.7,30.3 55.9,30.6 57.1,31.1 58.4,31.4 59.6,31.4 60.8,31.3 62.0,31.3" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.95"/><polyline points="0.0,27.7 1.2,26.9 2.4,26.1 3.6,25.2 4.9,24.2 6.1,23.8 7.3,23.1 8.5,22.9 9.7,22.3 10.9,22.0 12.2,22.1 13.4,21.2 14.6,18.4 15.8,16.5 17.0,14.1 18.2,12.1 19.5,10.3 20.7,8.5 21.9,6.9 23.1,5.7 24.3,4.8 25.5,4.4 26.7,4.0 28.0,5.3 29.2,6.9 30.4,8.7 31.6,10.3 32.8,12.3 34.0,14.0 35.3,15.7 36.5,16.9 37.7,18.3 38.9,20.1 40.1,21.3 41.3,22.7 42.5,24.1 43.8,25.5 45.0,26.7 46.2,27.6 47.4,28.7 48.6,29.9 49.8,30.6 51.1,31.5 52.3,32.3 53.5,33.2 54.7,33.5 55.9,34.3 57.1,34.4 58.4,34.5 59.6,35.1 60.8,35.4 62.0,35.0" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/><polyline points="0.0,27.7 1.2,28.0 2.4,28.3 3.6,28.3 4.9,28.8 6.1,28.7 7.3,29.2 8.5,29.3 9.7,29.4 10.9,29.6 12.2,29.6 13.4,29.7 14.6,29.7 15.8,28.8 17.0,25.1 18.2,22.1 19.5,18.8 20.7,15.8 21.9,12.9 23.1,10.3 24.3,7.9 25.5,6.2 26.7,4.9 28.0,3.9 29.2,3.2 30.4,2.6 31.6,4.7 32.8,6.2 34.0,8.4 35.3,10.0 36.5,11.5 37.7,13.3 38.9,15.0 40.1,16.5 41.3,18.2 42.5,19.9 43.8,21.3 45.0,22.6 46.2,24.0 47.4,24.7 48.6,26.0 49.8,27.1 51.1,28.0 52.3,29.0 53.5,29.9 54.7,30.7 55.9,31.3 57.1,32.0 58.4,32.3 59.6,32.5 60.8,32.6 62.0,32.5" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/></svg><div class="pat-mid"><div class="pat-nm">🎢 급등급락<em class="m">보통</em></div><div class="pat-w"><button>−</button><span>0.10</span><button>+</button><span class="pat-early">초반↑ <b>53%</b></span></div></div><div class="pat-prob">8.9%</div></div><div class="dv-row"><button class="dv-btn">그림 다시 뽑기</button></div><div class="dv-note">행을 누르면 <b>다음 판에 그 패턴이 나와요.</b> 그림은 실제로 뽑은 경로 3개예요.</div></div><div class="dv-foot"><button class="dv-btn">↺ 이 탭 기본값</button><button class="dv-btn go">▶ 재시작</button></div><button class="ok dark">닫기</button></div></div></figure>
+    <figure class="frame after"><figcaption>바꾼 뒤 <em>요약 바로 밑</em></figcaption><div class="phone modal-only"><div class="mbox"><div class="dv-top"><span class="dv-title">🛠 테스트 도구</span><span class="dv-state">XP 0 · 1차 · D-13</span><button class="dv-wipe">📋</button><button class="dv-wipe">🧹</button></div><div class="dv-tabs"><button class="dv-tab on"><b>📊</b>패턴</button><button class="dv-tab "><b>🧬</b>메타</button><button class="dv-tab "><b>🎬</b>시작</button><button class="dv-tab "><b>💸</b>파산</button><button class="dv-tab "><b>⚖️</b>밸런스</button></div><div class="dv-scroll"><div class="dv-mix"><span class="s">강세 23%</span><span class="m">보통 46%</span><span class="k">약세 30%</span><span class="e">초반↑ 14%</span></div><div class="dv-help">왼쪽 그림은 <b>그 패턴을 실제로 3번 뽑은 것</b>이에요 — 진한 선 1개 + 흐린 선 2개. 같은 패턴도 판마다 다르게 열려서(<b>MID_DIP</b>) 한 장으로는 알 수 없어요.</div><div class="pat-row"><svg class="pat-chart" viewBox="0 0 62 38" preserveAspectRatio="none"><line x1="0" x2="62" y1="29.8" y2="29.8" stroke="#b0b8c1" stroke-width="1" stroke-dasharray="2 2" opacity=".6"/><polyline points="0.0,29.8 1.2,30.4 2.4,30.9 3.6,31.6 4.9,32.5 6.1,32.9 7.3,33.2 8.5,33.7 9.7,34.7 10.9,34.3 12.2,34.6 13.4,34.4 14.6,33.6 15.8,33.0 17.0,31.4 18.2,30.3 19.5,29.3 20.7,28.3 21.9,28.0 23.1,27.0 24.3,26.4 25.5,25.8 26.7,25.6 28.0,25.4 29.2,25.5 30.4,26.0 31.6,26.6 32.8,27.0 34.0,27.5 35.3,28.0 36.5,28.3 37.7,28.4 38.9,28.6 40.1,28.6 41.3,26.7 42.5,24.5 43.8,22.5 45.0,20.4 46.2,18.8 47.4,17.3 48.6,15.4 49.8,13.9 51.1,12.1 52.3,10.8 53.5,9.5 54.7,8.3 55.9,7.4 57.1,6.7 58.4,6.3 59.6,5.7 60.8,5.4 62.0,5.2" fill="none" stroke="#00a862" stroke-width="1.6" stroke-linejoin="round" opacity="0.95"/><polyline points="0.0,29.8 1.2,30.5 2.4,31.2 3.6,31.9 4.9,32.2 6.1,32.7 7.3,33.3 8.5,34.1 9.7,34.1 10.9,34.3 12.2,34.6 13.4,34.0 14.6,33.2 15.8,32.9 17.0,31.9 18.2,31.0 19.5,30.5 20.7,30.1 21.9,29.4 23.1,28.8 24.3,28.3 25.5,28.0 26.7,27.7 28.0,27.5 29.2,27.3 30.4,27.4 31.6,27.8 32.8,28.5 34.0,29.0 35.3,29.1 36.5,29.7 37.7,30.0 38.9,29.7 40.1,29.3 41.3,27.1 42.5,25.0 43.8,22.5 45.0,20.2 46.2,18.5 47.4,16.7 48.6,14.8 49.8,12.6 51.1,11.1 52.3,9.4 53.5,8.0 54.7,6.7 55.9,6.0 57.1,5.4 58.4,4.4 59.6,3.7 60.8,3.5 62.0,3.5" fill="none" stroke="#00a862" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/><polyline points="0.0,29.8 1.2,30.6 2.4,31.2 3.6,31.8 4.9,32.5 6.1,32.9 7.3,33.5 8.5,34.0 9.7,34.3 10.9,34.6 12.2,35.0 13.4,35.4 14.6,35.3 15.8,34.9 17.0,33.8 18.2,32.5 19.5,31.8 20.7,30.3 21.9,29.7 23.1,28.4 24.3,28.0 25.5,27.1 26.7,26.7 28.0,26.5 29.2,25.9 30.4,25.7 31.6,25.3 32.8,26.2 34.0,27.3 35.3,28.1 36.5,28.8 37.7,29.3 38.9,29.7 40.1,29.7 41.3,28.6 42.5,26.1 43.8,23.4 45.0,21.2 46.2,19.0 47.4,17.2 48.6,14.9 49.8,12.8 51.1,11.0 52.3,9.5 53.5,8.0 54.7,6.4 55.9,5.2 57.1,4.3 58.4,3.5 59.6,2.9 60.8,2.7 62.0,2.6" fill="none" stroke="#00a862" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/></svg><div class="pat-mid"><div class="pat-nm">📈 상승<em class="s">강세</em></div><div class="pat-w"><button>−</button><span>0.22</span><button>+</button><span class="pat-early">초반↑ 0%</span></div></div><div class="pat-prob">19.6%</div></div><div class="pat-row"><svg class="pat-chart" viewBox="0 0 62 38" preserveAspectRatio="none"><line x1="0" x2="62" y1="7.0" y2="7.0" stroke="#b0b8c1" stroke-width="1" stroke-dasharray="2 2" opacity=".6"/><polyline points="0.0,7.0 1.2,8.3 2.4,8.6 3.6,10.4 4.9,11.1 6.1,11.8 7.3,12.9 8.5,14.0 9.7,14.7 10.9,15.2 12.2,15.2 13.4,16.0 14.6,16.1 15.8,15.5 17.0,13.5 18.2,11.5 19.5,9.9 20.7,8.2 21.9,6.5 23.1,5.7 24.3,4.4 25.5,4.2 26.7,3.9 28.0,4.9 29.2,6.3 30.4,8.3 31.6,9.8 32.8,11.4 34.0,12.5 35.3,13.6 36.5,14.2 37.7,14.7 38.9,15.5 40.1,15.7 41.3,16.3 42.5,17.9 43.8,19.0 45.0,21.2 46.2,22.7 47.4,23.8 48.6,25.4 49.8,26.6 51.1,27.8 52.3,28.9 53.5,30.2 54.7,31.6 55.9,32.0 57.1,32.2 58.4,33.0 59.6,33.6 60.8,33.5 62.0,33.5" fill="none" stroke="#f04452" stroke-width="1.6" stroke-linejoin="round" opacity="0.95"/><polyline points="0.0,7.0 1.2,8.2 2.4,9.2 3.6,10.1 4.9,10.8 6.1,12.4 7.3,12.5 8.5,13.0 9.7,14.1 10.9,14.2 12.2,14.7 13.4,14.9 14.6,13.3 15.8,11.8 17.0,10.4 18.2,8.9 19.5,6.9 20.7,5.8 21.9,4.9 23.1,3.4 24.3,3.0 25.5,2.7 26.7,2.6 28.0,3.6 29.2,5.3 30.4,7.5 31.6,8.6 32.8,10.2 34.0,11.3 35.3,12.4 36.5,13.1 37.7,13.4 38.9,14.4 40.1,14.5 41.3,15.8 42.5,17.3 43.8,19.5 45.0,21.4 46.2,23.1 47.4,24.4 48.6,25.9 49.8,27.3 51.1,29.9 52.3,30.7 53.5,31.4 54.7,32.8 55.9,33.3 57.1,34.5 58.4,34.5 59.6,35.0 60.8,35.3 62.0,35.4" fill="none" stroke="#f04452" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/><polyline points="0.0,7.0 1.2,8.1 2.4,9.2 3.6,10.4 4.9,11.7 6.1,13.0 7.3,13.8 8.5,14.8 9.7,15.7 10.9,16.7 12.2,16.8 13.4,17.3 14.6,17.3 15.8,15.8 17.0,14.1 18.2,12.9 19.5,10.8 20.7,8.5 21.9,6.7 23.1,5.8 24.3,5.0 25.5,4.5 26.7,3.6 28.0,5.2 29.2,6.7 30.4,7.7 31.6,8.8 32.8,9.9 34.0,10.9 35.3,12.3 36.5,12.6 37.7,13.3 38.9,14.1 40.1,14.6 41.3,15.3 42.5,16.0 43.8,16.5 45.0,17.5 46.2,19.1 47.4,21.0 48.6,22.9 49.8,24.3 51.1,26.3 52.3,27.4 53.5,28.6 54.7,30.3 55.9,31.4 57.1,31.6 58.4,32.6 59.6,33.1 60.8,33.7 62.0,34.1" fill="none" stroke="#f04452" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/></svg><div class="pat-mid"><div class="pat-nm">📉 하락<em class="k">약세</em></div><div class="pat-w"><button>−</button><span>0.22</span><button>+</button><span class="pat-early">초반↑ 0%</span></div></div><div class="pat-prob">19.6%</div></div><div class="pat-row"><svg class="pat-chart" viewBox="0 0 62 38" preserveAspectRatio="none"><line x1="0" x2="62" y1="28.9" y2="28.9" stroke="#b0b8c1" stroke-width="1" stroke-dasharray="2 2" opacity=".6"/><polyline points="0.0,28.9 1.2,29.9 2.4,30.2 3.6,30.7 4.9,31.5 6.1,31.7 7.3,32.5 8.5,33.2 9.7,33.4 10.9,34.1 12.2,34.5 13.4,34.9 14.6,35.3 15.8,35.3 17.0,35.4 18.2,34.0 19.5,31.4 20.7,28.9 21.9,25.8 23.1,23.6 24.3,21.9 25.5,19.2 26.7,18.0 28.0,16.7 29.2,15.7 30.4,14.8 31.6,13.8 32.8,14.6 34.0,16.1 35.3,18.2 36.5,19.8 37.7,20.9 38.9,21.8 40.1,22.9 41.3,23.8 42.5,24.6 43.8,25.2 45.0,25.1 46.2,23.2 47.4,20.9 48.6,18.7 49.8,16.9 51.1,15.1 52.3,13.1 53.5,12.1 54.7,10.7 55.9,9.4 57.1,8.8 58.4,7.6 59.6,7.1 60.8,7.0 62.0,7.4" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.95"/><polyline points="0.0,28.9 1.2,29.3 2.4,29.8 3.6,30.0 4.9,31.0 6.1,31.8 7.3,31.3 8.5,32.4 9.7,32.1 10.9,32.3 12.2,32.0 13.4,32.2 14.6,32.7 15.8,31.8 17.0,29.6 18.2,27.4 19.5,24.5 20.7,22.7 21.9,20.2 23.1,18.6 24.3,17.4 25.5,16.0 26.7,15.4 28.0,15.0 29.2,15.3 30.4,16.4 31.6,17.4 32.8,18.7 34.0,20.3 35.3,21.9 36.5,22.5 37.7,23.8 38.9,24.8 40.1,25.6 41.3,26.0 42.5,26.7 43.8,27.2 45.0,27.5 46.2,26.0 47.4,23.6 48.6,20.5 49.8,17.8 51.1,15.2 52.3,12.8 53.5,10.3 54.7,7.9 55.9,6.5 57.1,5.1 58.4,3.9 59.6,3.4 60.8,3.0 62.0,2.6" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/><polyline points="0.0,28.9 1.2,29.2 2.4,30.0 3.6,30.3 4.9,31.0 6.1,31.2 7.3,32.1 8.5,32.5 9.7,32.4 10.9,32.9 12.2,33.5 13.4,34.0 14.6,34.4 15.8,34.2 17.0,34.1 18.2,33.8 19.5,31.8 20.7,28.7 21.9,25.3 23.1,21.8 24.3,19.3 25.5,15.7 26.7,14.3 28.0,11.9 29.2,9.4 30.4,9.4 31.6,8.1 32.8,7.9 34.0,10.0 35.3,13.2 36.5,16.1 37.7,19.0 38.9,21.3 40.1,23.0 41.3,24.9 42.5,26.0 43.8,26.4 45.0,23.8 46.2,22.5 47.4,21.1 48.6,18.9 49.8,17.6 51.1,15.0 52.3,14.3 53.5,13.0 54.7,12.0 55.9,10.6 57.1,9.5 58.4,8.8 59.6,8.8 60.8,8.3 62.0,8.0" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/></svg><div class="pat-mid"><div class="pat-nm">✅ 눌림목<em class="m">보통</em></div><div class="pat-w"><button>−</button><span>0.12</span><button>+</button><span class="pat-early">초반↑ <b>15%</b></span></div></div><div class="pat-prob">10.7%</div></div><div class="pat-row"><svg class="pat-chart" viewBox="0 0 62 38" preserveAspectRatio="none"><line x1="0" x2="62" y1="27.7" y2="27.7" stroke="#b0b8c1" stroke-width="1" stroke-dasharray="2 2" opacity=".6"/><polyline points="0.0,27.7 1.2,26.8 2.4,25.8 3.6,25.2 4.9,24.4 6.1,23.7 7.3,23.4 8.5,23.0 9.7,22.5 10.9,22.1 12.2,21.9 13.4,20.6 14.6,18.3 15.8,16.7 17.0,14.4 18.2,12.5 19.5,10.7 20.7,9.2 21.9,8.5 23.1,7.4 24.3,7.0 25.5,6.6 26.7,7.9 28.0,9.4 29.2,10.4 30.4,11.8 31.6,13.0 32.8,14.1 34.0,15.6 35.3,16.8 36.5,17.9 37.7,19.2 38.9,20.2 40.1,21.0 41.3,22.0 42.5,23.0 43.8,24.2 45.0,25.2 46.2,26.1 47.4,26.8 48.6,27.3 49.8,28.1 51.1,28.7 52.3,29.4 53.5,30.0 54.7,30.3 55.9,30.6 57.1,31.1 58.4,31.4 59.6,31.4 60.8,31.3 62.0,31.3" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.95"/><polyline points="0.0,27.7 1.2,26.9 2.4,26.1 3.6,25.2 4.9,24.2 6.1,23.8 7.3,23.1 8.5,22.9 9.7,22.3 10.9,22.0 12.2,22.1 13.4,21.2 14.6,18.4 15.8,16.5 17.0,14.1 18.2,12.1 19.5,10.3 20.7,8.5 21.9,6.9 23.1,5.7 24.3,4.8 25.5,4.4 26.7,4.0 28.0,5.3 29.2,6.9 30.4,8.7 31.6,10.3 32.8,12.3 34.0,14.0 35.3,15.7 36.5,16.9 37.7,18.3 38.9,20.1 40.1,21.3 41.3,22.7 42.5,24.1 43.8,25.5 45.0,26.7 46.2,27.6 47.4,28.7 48.6,29.9 49.8,30.6 51.1,31.5 52.3,32.3 53.5,33.2 54.7,33.5 55.9,34.3 57.1,34.4 58.4,34.5 59.6,35.1 60.8,35.4 62.0,35.0" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/><polyline points="0.0,27.7 1.2,28.0 2.4,28.3 3.6,28.3 4.9,28.8 6.1,28.7 7.3,29.2 8.5,29.3 9.7,29.4 10.9,29.6 12.2,29.6 13.4,29.7 14.6,29.7 15.8,28.8 17.0,25.1 18.2,22.1 19.5,18.8 20.7,15.8 21.9,12.9 23.1,10.3 24.3,7.9 25.5,6.2 26.7,4.9 28.0,3.9 29.2,3.2 30.4,2.6 31.6,4.7 32.8,6.2 34.0,8.4 35.3,10.0 36.5,11.5 37.7,13.3 38.9,15.0 40.1,16.5 41.3,18.2 42.5,19.9 43.8,21.3 45.0,22.6 46.2,24.0 47.4,24.7 48.6,26.0 49.8,27.1 51.1,28.0 52.3,29.0 53.5,29.9 54.7,30.7 55.9,31.3 57.1,32.0 58.4,32.3 59.6,32.5 60.8,32.6 62.0,32.5" fill="none" stroke="#c98600" stroke-width="1.6" stroke-linejoin="round" opacity="0.35"/></svg><div class="pat-mid"><div class="pat-nm">🎢 급등급락<em class="m">보통</em></div><div class="pat-w"><button>−</button><span>0.10</span><button>+</button><span class="pat-early">초반↑ <b>53%</b></span></div></div><div class="pat-prob">8.9%</div></div><div class="dv-row"><button class="dv-btn">🎲 경로 다시 뽑기 — 다른 얼굴 보기</button></div><div class="dv-note">행을 누르면 <b>다음 판에 그 패턴이 나와요.</b></div></div><div class="dv-foot"><button class="dv-btn">↺ 이 탭 기본값</button><button class="dv-btn go">▶ 재시작</button></div><button class="ok dark">닫기</button></div></div></figure>
+  </div>
+</section>
+
+<section class="spec">
+  <div class="spec-head"><div class="eyebrow">고침 02</div>
+    <h2>🧬 메타 — XP를 넣는 곳이 아니라 XP가 어떻게 자라는지 고치는 곳</h2>
+    <p>"메타 해금이 너무 빠르다"를 만지려면 <b>XP 공식과 해금 문턱</b>이 필요한데,
+    지금 메타 탭에는 둘 다 없고 XP를 직접 꽂는 버튼만 있었습니다.
+    오른쪽 파란 숫자가 <b>"몇 판 만에 열리나"</b>입니다 — 문턱을 만지면 같이 움직입니다.</p></div>
+  <div class="frames">
+    <figure class="frame after"><figcaption>새 메타 탭</figcaption><div class="phone modal-only"><div class="mbox"><div class="dv-top"><span class="dv-title">🛠 테스트 도구</span><span class="dv-state">XP 0 · 1차 · D-13</span><button class="dv-wipe">📋</button><button class="dv-wipe">🧹</button></div><div class="dv-tabs"><button class="dv-tab "><b>📊</b>패턴</button><button class="dv-tab on"><b>🧬</b>메타</button><button class="dv-tab "><b>🎬</b>시작</button><button class="dv-tab "><b>💸</b>파산</button><button class="dv-tab "><b>⚖️</b>밸런스</button></div><div class="dv-scroll"><div class="dv-help">이 탭은 <b>판을 넘어 남는 것이 얼마나 빨리 자라는가</b>만 다뤄요. XP를 직접 넣거나 난이도를 고르는 건 🎬 시작 탭으로 옮겼어요.</div><div class="dv-sec">XP 공식 — 그 판 최고 기록의 로그</div><div class="dv-row"><button class="dv-btn">−2</button><span class="dv-val">20<small>계수</small></span><button class="dv-btn">+2</button></div><div class="dv-prev"><span class="hd">이 계수로 받는 XP</span>50만 <b>13</b> · 2000만 <b>46</b> · 10억 <b>80</b> · 500억 <b>113</b></div><div class="dv-sec">조기 상환 XP — 하루 일찍 갚을 때마다</div><div class="dv-row"><button class="dv-btn">−1</button><span class="dv-val">2</span><button class="dv-btn">+1</button></div><div class="dv-sec">난이도 XP 배수 — 1단계 기준</div><div class="dv-row"><button class="dv-btn">−0.1</button><span class="dv-val">×1.0<small>2~5단계는 비례해서 같이 움직여요</small></span><button class="dv-btn">+0.1</button></div><div class="dv-sec">파산 XP 페널티</div><div class="dv-row"><button class="dv-btn">−5%p</button><span class="dv-val">30%<small>파산하면 이만큼 깎여요</small></span><button class="dv-btn">+5%p</button></div><div class="dv-sec">해금 문턱 — 필요 XP</div><div class="dv-gate"><span class="nm">🐻 공매도</span><button>−</button><span class="vv">40</span><button>+</button><span class="rn">1판</span></div><div class="dv-gate"><span class="nm">✂️ 분할 매도</span><button>−</button><span class="vv">140</span><button>+</button><span class="rn">3판</span></div><div class="dv-gate"><span class="nm">💧 물타기</span><button>−</button><span class="vv">260</span><button>+</button><span class="rn">5판</span></div><div class="dv-gate"><span class="nm">📊 코스피ETF</span><button>−</button><span class="vv">400</span><button>+</button><span class="rn">7판</span></div><div class="dv-gate"><span class="nm">🎲 동전주</span><button>−</button><span class="vv">560</span><button>+</button><span class="rn">9판</span></div><div class="dv-gate"><span class="nm">📋 패턴 도감</span><button>−</button><span class="vv">740</span><button>+</button><span class="rn">12판</span></div><div class="dv-gate"><span class="nm">🪙 코인</span><button>−</button><span class="vv">900</span><button>+</button><span class="rn">14판</span></div><div class="dv-row"><button class="dv-btn">문턱 전체 −10%</button><button class="dv-btn">전체 +10%</button></div><div class="dv-prev"><span class="hd">이 설정이면 · 3단계에서 1억까지 가는 판 기준</span>전부 해금까지 <b>14판</b> · 마지막 🪙 코인이 <b>900 XP</b></div><div class="dv-note">오른쪽 파란 숫자가 <b>"몇 판 만에 열리나"</b>예요 — 문턱을 만지면 같이 움직여요.</div></div><div class="dv-foot"><button class="dv-btn">↺ 이 탭 기본값</button><button class="dv-btn go">▶ 재시작</button></div><button class="ok dark">닫기</button></div></div></figure>
+    <figure class="frame after"><figcaption>🎬 시작 <em>옛 메타 탭 내용이 여기로</em></figcaption><div class="phone modal-only"><div class="mbox"><div class="dv-top"><span class="dv-title">🛠 테스트 도구</span><span class="dv-state">XP 0 · 1차 · D-13</span><button class="dv-wipe">📋</button><button class="dv-wipe">🧹</button></div><div class="dv-tabs"><button class="dv-tab "><b>📊</b>패턴</button><button class="dv-tab "><b>🧬</b>메타</button><button class="dv-tab on"><b>🎬</b>시작</button><button class="dv-tab "><b>💸</b>파산</button><button class="dv-tab "><b>⚖️</b>밸런스</button></div><div class="dv-scroll"><div class="dv-sec">경험치 — 지금 0</div><div class="dv-row"><button class="dv-btn">0</button><button class="dv-btn">400</button><button class="dv-btn">900</button><button class="dv-btn">+100</button></div><div class="dv-sec">해금 — 0 / 7</div><div class="dv-row wrap"><button class="dv-btn sm">🐻 공매도</button><button class="dv-btn sm">✂️ 분할 매도</button><button class="dv-btn sm">💧 물타기</button><button class="dv-btn sm">📊 코스피ETF</button><button class="dv-btn sm">🎲 동전주</button><button class="dv-btn sm">📋 도감</button><button class="dv-btn sm">🪙 코인</button></div><div class="dv-sec">난이도 단계</div><div class="dv-row wrap"><button class="dv-btn sm sel">1 개미</button><button class="dv-btn sm ">2 실전</button><button class="dv-btn sm ">3 하락장</button><button class="dv-btn sm ">4 촉박</button><button class="dv-btn sm ">5 벼랑</button></div><div class="dv-sec">시작 현금 — 새 판 10만원 · 지금 10만원</div><div class="dv-row"><button class="dv-btn sel">10만</button><button class="dv-btn">100만</button><button class="dv-btn">1000만</button></div><div class="dv-row"><button class="dv-btn">지금 현금 ×10</button><button class="dv-btn">×100</button><button class="dv-btn">목표 −1만</button></div><div class="dv-sec">레버리지 — 최소 3배 · 최대 3배</div><div class="dv-row"><span class="dv-lab">최소</span><button class="dv-btn sm ">1</button><button class="dv-btn sm ">2</button><button class="dv-btn sm sel">3</button><button class="dv-btn sm ">5</button></div><div class="dv-row"><span class="dv-lab">최대</span><button class="dv-btn sm sel">3</button><button class="dv-btn sm ">5</button><button class="dv-btn sm ">10</button></div><div class="dv-sec">상환 단계 — 1차 · D-13</div><div class="dv-row"><button class="dv-btn">다음 단계</button><button class="dv-btn">완제 직전</button><button class="dv-btn">D-1</button></div><div class="dv-sec">거래일 — 13·13·13·15·15·17·17</div><div class="dv-row"><button class="dv-btn">−3</button><button class="dv-btn">−1</button><span class="dv-val">13<small>1차 기준</small></span><button class="dv-btn">+1</button><button class="dv-btn">+3</button></div><div class="dv-row"><button class="dv-btn danger">판만 초기화</button></div></div><div class="dv-foot"><button class="dv-btn">↺ 이 탭 기본값</button><button class="dv-btn go">▶ 재시작</button></div><button class="ok dark">닫기</button></div></div></figure>
+  </div>
+</section>
+
+<section class="spec">
+  <div class="spec-head"><div class="eyebrow">고침 03</div>
+    <h2>💸 파산 — 지는 쪽에도 손잡이를 낸다</h2>
+    <p>지금은 화면을 띄우는 버튼뿐이라 <b>↺ 이 탭 기본값</b>도 없었습니다.
+    파산선·청산 여유·기한 연장을 냅니다. 특히 <b>청산 여유</b>는 1.00이 원금 전액 손실선이고,
+    내리면 전액을 잃기 전에 잘립니다 — 난이도가 가장 세게 움직이는 값입니다.</p></div>
+  <div class="frames">
+    <figure class="frame after"><figcaption>새 파산 탭</figcaption><div class="phone modal-only"><div class="mbox"><div class="dv-top"><span class="dv-title">🛠 테스트 도구</span><span class="dv-state">XP 0 · 1차 · D-13</span><button class="dv-wipe">📋</button><button class="dv-wipe">🧹</button></div><div class="dv-tabs"><button class="dv-tab "><b>📊</b>패턴</button><button class="dv-tab "><b>🧬</b>메타</button><button class="dv-tab "><b>🎬</b>시작</button><button class="dv-tab on"><b>💸</b>파산</button><button class="dv-tab "><b>⚖️</b>밸런스</button></div><div class="dv-scroll"><div class="dv-help">지는 쪽의 수치예요. <b>올리면 어려워지는 것</b>은 파산선, <b>내리면 어려워지는 것</b>은 청산 여유·연장 일수예요.</div><div class="dv-sec">파산선 — 최소 베팅</div><div class="dv-row"><button class="dv-btn">−</button><span class="dv-val">1만원<small>현금이 이 밑이면 파산</small></span><button class="dv-btn">+</button></div><div class="dv-sec">청산 여유 — 3배 기준</div><div class="dv-row"><button class="dv-btn">−0.05</button><span class="dv-val">×1.00<small>롱 0.67 (−33%) · 숏 1.33</small></span><button class="dv-btn">+0.05</button></div><div class="dv-help">1.00이 <b>원금 전액 손실선</b>이에요. 내리면 전액을 잃기 <b>전에</b> 잘리고, 올리면 더 버티다 잘려요.</div><div class="dv-sec">기한 연장</div><div class="dv-row"><span class="dv-lab">일수</span><button class="dv-btn">−1</button><span class="dv-val">3</span><button class="dv-btn">+1</button></div><div class="dv-row"><span class="dv-lab">비용</span><button class="dv-btn">−5%p</button><span class="dv-val">25%<small>자산 대비</small></span><button class="dv-btn">+5%p</button></div><div class="dv-sec">지금 상태 · 만들기</div><div class="dv-row"><span class="dv-lab">현금</span><span class="dv-val">10만원<small>파산까지 9만원</small></span></div><div class="dv-row"><button class="dv-btn danger">즉시 파산</button><button class="dv-btn">최소 베팅만 남기기</button></div><div class="dv-row"><button class="dv-btn">반대매매</button><button class="dv-btn">정산 화면</button></div></div><div class="dv-foot"><button class="dv-btn">↺ 이 탭 기본값</button><button class="dv-btn go">▶ 재시작</button></div><button class="ok dark">닫기</button></div></div></figure>
+    <figure class="frame after"><figcaption>⚖️ 밸런스 <em>값마다 설명</em></figcaption><div class="phone modal-only"><div class="mbox"><div class="dv-top"><span class="dv-title">🛠 테스트 도구</span><span class="dv-state">XP 0 · 1차 · D-13</span><button class="dv-wipe">📋</button><button class="dv-wipe">🧹</button></div><div class="dv-tabs"><button class="dv-tab "><b>📊</b>패턴</button><button class="dv-tab "><b>🧬</b>메타</button><button class="dv-tab "><b>🎬</b>시작</button><button class="dv-tab "><b>💸</b>파산</button><button class="dv-tab on"><b>⚖️</b>밸런스</button></div><div class="dv-scroll"><div class="dv-help"><b>어려워지는 방향</b> — MID_DIP <span class="up">↑</span> · DIP <span class="dn">↓</span> · 적중률 <span class="dn">↓</span> · 보너스 <span class="dn">↓</span></div><div class="dv-sec">MID_DIP — 보통 4종이 급락으로 여는 확률의 배수</div><div class="dv-row"><button class="dv-btn">−0.1</button><span class="dv-val">1.0<small>1.0이 기본 · 0이면 전부 오르며 연다</small></span><button class="dv-btn">+0.1</button></div><div class="dv-help">눌림목·급등급락·고점후하락·이중고점이 <b>떨어지며 열지 오르며 열지</b>를 정해요. 올리면 초반 급등이 줄어 <b>어려워져요.</b></div><div class="dv-sec">DIP — 급락으로 열 때 얼마나 깊이</div><div class="dv-row"><button class="dv-btn">−0.02</button><span class="dv-val">0.84<small>3배에서 −48%</small></span><button class="dv-btn">+0.02</button></div><div class="dv-help">청산선 <b>0.67</b> 밑으로 내리면 열자마자 죽어요. 올리면 덜 떨어져 <b>쉬워져요.</b></div><div class="dv-sec">신호 적중률 — 🟢🟡🔴가 맞을 확률</div><div class="dv-row"><button class="dv-btn sel">55%</button><button class="dv-btn ">62%</button><button class="dv-btn ">70%</button><button class="dv-btn ">78%</button></div><div class="dv-help">올리면 예측이 쉬워져 <b>쉬워져요.</b> 78%는 정보력을 최대로 강화한 상태예요.</div><div class="dv-sec">조기 상환 보너스 — 남은 1일당</div><div class="dv-row"><button class="dv-btn">−5%p</button><span class="dv-val">10%<small>상환금의 몇 %를 현금으로</small></span><button class="dv-btn">+5%p</button></div><div class="dv-help">기한보다 일찍 갚으면 남은 하루마다 받아요. <b>후반이 헐거워지는 주범</b>이에요.</div><div class="dv-note">여기 값들은 저장 안 해요 — 새로고침하면 돌아와요.</div></div><div class="dv-foot"><button class="dv-btn">↺ 이 탭 기본값</button><button class="dv-btn go">▶ 재시작</button></div><button class="ok dark">닫기</button></div></div></figure>
+  </div>
+</section>
+
+<section class="spec">
+  <div class="spec-head"><div class="eyebrow">담기는 값</div>
+    <h2>📋 템플릿에 무엇이 늘어나나</h2></div>
+  <table class="tbl"><thead><tr><th>탭</th><th>템플릿에 담기는 값</th></tr></thead><tbody>
+    <tr><td>📊 패턴</td><td>10종 가중치</td></tr>
+    <tr><td>🧬 메타</td><td><b>새로 담김</b> — XP 계수 · 조기상환 XP · 난이도 배수 · 파산 페널티 · 해금 문턱 7개</td></tr>
+    <tr><td>🎬 시작</td><td>시작 현금 · 최소/최대 레버리지 · 거래일 7개</td></tr>
+    <tr><td>💸 파산</td><td><b>새로 담김</b> — 파산선 · 청산 여유 · 연장 일수/비용</td></tr>
+    <tr><td>⚖️ 밸런스</td><td>MID_DIP · DIP · 신호 적중률 · 조기 상환 보너스</td></tr>
+  </tbody></table>
+  <p class="spec-head" style="margin-top:14px"><i style="font-style:normal;color:var(--wb-mut);font-size:14px">
+  XP·해금 <b style="color:var(--wb-ink)">상태</b>(지금 몇 XP인가)는 여전히 안 담습니다 — 그건 밸런스가 아니라 테스트용 상태예요.</i></p>
+</section>
+</div>

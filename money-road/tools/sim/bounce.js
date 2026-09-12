@@ -25,7 +25,9 @@
 const G = require('./_game');
 
 const MIN_BET = 10000, RATE = 0.10, LAG = 10, LEV = 3, LIQ = 1 - 1/LEV;
-const GATES = [[5e5,13],[3e6,13],[2e7,13],[1.5e8,15],[1e9,15],[8e9,17],[5e10,17]];
+const BASE_GATES = [[5e5,13],[3e6,13],[2e7,13],[1.5e8,15],[1e9,15],[8e9,17],[5e10,17]];
+let GATES = BASE_GATES;
+function setDays(mul){ GATES = BASE_GATES.map(([g,d])=>[g, Math.round(d*mul)]); }
 const DOWN = 0.04, INFO_ACC = 0.55;          // 신호는 그대로
 const TIERS = ['strong','mid','weak'];
 const dev = G.dev, mp = G.buildMultiPhase, ns = G.noiseScale;
@@ -267,3 +269,43 @@ for (const d of [0.72, 0.78, 0.84, 0.88, 0.92]) {
     return ((c/N*100).toFixed(0)+'%').padStart(7); }).join(' ');
   console.log(`  ${d.toFixed(2)}   ${((d-1)*300).toFixed(0)+'%'}`.padEnd(22) + cells);
 }
+
+
+/* ── 채택안(급락 0.84)에서 거래일이 얼마나 필요한가 ──────────────────────
+   0.84는 전략 독주를 없애는 대신 난이도를 크게 올린다. 지금 최고 전략이
+   65%(panic)인데 0.84에서는 18%다. 거래일로 되돌려야 한다. */
+const DIP = 0.84;
+const ADOPTED = {
+  up:   { weight:0.22, gen:(st,T)=>mp([
+          [R(0.18,0.10), dev(R(DIP,0.06), st.pMult)],
+          [R(0.42,0.10), dev(R(DIP+0.18,0.12), st.pMult)],
+          [R(0.62,0.08), dev(R(DIP+0.10,0.10), st.pMult)],
+          [1,            dev(R(1.70,0.25), st.pMult)]], 0.013*ns(T)*st.noiseMult,T) },
+  down: { weight:0.22, gen:(st,T)=>mp([
+          [R(0.18,0.10), dev(R(DIP-0.02,0.06), st.pMult)],
+          [R(0.42,0.10), dev(R(DIP+0.16,0.10), st.pMult)],
+          [R(0.65,0.08), dev(R(DIP,0.06), st.pMult)],
+          [1,            dev(R(0.45,0.15), st.pMult)]], 0.013*ns(T)*st.noiseMult,T) },
+  spike:{ tier:'mid' }, delayup:{weight:0.04}, delaydown:{weight:0.04},
+  v:    { weight:0.12, gen: rallyDipRally },
+};
+console.log('\n■ 급락 0.84에서 거래일을 늘리면 (총 103일이 기준)');
+console.log('  거래일          trail   panic  bounce    conv    최고');
+{
+  const b = build(ADOPTED), pick = picker(b.pats, b.tier, DOWN);
+  for (const mul of [1.0, 1.3, 1.6, 2.0, 2.5]) {
+    setDays(mul);
+    const tot = GATES.reduce((a,[,d])=>a+d,0);
+    const vals = ['trail','panic','bounce','conv'].map(m=>{
+      const N=350; let c=0;
+      for(let k=0;k<N;k++) if(run(pick,stock,m)==='클리어') c++;
+      return c/N*100;
+    });
+    const best = Math.max(...vals);
+    console.log(`  ×${mul.toFixed(1)} (${String(tot).padStart(3)}일)  ` +
+      vals.map(v=>(v.toFixed(0)+'%').padStart(7)).join(' ') +
+      `  ${(best.toFixed(0)+'%').padStart(6)}`);
+  }
+  setDays(1.0);
+}
+console.log('\n  참고 — 지금 패턴 · 103일에서 최고는 panic 65%, trail 21%');

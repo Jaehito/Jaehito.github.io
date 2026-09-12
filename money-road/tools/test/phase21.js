@@ -5,7 +5,6 @@
      2) 손익 부호 대칭
      3) 청산선 — 롱은 아래(1−1/L), 숏은 위(1+1/L). 숏은 1배에도 청산이 있다
      4) 매도 등급 반전 (숏은 낮게 덮을수록 잘한 것)
-     5) 자동 익절은 숏에서 목표 배율의 역수
      6) 청산 경고 영역이 청산선 바깥쪽만 칠하는가 (화면 밖으로 나가도) */
 const { launch, GAME: url } = require('../lib/browser');
 (async()=>{
@@ -30,19 +29,21 @@ const { launch, GAME: url } = require('../lib/browser');
  let p=await fresh(0);
  L('XP 0', await p.evaluate(()=>({
    metaHas:metaHas('short'),
-   상승버튼:!!$('tradeGo'), 하락버튼:!!$('tradeShort'),
+   시작버튼:!!$('tradeGo'), 방향토글:!!$('dirToggle'),
    버튼문구:$('tradeGo').textContent.replace(/\s+/g,' ').trim(),
    레버리지소문자:[...document.querySelectorAll('.lev-row small')].map(e=>e.textContent)})));
  L('해금해도 startRound(-1)은 롱으로 막힌다', await p.evaluate(()=>{
    startRound(-1); const d=S.activeRound.dir; S.activeRound=null; return {dir:d};}));
  await p.close();
 
- console.log('\n=== 1-b. 해금하면 좌우로 쪼개진다 ===');
+ console.log('\n=== 1-b. 해금하면 방향 토글이 생긴다 (버튼은 하나 그대로) ===');
  p=await fresh(200);
  L('', await p.evaluate(()=>({
    metaHas:metaHas('short'),
-   상승:$('tradeGo').textContent.replace(/\s+/g,' ').trim(),
-   하락:$('tradeShort').textContent.replace(/\s+/g,' ').trim(),
+   토글:$('dirToggle').textContent.replace(/\s+/g,' ').trim(),
+   시작버튼:$('tradeGo').textContent.replace(/\s+/g,' ').trim(),
+   하락으로바꾸면:(()=>{ $('dirToggle').querySelector('[data-d="-1"]').click();
+     return $('tradeGo').textContent.replace(/\s+/g,' ').trim(); })(),
    레버리지소문자:[...document.querySelectorAll('.lev-row small')].map(e=>e.textContent.trim())})));
  await p.close();
 
@@ -78,18 +79,6 @@ const { launch, GAME: url } = require('../lib/browser');
      매도배율:m,
      롱:(g=>g?`${g.g} ${g.pct}%`:'-')(gradeOf(m,0.70,1.30,1)),
      숏:(g=>g?`${g.g} ${g.pct}%`:'-')(gradeOf(m,0.70,1.30,-1))}))));
- await p.close();
-
- console.log('\n=== 5. 자동 익절 — 숏은 목표 배율의 역수 ===');
- p=await fresh(200);
- L('', await p.evaluate(()=>{
-   const out=[];
-   for(const [dir,t,mult,hit] of [[1,1.5,1.50,true],[1,1.5,1.40,false],
-                                  [-1,1.5,0.66,true],[-1,1.5,0.70,false]]){
-     const ok = dir>0 ? mult>=t : mult<=1/t;
-     out.push({방향:dir>0?'롱':'숏', 목표:t+'x', 실제:mult, 발동:ok, 기대:hit, 일치:ok===hit});
-   }
-   return out;}));
  await p.close();
 
  console.log('\n=== 6. 청산 경고 영역은 청산선 바깥쪽만 칠한다 ===');

@@ -19,7 +19,7 @@ const { launch, GAME: url } = require('../lib/browser');
       화면 배치만 보므로 XP를 채워서 켠다. */
    META.xp=999; saveMeta();
    S.level=6;S.peakCash=1.2e9;S.cash=320000000;S.upg.leverageLv=3;
-   S.themeUnlocked=true;S.buffs=['info'];S.betAutoTarget=1.5;setBet(32000000);render();
+   S.themeUnlocked=true;S.buffs=['info'];setBet(32000000);render();
    return {히어로:!!document.querySelector('.hero'), 지갑줄:!!document.querySelector('.wallet'),
      레벨힌트:!!document.getElementById('lvHint'), 패널제목:!!document.querySelector('.tp-title'),
      청산경고줄:!!document.querySelector('.liq-note'), 하단안내문:!!document.querySelector('.trade-note'),
@@ -30,7 +30,7 @@ const { launch, GAME: url } = require('../lib/browser');
  L('', await p.evaluate(()=>({
    상단바잔고:$('cashView').textContent,
    상단바sticky:getComputedStyle(document.querySelector('.topbar')).position,
-   여유칩:document.querySelector('.opt.room').textContent.replace(/\s+/g,' ').trim(),
+   남은금액칩:document.querySelector('.opt.need').textContent.replace(/\s+/g,' ').trim(),
  })));
 
  console.log('\n=== 레버리지: 청산선이 버튼 안으로 ===');
@@ -39,16 +39,18 @@ const { launch, GAME: url } = require('../lib/browser');
    헤드:$('tpLimit').textContent,
  })));
 
- console.log('\n=== 자동 익절 접기/펼치기 ===');
- L('접힘', await p.evaluate(()=>({
-   칩:$('autoToggle').textContent.replace(/\s+/g,' ').trim(),
-   버튼노출:document.querySelectorAll('.auto-row button[data-t]').length})));
- await p.click('#autoToggle'); await p.waitForTimeout(150);
- L('펼침', await p.evaluate(()=>({
-   버튼노출:document.querySelectorAll('.auto-row button[data-t]').length, autoOpen:S.autoOpen})));
- await p.evaluate(()=>{document.querySelector('.auto-row button[data-t="2"]').click();});
- await p.waitForTimeout(150);
- L('선택 반영', await p.evaluate(()=>({target:S.betAutoTarget, 칩:$('autoToggle').textContent.replace(/\s+/g,' ').trim()})));
+ /* 자동 익절은 삭제했다(게임이 시키는 유일한 행동을 대신해 줬다). 그 자리는
+    방향 토글과 "목표까지 남은 금액"이 쓴다. */
+ console.log('\n=== 옵션 줄 — 방향 토글과 남은 금액 ===');
+ L('공매도 해금 전', await p.evaluate(()=>({
+   자동익절:!!$('autoToggle'), 방향토글:!!$('dirToggle'),
+   줄:document.querySelector('.opt-row').textContent.replace(/\s+/g,' ').trim()})));
+ L('해금하면', await p.evaluate(()=>{ META.xp=200; saveMeta(); renderTrade();
+   return {방향토글:$('dirToggle').textContent.replace(/\s+/g,' ').trim(),
+     시작버튼:$('tradeGo').textContent.trim(), betDir:S.betDir};}));
+ L('하락으로', await p.evaluate(()=>{
+   $('dirToggle').querySelector('[data-d="-1"]').click();
+   return {betDir:S.betDir, 시작버튼:$('tradeGo').textContent.trim()};}));
 
  console.log('\n=== 티켓: 스트립에서 빠지고 시작 버튼 위 한 줄로 ===');
  L('1개', await p.evaluate(()=>{S.buffs=['info'];render();

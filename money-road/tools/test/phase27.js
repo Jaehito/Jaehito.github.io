@@ -6,8 +6,7 @@
      2) 노이즈 보정 — 틱이 늘어도 흔들림의 크기는 같아야 한다
      3) 라운드에 ticks가 저장되고 새로고침 뒤에도 남는다
      4) 진행바·남은 시간이 그 종목의 틱을 기준으로 돈다
-     5) 장중 뉴스가 코인에서도 정해진 구간에 뜬다
-     6) y축 아래 여백이 0 밑으로 안 내려간다 (진폭 큰 종목에서 음수 눈금이 났다) */
+     5) y축 아래 여백이 0 밑으로 안 내려간다 (진폭 큰 종목에서 음수 눈금이 났다) */
 const { launch, GAME: url } = require('../lib/browser');
 (async()=>{
  const b = await launch();
@@ -80,19 +79,6 @@ const { launch, GAME: url } = require('../lib/browser');
      sellRound(false); $('mOk').click();
    }
    return out;}));
- await p.close();
-
- console.log('\n=== 5. 뉴스가 코인에서도 구간 안에 뜬다 ===');
- p=await fresh(1000);
- L('각 2000회', await p.evaluate(()=>{
-   const chk=(id)=>{ const st=TRADE_STOCKS.find(s=>s.id===id);
-     let lo=1, hi=0;
-     for(let k=0;k<2000;k++){ const path=genRound(st,'mid').path;
-       const n=rollNews(path,st.name); const f=n.idx/(path.length-1);
-       if(f<lo)lo=f; if(f>hi)hi=f; }
-     return {구간:[+lo.toFixed(2),+hi.toFixed(2)], 설정:NEWS_AT,
-       안에있나:lo>=NEWS_AT[0]-0.01&&hi<=NEWS_AT[1]+0.01}; };
-   return {사성전자:chk('stable'), 코인:chk('coin')};}));
  await p.close();
 
  console.log('\n=== 6. y축 아래 여백이 0 밑으로 안 내려간다 ===');

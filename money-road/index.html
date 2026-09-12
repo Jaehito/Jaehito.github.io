@@ -393,13 +393,24 @@
   /* 조기 상환 보너스는 레벨 보상과 나란히 뜨므로 금색으로 갈라둔다 — 현금이 들어온 줄이다 */
   .lv-gain.early{background:#fff9ec;} .lv-gain.early b{color:#8a5a00;}
 
-  /* 🛠 테스트 도구 — 상단 로고를 5번 연타하면 열린다. 평소엔 아무 흔적이 없다. */
-  .dv-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px;
-    padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:10px;}
-  .dv-title{font-size:16px; font-weight:900; color:var(--ink);}
-  .dv-ver{font-size:10.5px; font-weight:700; color:var(--gray3); font-variant-numeric:tabular-nums;}
-  .dv-scroll{max-height:56vh; overflow-y:auto; -webkit-overflow-scrolling:touch; text-align:left;}
-  .dv-sec{font-size:10.5px; font-weight:800; color:var(--gray3); letter-spacing:.04em; margin:12px 0 6px;}
+  /* 🛠 테스트 도구 — 상단 로고를 2번 연타하면 열린다. 평소엔 아무 흔적이 없다. */
+  .dv-top{display:flex; align-items:center; gap:8px; padding-bottom:9px;
+    border-bottom:1px solid var(--line);}
+  .dv-title{font-size:15px; font-weight:900; color:var(--ink);}
+  .dv-state{flex:1; font-size:10.5px; font-weight:700; color:var(--gray3);
+    font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;}
+  .dv-wipe{border:none; background:var(--red-weak); color:var(--red); font-size:13px;
+    width:28px; height:28px; border-radius:9px; cursor:pointer; flex-shrink:0;}
+  .dv-tabs{display:grid; grid-template-columns:repeat(5,1fr); gap:3px; margin:9px 0 10px;
+    background:var(--field); border-radius:11px; padding:3px;}
+  .dv-tab{border:none; background:transparent; font-family:inherit; font-size:10.5px;
+    font-weight:800; color:var(--gray2); padding:7px 2px; border-radius:8px; cursor:pointer;
+    line-height:1.25;}
+  .dv-tab b{display:block; font-size:13px; font-weight:400;}
+  .dv-tab.on{background:var(--card); color:var(--ink); box-shadow:var(--shadow);}
+  .dv-scroll{max-height:50vh; overflow-y:auto; -webkit-overflow-scrolling:touch; text-align:left;}
+  .dv-sec{font-size:10.5px; font-weight:800; color:var(--gray3); margin:11px 0 6px;}
   .dv-sec:first-child{margin-top:0;}
   .dv-row{display:flex; gap:5px; align-items:center; margin-bottom:5px;}
   .dv-row.wrap{flex-wrap:wrap;}
@@ -409,21 +420,66 @@
   .dv-btn.sm{flex:0 0 auto; padding:6px 9px; font-size:11px;}
   .dv-btn.sel{border-color:var(--blue); background:var(--blue-weak); color:var(--blue);}
   .dv-btn.danger{border-color:var(--red); background:var(--red-weak); color:var(--red);}
-  .dv-lab{font-size:11px; font-weight:800; color:var(--gray3); flex-shrink:0; margin-right:3px;}
-  .dv-val{flex:1; text-align:center; font-size:14px; font-weight:900; color:var(--ink); font-variant-numeric:tabular-nums;}
+  .dv-lab{font-size:11px; font-weight:800; color:var(--gray3); flex-shrink:0;}
+  .dv-val{flex:1; text-align:center; font-size:14px; font-weight:900; color:var(--ink);
+    font-variant-numeric:tabular-nums;}
   .dv-val small{display:block; font-size:10px; font-weight:700; color:var(--gray3);}
-  .dv-hint{font-weight:800; color:var(--blue); margin-left:6px;}
-  .dv-pn{flex:1; font-size:11px; font-weight:800; color:var(--gray); white-space:nowrap;
+  .dv-note{font-size:10.5px; font-weight:700; color:var(--gray3); margin-top:7px; line-height:1.55;}
+  .dv-note b{color:var(--blue);}
+  /* 탭 바닥 — 값을 만져도 새 판이라야 듣는 것이 있어서 재시작이 늘 손 닿는 곳에 있어야 한다 */
+  .dv-foot{display:flex; gap:5px; margin-top:11px; padding-top:9px;
+    border-top:1px solid var(--line);}
+  .dv-foot .dv-btn{font-size:11px; padding:9px 6px;}
+  .dv-foot .go{border-color:var(--blue); background:var(--blue-weak); color:var(--blue);}
+  /* 패턴 탭 */
+  .dv-mix{display:flex; gap:5px; margin-bottom:9px;}
+  .dv-mix span{flex:1; text-align:center; font-size:10.5px; font-weight:800; padding:6px 2px;
+    border-radius:8px; font-variant-numeric:tabular-nums;}
+  .dv-mix .s{background:#e9f9f0; color:#00a862;}
+  .dv-mix .m{background:#fff9ec; color:#8a5a00;}
+  .dv-mix .k{background:var(--red-weak); color:var(--red);}
+  .dv-mix .e{background:var(--blue-weak); color:var(--blue);}
+  .pat-row{display:flex; gap:8px; align-items:center; padding:6px; border-radius:11px;
+    border:1px solid var(--line); background:var(--card); margin-bottom:5px; cursor:pointer;}
+  .pat-row.forced{border-color:var(--blue); background:var(--blue-weak);}
+  .pat-chart{width:62px; height:38px; flex-shrink:0; background:var(--field); border-radius:7px;}
+  .pat-mid{flex:1; min-width:0;}
+  .pat-nm{font-size:12px; font-weight:900; color:var(--ink); white-space:nowrap;
     overflow:hidden; text-overflow:ellipsis;}
-  .dv-wv{width:34px; text-align:center; font-size:11.5px; font-weight:900; color:var(--ink);
+  .pat-nm em{font-style:normal; font-size:10px; font-weight:800; margin-left:4px;}
+  .pat-nm em.s{color:#00a862;} .pat-nm em.m{color:#c98600;} .pat-nm em.k{color:var(--red);}
+  .pat-w{display:flex; align-items:center; gap:3px; margin-top:3px;}
+  .pat-w button{border:1px solid var(--line); background:var(--field); color:var(--gray);
+    font-family:inherit; font-size:11px; font-weight:900; width:21px; height:21px;
+    border-radius:6px; cursor:pointer; padding:0; flex-shrink:0;}
+  .pat-w span{width:30px; text-align:center; font-size:11px; font-weight:900; color:var(--ink);
     font-variant-numeric:tabular-nums;}
-  .dv-wp{width:40px; text-align:right; font-size:10.5px; font-weight:800; color:var(--gray3);
+  .pat-w span.pat-early{width:auto; text-align:left; font-size:10px; font-weight:700;
+    color:var(--gray3); margin-left:5px; white-space:nowrap;}
+  .pat-early b{color:var(--blue);}
+  .pat-prob{width:44px; text-align:right; font-size:12px; font-weight:900; color:var(--gray);
+    font-variant-numeric:tabular-nums; flex-shrink:0;}
+  /* 📋 템플릿 화면 */
+  .dv-hd{display:flex; align-items:center; gap:8px; padding-bottom:9px;
+    border-bottom:1px solid var(--line); margin-bottom:10px;}
+  .dv-hd .bk{border:none; background:var(--field); color:var(--gray); font-size:13px;
+    width:28px; height:28px; border-radius:9px; cursor:pointer; flex-shrink:0;}
+  .dv-tplbox{width:100%; height:132px; border:1px solid var(--line); border-radius:10px;
+    background:var(--field); color:var(--gray); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:9.5px; line-height:1.5; padding:9px 10px; resize:none; margin-top:6px;
+    user-select:text; -webkit-user-select:text;}
+  .dv-tplbox.edit{border-color:var(--blue); background:var(--card); color:var(--ink);}
+  .dv-slot{display:flex; gap:5px; align-items:center; margin-bottom:5px;}
+  .dv-slot .nm{flex:1; font-size:11.5px; font-weight:800; color:var(--ink);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .dv-slot .nm small{display:block; font-size:9.5px; font-weight:700; color:var(--gray3);
     font-variant-numeric:tabular-nums;}
-  .dv-note{font-size:10.5px; font-weight:700; color:var(--gray3); margin-top:6px; line-height:1.5;}
+  .dv-slot.empty .nm{color:var(--gray3); font-weight:700;}
   .modal .ok.dark{background:linear-gradient(135deg,#4e5968,#191f28);}
   .modal .ok.danger{background:linear-gradient(135deg,#f04452,#ff6b78);}
   .modal .ok.ghost{margin-top:8px; background:var(--field); color:var(--gray); box-shadow:none;}
-  .brand{cursor:pointer;}
+  /* 2번 탭으로 도구를 여는 이상, 브라우저의 더블탭 확대와 겹친다. 확대만 막는다. */
+  .brand{cursor:pointer; touch-action:manipulation; -webkit-user-select:none; user-select:none;}
   .toast{position:fixed; left:50%; bottom:28px; translate:-50% 0; background:rgba(25,31,40,.92); color:#fff; font-size:13.5px; font-weight:700; padding:11px 18px; border-radius:14px; z-index:70; opacity:0; transition:.25s; pointer-events:none; max-width:88%; text-align:center;} .toast.on{opacity:1;}
 </style>
 </head>
@@ -513,7 +569,8 @@ const BROKE_LIMIT=MIN_BET;
    예전에는 레거시 "빚 청산"을 사서 3 → 2 → 1로 내렸다. 반복 플레이의 보상이 곧 난이도
    완화였던 셈이라 트리와 함께 걷어냈고, 이 축은 난이도 선택으로 옮긴다(높은 단계를
    고를수록 최소 배율이 올라간다). 그 전까지는 현행 1회차와 같은 3배 고정. */
-const MIN_LEVERAGE=3;
+let MIN_LEVERAGE=3;            /* 🛠 테스트 도구가 민다 */
+const MIN_LEVERAGE_BASE=MIN_LEVERAGE;
 function minLevOf(){return MIN_LEVERAGE;}
 function hasDebt(){return minLevOf()>1;}
 
@@ -579,7 +636,7 @@ function dev(base,mult){return Math.max(0.05,1+(base-1)*mult);}
    조정 손잡이는 이 숫자 하나다. 올리면(0.86~0.88) 트레일링이 다시 살아난다. */
 /* 🛠 테스트 도구가 밀어 넣는 값들. applyTierWeights가 부팅 시점에 DEV.w를 읽으므로
    선언이 여기(위쪽)에 있어야 한다 — 도구 쪽에 두면 TDZ에 걸린다. */
-const DEV={pat:null, w:null};
+const DEV={pat:null, w:null, tab:'pat', tpl:false, tplEdit:false};
 
 let DIP=0.84;
 const DIP_BASE=DIP;   // 테스트 도구가 DIP를 밀어도 돌아올 자리
@@ -829,7 +886,8 @@ const EXTEND_DAYS=3, EXTEND_COST_FRAC=0.25;   // 기한 연장: 자산의 25%로
      이월0 + 보너스 10%/일              클리어 14%
      이월0 + 보너스 10%/일 + 일수 +1    클리어 19%   ← 채택. 현행과 같은 난이도
    그래서 GATES 일수를 전부 +1 했다(12→13, 14→15, 16→17). */
-const EARLY_BONUS_RATE=0.10;
+let EARLY_BONUS_RATE=0.10;     /* 🛠 테스트 도구가 민다 */
+const EARLY_BONUS_BASE=EARLY_BONUS_RATE;
 
 /* ===== 난이도 단계 =====
    새 판을 시작할 때 고른다. 1단계만 열려 있고, 그 단계를 "완제"해야 다음이 열린다 —
@@ -863,7 +921,9 @@ function tierOf(){return TIERS[tierIdx()];}
 function gateOf(){return GATES[Math.min(GATES.length-1,S.gate||0)];}
 /* 관문 기한은 난이도가 깎는다. 4일 밑으로는 안 내린다 — 한 관문을 세 판에 넘으라는 건
    기한이 아니라 그냥 못 하는 판이 된다. */
-function gateDaysOf(i){return Math.max(4,GATES[Math.min(GATES.length-1,i)].days+tierOf().dday);}
+/* 🛠 테스트 도구가 일수를 통째로 밀 수 있게 사본을 둔다. GATES 원본은 기본값으로 남는다. */
+let GATE_DAYS=GATES.map(g=>g.days);
+function gateDaysOf(i){return Math.max(4,GATE_DAYS[Math.min(GATE_DAYS.length-1,i)]+tierOf().dday);}
 function gateDone(){return (S.gate||0)>=GATES.length;}
 /* 거래일 → 날짜. 주말은 건너뛴다(장이 안 서니까). */
 function dateOfDay(n){
@@ -1030,7 +1090,8 @@ function saveMeta(){if(WIPING)return;try{localStorage.setItem(META_KEY,JSON.stri
 
 /* run state */
 let S=null;
-const START_CASH=100000;   // 시드머니는 늘 여기서 시작한다(레거시 "시드머니" 강화 삭제)
+let START_CASH=100000;   // 시드머니는 늘 여기서 시작한다(레거시 "시드머니" 강화 삭제)
+const START_CASH_BASE=START_CASH;   /* 🛠 테스트 도구가 민다 */
 function newState(tier){
   const now=Date.now();
   const minLev=minLevOf();
@@ -2195,7 +2256,7 @@ function showIntroModal(){
    밸런스를 만질 때마다 새 판을 처음부터 굴려야 확인이 된다 — 해금 하나 보려고
    900 XP를 모으고, 마지막 상환 단계를 보려고 100판을 돌린다. 그걸 건너뛴다.
 
-   상단 로고를 1.5초 안에 5번 누르면 열린다. 평소 화면에는 아무 흔적이 없고,
+   상단 로고를 1.5초 안에 2번 누르면 열린다. 평소 화면에는 아무 흔적이 없고,
    모달 하나만 쓰므로 게임 구조도 안 건드린다.
 
    DEV.pat / DEV.dip 은 저장하지 않는다 — 새로고침하면 원래대로 돌아온다.
@@ -2210,6 +2271,7 @@ function devWipe(what){
     for(let i=0;i<localStorage.length;i++){
       const k=localStorage.key(i);
       if(!k||!/^moneyroad/.test(k))continue;
+      if(/devtpl/.test(k))continue;      // 맞춰둔 템플릿 슬롯은 살린다
       const isRun=/_run/.test(k), isMeta=/_meta/.test(k);
       if(what==='all' || (what==='run'&&isRun) || (what==='meta'&&isMeta))kill.push(k);
     }
@@ -2221,7 +2283,8 @@ function showDevWipeModal(){
   const unlocked=META_UNLOCKS.filter(u=>META.xp>=u.need).length;
   $('modalBox').innerHTML=`<div class="emo">🧹</div>
     <div class="tt">전부 지울까요?</div>
-    <div class="dc">진행 중인 판과 <b>모아둔 경험치·해금이 전부</b> 사라져요.<br>되돌릴 수 없어요.</div>
+    <div class="dc">진행 중인 판과 <b>모아둔 경험치·해금이 전부</b> 사라져요.<br>되돌릴 수 없어요.<br>
+      저장해둔 템플릿 슬롯은 남아요.</div>
     <div class="stat-grid">
       <div class="s"><div class="k">지금 XP</div><div class="v">${META.xp|0}</div></div>
       <div class="s"><div class="k">해금</div><div class="v">${unlocked}종</div></div></div>
@@ -2230,139 +2293,419 @@ function showDevWipeModal(){
   $('mOk').onclick=()=>devWipe('all');
   $('mNo').onclick=()=>{sfx.tap();showDevModal();};
 }
+
+/* ===== 도구 안에서 쓰는 것들 ===== */
+const DEV_TABS=[['pat','📊','패턴'],['meta','🧬','메타'],['start','🎬','시작'],
+                ['broke','💸','파산'],['bal','⚖️','밸런스']];
+const DEV_TIER_COLOR={strong:'#00a862', mid:'#c98600', weak:'#f04452'};
+const DEV_TIER_NAME={strong:['s','강세'], mid:['m','보통'], weak:['k','약세']};
+function devStock(){ return TRADE_STOCKS.find(x=>x.id===S.selectedStock)||TRADE_STOCKS[0]; }
+function devState(){ return `XP ${META.xp|0} · ${gateDone()?'완제':gateOf().n} · D-${S.daysLeft}`; }
+function devEsc(t){ return String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* 패턴별 "초반↑" — 라운드 25% 안에 +5% 이상 오르는 판의 비율. 지금 고치고 있는 그 숫자다.
+   경로를 실제로 뽑아서 세기 때문에 비싸다(10종 × 150판). 모양을 바꾸는 값이 그대로면
+   다시 안 센다 — 탭을 옮길 때마다 400ms씩 멈추면 도구를 못 쓴다. */
+let devEarlyMemo={k:'',v:null};
+function devEarly(){
+  const st=devStock(), k=st.id+'|'+DIP+'|'+MID_DIP;
+  if(devEarlyMemo.k===k)return devEarlyMemo.v;
+  const v={}, N=150, T=ticksOf(st);
+  PATTERNS.forEach(p=>{
+    let up=0;
+    for(let i=0;i<N;i++){
+      const a=p.gen(st,T), q=Math.floor((a.length-1)*0.25);
+      for(let j=1;j<=q;j++) if(a[j]>=1.05){ up++; break; }
+    }
+    v[p.id]=up/N;
+  });
+  devEarlyMemo={k,v};
+  return v;
+}
+
+/* 도감의 스파크라인은 "대표 모양" 하나라, 같은 패턴이 판마다 다르게 열린다는 걸
+   못 보여준다(midHead를 넣은 뒤로는 더 그렇다). 그래서 매번 세 번 뽑아 겹쳐 그린다. */
+function devChart(p){
+  const st=devStock(), T=ticksOf(st), W=76, H=40, N=52;
+  const runs=[]; let lo=1, hi=1;
+  for(let k=0;k<3;k++){
+    const a=p.gen(st,T), pts=[];
+    for(let i=0;i<N;i++){
+      const v=a[Math.round(i/(N-1)*(a.length-1))];
+      pts.push(v); if(v<lo)lo=v; if(v>hi)hi=v;
+    }
+    runs.push(pts);
+  }
+  const pad=(hi-lo)*0.08||0.02, top=hi+pad, bot=lo-pad;
+  const y=v=>((top-v)/(top-bot)*H).toFixed(1);
+  const c=DEV_TIER_COLOR[PATTERN_TIER[p.id]];
+  const line=(pts,op)=>`<polyline points="${pts.map((v,i)=>(i/(N-1)*W).toFixed(1)+','+y(v)).join(' ')}"`+
+    ` fill="none" stroke="${c}" stroke-width="1.6" stroke-linejoin="round" opacity="${op}"/>`;
+  return `<svg class="pat-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`+
+    `<line x1="0" x2="${W}" y1="${y(1)}" y2="${y(1)}" stroke="#b0b8c1" stroke-width="1" stroke-dasharray="2 2" opacity=".6"/>`+
+    line(runs[0],.95)+line(runs[1],.35)+line(runs[2],.35)+`</svg>`;
+}
+
+/* 📊 패턴 — 무엇이 몇 %로 나오는가. 제일 자주 보는 화면이라 첫 탭이다. */
+function devPatTab(){
+  const early=devEarly(), mix={strong:0,mid:0,weak:0};
+  PATTERNS.forEach(p=>mix[PATTERN_TIER[p.id]]+=p.weight);
+  const agg=PATTERNS.reduce((a,p)=>a+p.weight*early[p.id],0);
+  return `<div class="dv-mix">
+      <span class="s">강세 ${(mix.strong*100).toFixed(0)}%</span>
+      <span class="m">보통 ${(mix.mid*100).toFixed(0)}%</span>
+      <span class="k">약세 ${(mix.weak*100).toFixed(0)}%</span>
+      <span class="e">초반↑ ${(agg*100).toFixed(0)}%</span></div>
+    ${PATTERNS.map((p,i)=>{
+      const w=(DEV.w&&DEV.w[p.id]!==undefined)?DEV.w[p.id]:BASE_WEIGHTS[i];
+      const tn=DEV_TIER_NAME[PATTERN_TIER[p.id]], e=(early[p.id]*100).toFixed(0);
+      return `<div class="pat-row ${DEV.pat===p.id?'forced':''}" data-patrow="${p.id}">
+        ${devChart(p)}
+        <div class="pat-mid">
+          <div class="pat-nm">${p.emo} ${p.name}<em class="${tn[0]}">${tn[1]}</em></div>
+          <div class="pat-w">
+            <button data-w="${p.id}" data-d="-0.02">−</button>
+            <span>${w.toFixed(2)}</span>
+            <button data-w="${p.id}" data-d="0.02">+</button>
+            <span class="pat-early">초반↑ ${early[p.id]>=0.1?`<b>${e}%</b>`:`${e}%`}</span>
+          </div>
+        </div>
+        <div class="pat-prob">${(p.weight*100).toFixed(1)}%</div>
+      </div>`;}).join('')}
+    <div class="dv-row"><button class="dv-btn" data-redraw="1">그림 다시 뽑기</button></div>
+    <div class="dv-note">행을 누르면 <b>다음 판에 그 패턴이 나와요.</b> 그림은 실제로 뽑은 경로 3개예요.<br>
+      가중치와 확률이 다른 건 난이도 단계가 강세를 깎고 약세를 얹기 때문이에요.</div>`;
+}
+
+/* 🧬 메타 — 판을 넘어 남는 것 */
+function devMetaTab(){
+  const done=META_UNLOCKS.filter(u=>(META.xp|0)>=u.need).length;
+  return `<div class="dv-sec">경험치 — 지금 ${META.xp|0}</div>
+    <div class="dv-row">
+      <button class="dv-btn" data-xp="0">0</button>
+      <button class="dv-btn" data-xp="400">400</button>
+      <button class="dv-btn" data-xp="900">900</button>
+      <button class="dv-btn" data-xp="+100">+100</button></div>
+    <div class="dv-sec">해금 — ${done} / ${META_UNLOCKS.length}</div>
+    <div class="dv-row wrap">${META_UNLOCKS.map(u=>
+      `<button class="dv-btn sm ${(META.xp|0)>=u.need?'sel':''}" data-xp="${u.need}">${u.emo} ${u.name}</button>`).join('')}</div>
+    <div class="dv-note">칩을 누르면 그 해금까지 XP가 채워져요.</div>
+    <div class="dv-sec">난이도 단계</div>
+    <div class="dv-row wrap">${TIERS.map((t,i)=>
+      `<button class="dv-btn sm ${tierIdx()===i?'sel':''}" data-tier="${i}">${i+1} ${t.n}</button>`).join('')}</div>
+    <div class="dv-row"><button class="dv-btn danger" data-wipe="meta">메타만 초기화</button></div>`;
+}
+
+/* 🎬 시작 — 판을 어디서부터 */
+function devStartTab(){
+  const maxLev=leverageMultOf();
+  return `<div class="dv-sec">시작 현금 — 새 판 ${fmtWon(START_CASH)} · 지금 ${fmtWon(S.cash)}</div>
+    <div class="dv-row">
+      ${[[100000,'10만'],[1000000,'100만'],[10000000,'1000만']].map(([v,n])=>
+        `<button class="dv-btn ${START_CASH===v?'sel':''}" data-scash="${v}">${n}</button>`).join('')}</div>
+    <div class="dv-row">
+      <button class="dv-btn" data-cash="10">지금 현금 ×10</button>
+      <button class="dv-btn" data-cash="100">×100</button>
+      <button class="dv-btn" data-goal="1">목표 −1만</button></div>
+    <div class="dv-sec">레버리지 — 최소 ${MIN_LEVERAGE}배 · 최대 ${maxLev}배</div>
+    <div class="dv-row"><span class="dv-lab">최소</span>
+      ${[1,2,3,5].map(m=>`<button class="dv-btn sm ${MIN_LEVERAGE===m?'sel':''}" data-minlev="${m}">${m}</button>`).join('')}</div>
+    <div class="dv-row"><span class="dv-lab">최대</span>
+      ${[3,5,10].map(m=>`<button class="dv-btn sm ${maxLev===m?'sel':''}" data-maxlev="${m}">${m}</button>`).join('')}</div>
+    <div class="dv-sec">상환 단계 — ${gateDone()?'완제':gateOf().n} · D-${S.daysLeft}</div>
+    <div class="dv-row">
+      <button class="dv-btn" data-gate="next">다음 단계</button>
+      <button class="dv-btn" data-gate="last">완제 직전</button>
+      <button class="dv-btn" data-days="1">D-1</button></div>
+    <div class="dv-sec">거래일 — ${GATE_DAYS.join('·')}</div>
+    <div class="dv-row">
+      <button class="dv-btn" data-gdays="-3">−3</button>
+      <button class="dv-btn" data-gdays="-1">−1</button>
+      <span class="dv-val">${GATE_DAYS[0]}<small>1차 기준</small></span>
+      <button class="dv-btn" data-gdays="1">+1</button>
+      <button class="dv-btn" data-gdays="3">+3</button></div>
+    <div class="dv-row"><button class="dv-btn danger" data-wipe="run">판만 초기화</button></div>
+    <div class="dv-note">시작 현금·레버리지는 <b>새 판이라야</b> 들어요 — 아래 ▶ 재시작을 눌러주세요.</div>`;
+}
+
+/* 💸 파산 — 지는 길 확인. 만들기가 제일 번거로운데 확인할 일은 잦다. */
+function devBrokeTab(){
+  const lev=Math.max(minLevOf(),S.betLeverage||minLevOf());
+  const lo=liqMultOf(lev,1), hi=liqMultOf(lev,-1);
+  return `<div class="dv-sec">지금 상태</div>
+    <div class="dv-row"><span class="dv-lab">현금</span>
+      <span class="dv-val">${fmtWon(S.cash)}<small>최소 베팅 ${fmtWon(MIN_BET)} · 이 밑이면 파산</small></span></div>
+    <div class="dv-sec">파산 만들기</div>
+    <div class="dv-row">
+      <button class="dv-btn danger" data-broke="now">즉시 파산</button>
+      <button class="dv-btn" data-broke="edge">최소 베팅만 남기기</button></div>
+    <div class="dv-sec">청산선 — ${lev}배 기준</div>
+    <div class="dv-row">
+      <span class="dv-val">${lo.toFixed(2)}<small>롱 ${Math.round((lo-1)*100)}%에서 청산</small></span>
+      <span class="dv-val">${hi.toFixed(2)}<small>숏 +${Math.round((hi-1)*100)}%에서 청산</small></span></div>
+    <div class="dv-sec">끝나는 화면</div>
+    <div class="dv-row">
+      <button class="dv-btn" data-screen="default">반대매매</button>
+      <button class="dv-btn" data-screen="settle">정산 화면</button></div>
+    <div class="dv-note">이 탭은 화면을 띄우는 동작뿐이라 되돌릴 값이 없어요 — 템플릿에도 안 담겨요.</div>`;
+}
+
+/* ⚖️ 밸런스 — 숫자 손잡이 */
+function devBalTab(){
+  const lv=S.upg.infoLv||0;
+  return `<div class="dv-sec">보통 등급이 눌리며 여는 비율 (MID_DIP)</div>
+    <div class="dv-row">
+      <button class="dv-btn" data-mid="-0.1">−0.1</button>
+      <span class="dv-val">${MID_DIP.toFixed(1)}<small>${MID_DIP<=0?'전부 오르며 연다':'1.0이 기본'}</small></span>
+      <button class="dv-btn" data-mid="0.1">+0.1</button></div>
+    <div class="dv-sec">급락 바닥 (DIP)</div>
+    <div class="dv-row">
+      <button class="dv-btn" data-dip="-0.02">−0.02</button>
+      <span class="dv-val">${DIP.toFixed(2)}<small>3배 ${Math.round((DIP-1)*300)}%</small></span>
+      <button class="dv-btn" data-dip="0.02">+0.02</button></div>
+    <div class="dv-sec">신호 적중률</div>
+    <div class="dv-row">${INFO_ACC.map((a,i)=>
+      `<button class="dv-btn ${lv===i?'sel':''}" data-acc="${i}">${Math.round(a*100)}%</button>`).join('')}</div>
+    <div class="dv-sec">조기 상환 보너스 — 남은 1일당</div>
+    <div class="dv-row">
+      <button class="dv-btn" data-bonus="-0.05">−5%p</button>
+      <span class="dv-val">${Math.round(EARLY_BONUS_RATE*100)}%</span>
+      <button class="dv-btn" data-bonus="0.05">+5%p</button></div>
+    <div class="dv-note">여기 값들은 저장 안 해요 — 새로고침하면 돌아와요.<br>
+      기본: MID_DIP ${MID_DIP_BASE.toFixed(1)} · DIP ${DIP_BASE.toFixed(2)} ·
+      적중률 ${Math.round(INFO_ACC[0]*100)}% · 보너스 ${Math.round(EARLY_BONUS_BASE*100)}%</div>`;
+}
+
+/* 그 탭이 만지는 값만 되돌린다. 다른 탭에서 맞춰둔 건 안 건드린다 — 그게 이 버튼의 요지다. */
+function devTabReset(){
+  if(DEV.tab==='pat'){ DEV.w=null; DEV.pat=null; applyTierWeights(); }
+  else if(DEV.tab==='meta'){ META.xp=0; saveMeta(); S.tier=0; applyTierWeights();
+    S.daysLeft=gateDaysOf(S.gate||0); }
+  else if(DEV.tab==='start'){ START_CASH=START_CASH_BASE; MIN_LEVERAGE=MIN_LEVERAGE_BASE;
+    S.upg.leverageLv=START_LEVERAGE_LV; GATE_DAYS=GATES.map(g=>g.days);
+    S.daysLeft=gateDaysOf(S.gate||0); }
+  else if(DEV.tab==='bal'){ MID_DIP=MID_DIP_BASE; DIP=DIP_BASE; S.upg.infoLv=0;
+    EARLY_BONUS_RATE=EARLY_BONUS_BASE; }
+}
+
+/* ===== 📋 템플릿 =====
+   앱에서 값을 맞추고 JSON으로 넘기면 그대로 코드에 박는다. 이게 이 도구의 목적이다.
+   측정값(초반↑ 같은 것)은 안 담는다 — 받아서 직접 다시 재는 쪽이 안전하다. */
+const DEV_TPL_KEY='moneyroad2_devtpl_v1';
+function devTplData(){
+  const w={};
+  PATTERNS.forEach((p,i)=>w[p.id]=+((DEV.w&&DEV.w[p.id]!==undefined)?DEV.w[p.id]:BASE_WEIGHTS[i]).toFixed(3));
+  return {v:1, 패턴:w, MID_DIP:+MID_DIP.toFixed(2), DIP:+DIP.toFixed(2),
+    신호적중률:+infoAccOf().toFixed(2), 조기상환:+EARLY_BONUS_RATE.toFixed(2),
+    레버리지:{최소:MIN_LEVERAGE, 최대:leverageMultOf()},
+    시작현금:START_CASH, 거래일:GATE_DAYS.slice()};
+}
+function devTplApply(o){
+  if(!o||typeof o!=='object'||Array.isArray(o))return '읽을 수 없는 형식이에요';
+  if(o.패턴&&typeof o.패턴==='object'){
+    DEV.w={};
+    PATTERNS.forEach((p,i)=>DEV.w[p.id]=typeof o.패턴[p.id]==='number'?o.패턴[p.id]:BASE_WEIGHTS[i]);
+    applyTierWeights();
+  }
+  if(typeof o.MID_DIP==='number')MID_DIP=o.MID_DIP;
+  if(typeof o.DIP==='number')DIP=o.DIP;
+  if(typeof o.신호적중률==='number'){
+    let best=0;
+    INFO_ACC.forEach((a,i)=>{ if(Math.abs(a-o.신호적중률)<Math.abs(INFO_ACC[best]-o.신호적중률))best=i; });
+    S.upg.infoLv=best;
+  }
+  if(typeof o.조기상환==='number')EARLY_BONUS_RATE=o.조기상환;
+  if(o.레버리지&&typeof o.레버리지==='object'){
+    if(typeof o.레버리지.최소==='number')MIN_LEVERAGE=o.레버리지.최소;
+    const i=LEVERAGE_MULTS.indexOf(o.레버리지.최대);
+    if(i>=0)S.upg.leverageLv=i;
+  }
+  if(typeof o.시작현금==='number')START_CASH=o.시작현금;
+  if(Array.isArray(o.거래일))GATE_DAYS=GATES.map((g,i)=>+o.거래일[i]||g.days);
+  S.daysLeft=gateDaysOf(S.gate||0);
+  return '';
+}
+/* 슬롯은 전부 초기화에서 빠진다(devWipe가 devtpl 키를 건너뛴다). 맞춰둔 값을
+   실수로 잃으면 그 시간이 통째로 날아가니까. */
+function devSlots(){ try{ const a=JSON.parse(localStorage.getItem(DEV_TPL_KEY)); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function devSlotsSave(a){ try{ localStorage.setItem(DEV_TPL_KEY,JSON.stringify(a)); }catch(e){} }
+
+function devTplScreen(){
+  const js=JSON.stringify(devTplData(),null,1);
+  const slots=devSlots(), rows=[];
+  for(let i=0;i<3;i++){
+    const s=slots[i];
+    rows.push(s
+      ? `<div class="dv-slot"><span class="nm">${devEsc(s.name)}
+           <small>MID_DIP ${s.data.MID_DIP} · DIP ${s.data.DIP} · ${devEsc(s.at||'')}</small></span>
+         <button class="dv-btn sm" data-slotload="${i}">불러오기</button>
+         <button class="dv-btn sm danger" data-slotdel="${i}">✕</button></div>`
+      : `<div class="dv-slot empty"><span class="nm">빈 슬롯</span>
+         <button class="dv-btn sm" data-slotsave="${i}">지금 설정 저장</button></div>`);
+  }
+  return `<div class="dv-hd"><button class="bk" data-tplback="1">←</button>
+      <span class="dv-title">📋 템플릿</span></div>
+    <div class="dv-sec">지금 설정</div>
+    <textarea class="dv-tplbox ${DEV.tplEdit?'edit':''}" id="dvTpl" ${DEV.tplEdit?'':'readonly'}>${devEsc(js)}</textarea>
+    <div class="dv-row">${DEV.tplEdit
+      ? `<button class="dv-btn" data-tpledit="0">취소</button><button class="dv-btn go" data-tplok="1">적용</button>`
+      : `<button class="dv-btn go" data-tplsel="1">전체 선택</button><button class="dv-btn" data-tpledit="1">불러오기</button>`}</div>
+    <div class="dv-note">${DEV.tplEdit
+      ? '통째로 지우고 받은 JSON을 붙여넣은 뒤 <b>적용</b>을 눌러주세요.'
+      : '길게 눌러 복사한 뒤 그대로 넘겨주시면 코드에 박아 드려요.'}</div>
+    <div class="dv-sec">저장 슬롯</div>
+    ${rows.join('')}
+    <div class="dv-note">슬롯은 <b>전부 초기화에도 안 지워져요</b> — 맞춰둔 값을 잃으면 안 되니까요.</div>`;
+}
+
 function showDevModal(){
-  const pats=PATTERNS.map(p=>
-    `<button class="dv-btn sm ${DEV.pat===p.id?'sel':''}" data-pat="${p.id}">${p.emo}${p.name}</button>`).join('');
+  const body = DEV.tpl ? devTplScreen()
+    : DEV.tab==='meta'  ? devMetaTab()
+    : DEV.tab==='start' ? devStartTab()
+    : DEV.tab==='broke' ? devBrokeTab()
+    : DEV.tab==='bal'   ? devBalTab()
+    :                     devPatTab();
+  const tabs = DEV.tpl ? '' : `<div class="dv-tabs">${DEV_TABS.map(([id,e,n])=>
+    `<button class="dv-tab ${DEV.tab===id?'on':''}" data-tab="${id}"><b>${e}</b>${n}</button>`).join('')}</div>`;
+  /* 파산 탭은 값이 없어서 되돌릴 것도 없다 — 버튼을 두면 아무 일도 안 하는 버튼이 된다. */
+  const foot = DEV.tpl ? '' : `<div class="dv-foot">${
+    DEV.tab==='broke' ? '' : `<button class="dv-btn" data-tabreset="1">↺ 이 탭 기본값</button>`
+  }<button class="dv-btn go" data-restart="1">▶ 재시작</button></div>`;
   $('modalBox').innerHTML=`
-    <div class="dv-head"><span class="dv-title">🛠 테스트 도구</span>
-      <span class="dv-ver">XP ${META.xp|0} · ${gateDone()?'완제':gateOf().n} · D-${S.daysLeft}</span></div>
-    <div class="dv-scroll">
-      <div class="dv-sec">저장</div>
-      <div class="dv-row">
-        <button class="dv-btn danger" data-wipe="all">전부 초기화</button>
-        <button class="dv-btn" data-wipe="run">판만</button>
-        <button class="dv-btn" data-wipe="meta">메타만</button>
-      </div>
-
-      <div class="dv-sec">이 판 — 현금 ${fmtWon(S.cash)}</div>
-      <div class="dv-row">
-        <button class="dv-btn" data-cash="10">현금 ×10</button>
-        <button class="dv-btn" data-cash="100">×100</button>
-        <button class="dv-btn" data-goal="1">목표 −1만</button>
-      </div>
-      <div class="dv-row">
-        <button class="dv-btn" data-gate="next">다음 상환</button>
-        <button class="dv-btn" data-gate="last">완제 직전</button>
-        <button class="dv-btn" data-days="1">D-1</button>
-      </div>
-
-      <div class="dv-sec">메타</div>
-      <div class="dv-row">
-        <button class="dv-btn" data-xp="0">XP 0</button>
-        <button class="dv-btn" data-xp="400">400</button>
-        <button class="dv-btn" data-xp="900">900</button>
-        <button class="dv-btn" data-xp="+100">+100</button>
-      </div>
-      <div class="dv-row"><span class="dv-lab">난이도</span>
-        ${TIERS.map((t,i)=>`<button class="dv-btn sm ${tierIdx()===i?'sel':''}" data-tier="${i}">${i+1}</button>`).join('')}
-      </div>
-
-      <div class="dv-sec">다음 판 패턴 강제</div>
-      <div class="dv-row wrap">${pats}
-        <button class="dv-btn sm ${DEV.pat?'':'sel'}" data-pat="">끄기</button></div>
-
-      <div class="dv-sec">패턴 가중치 <span class="dv-hint" id="dvEarly">…</span></div>
-      ${PATTERNS.map((p,i)=>{
-        const w=(DEV.w&&DEV.w[p.id]!==undefined)?DEV.w[p.id]:BASE_WEIGHTS[i];
-        return `<div class="dv-row">
-          <span class="dv-pn">${p.emo} ${p.name}</span>
-          <button class="dv-btn sm" data-w="${p.id}" data-d="-0.02">−</button>
-          <span class="dv-wv">${w.toFixed(2)}</span>
-          <button class="dv-btn sm" data-w="${p.id}" data-d="0.02">+</button>
-          <span class="dv-wp">${(p.weight*100).toFixed(1)}%</span>
-        </div>`;}).join('')}
-      <div class="dv-row"><button class="dv-btn" data-wreset="1">가중치 기본값으로</button></div>
-
-      <div class="dv-sec">보통 등급이 눌리며 여는 비율</div>
-      <div class="dv-row">
-        <button class="dv-btn" data-mid="-0.1">−0.1</button>
-        <span class="dv-val">${MID_DIP.toFixed(1)}<small>${MID_DIP<=0?'전부 오르며 연다':'1.0이 기본'}</small></span>
-        <button class="dv-btn" data-mid="0.1">+0.1</button>
-      </div>
-
-      <div class="dv-sec">급락 바닥 (DIP)</div>
-      <div class="dv-row">
-        <button class="dv-btn" data-dip="-0.02">−0.02</button>
-        <span class="dv-val">${DIP.toFixed(2)}<small>3배 ${Math.round((DIP-1)*300)}%</small></span>
-        <button class="dv-btn" data-dip="0.02">+0.02</button>
-      </div>
-      <div class="dv-note">가중치·눌림 비율·DIP·패턴 강제는 저장 안 해요 — 새로고침하면 돌아와요.<br>기본값: DIP ${DIP_BASE.toFixed(2)} · 눌림 ${MID_DIP_BASE.toFixed(1)}</div>
-    </div>
+    <div class="dv-top"><span class="dv-title">🛠 테스트 도구</span>
+      <span class="dv-state">${devState()}</span>
+      <button class="dv-wipe" data-tpl="1">📋</button>
+      <button class="dv-wipe" data-wipe="all">🧹</button></div>
+    ${tabs}
+    <div class="dv-scroll">${body}</div>
+    ${foot}
     <button class="ok dark" id="mOk">닫기</button>`;
   $('modal').classList.add('on');
+  bindDevModal();
+}
+
+function bindDevModal(){
   const box=$('modalBox');
+  const q=(sel,fn)=>box.querySelectorAll(sel).forEach(fn);
   const again=()=>{ saveRun(); render(); showDevModal(); };
-  box.querySelectorAll('[data-wipe]').forEach(b=>b.onclick=()=>{ sfx.tap();
-    const w=b.dataset.wipe;
-    if(w==='all')showDevWipeModal(); else devWipe(w); });
-  box.querySelectorAll('[data-cash]').forEach(b=>b.onclick=()=>{ sfx.tap();
+
+  q('[data-tab]',b=>b.onclick=()=>{ sfx.tap(); DEV.tab=b.dataset.tab; showDevModal(); });
+  q('[data-tpl]',b=>b.onclick=()=>{ sfx.tap(); DEV.tpl=true; DEV.tplEdit=false; showDevModal(); });
+  q('[data-tplback]',b=>b.onclick=()=>{ sfx.tap(); DEV.tpl=false; DEV.tplEdit=false; showDevModal(); });
+  q('[data-wipe]',b=>b.onclick=()=>{ sfx.tap();
+    const w=b.dataset.wipe; if(w==='all')showDevWipeModal(); else devWipe(w); });
+  q('[data-tabreset]',b=>b.onclick=()=>{ sfx.tap(); devTabReset(); again(); });
+  q('[data-restart]',b=>b.onclick=()=>{ sfx.pay();
+    const t=tierIdx(); startRunAt(t);
+    $('modal').classList.remove('on'); render(); toast('지금 설정으로 새 판을 열었어요'); });
+
+  /* 패턴 */
+  q('[data-patrow]',r=>r.onclick=e=>{
+    if(e.target.closest('.pat-w'))return;          // ± 는 강제 선택이 아니다
+    sfx.tap(); const id=r.dataset.patrow;
+    DEV.pat = DEV.pat===id ? null : id; showDevModal(); });
+  q('[data-w]',b=>b.onclick=()=>{ sfx.tap();
+    const id=b.dataset.w;
+    if(!DEV.w){ DEV.w={}; PATTERNS.forEach((p,k)=>DEV.w[p.id]=BASE_WEIGHTS[k]); }
+    DEV.w[id]=Math.max(0,Math.min(0.6,+(DEV.w[id]+ +b.dataset.d).toFixed(2)));
+    applyTierWeights(); showDevModal(); });
+  q('[data-redraw]',b=>b.onclick=()=>{ sfx.tap(); showDevModal(); });
+
+  /* 메타 */
+  q('[data-xp]',b=>b.onclick=()=>{ sfx.tap();
+    const v=b.dataset.xp;
+    META.xp = v[0]==='+' ? (META.xp|0)+ +v.slice(1) : +v;
+    saveMeta(); again(); });
+  q('[data-tier]',b=>b.onclick=()=>{ sfx.tap();
+    S.tier=+b.dataset.tier; applyTierWeights(); S.daysLeft=gateDaysOf(S.gate||0); again(); });
+
+  /* 시작 */
+  q('[data-scash]',b=>b.onclick=()=>{ sfx.tap(); START_CASH=+b.dataset.scash; showDevModal(); });
+  q('[data-cash]',b=>b.onclick=()=>{ sfx.tap();
     S.cash=Math.round(S.cash*(+b.dataset.cash));
     S.peakCash=Math.max(S.peakCash||0,S.cash); setBet(S.betAmount); again(); });
-  box.querySelectorAll('[data-goal]').forEach(b=>b.onclick=()=>{ sfx.tap();
+  q('[data-goal]',b=>b.onclick=()=>{ sfx.tap();
     if(!gateDone()){ S.cash=Math.max(MIN_BET,gateOf().goal-10000);
       S.peakCash=Math.max(S.peakCash||0,S.cash); setBet(S.betAmount); } again(); });
-  box.querySelectorAll('[data-gate]').forEach(b=>b.onclick=()=>{ sfx.tap();
+  q('[data-minlev]',b=>b.onclick=()=>{ sfx.tap();
+    MIN_LEVERAGE=+b.dataset.minlev;
+    S.betLeverage=Math.max(MIN_LEVERAGE,S.betLeverage||MIN_LEVERAGE); again(); });
+  q('[data-maxlev]',b=>b.onclick=()=>{ sfx.tap();
+    const i=LEVERAGE_MULTS.indexOf(+b.dataset.maxlev);
+    if(i>=0)S.upg.leverageLv=i; again(); });
+  q('[data-gate]',b=>b.onclick=()=>{ sfx.tap();
     if(b.dataset.gate==='last'){ S.gate=GATES.length-1; S.level=GATES.length; }
     else S.gate=Math.min(GATES.length-1,(S.gate||0)+1);
     S.daysLeft=gateDaysOf(S.gate);
     S.cash=Math.max(MIN_BET,Math.round(GATES[S.gate].goal*0.5));
     S.peakCash=Math.max(S.peakCash||0,S.cash); setBet(S.betAmount); again(); });
-  box.querySelectorAll('[data-days]').forEach(b=>b.onclick=()=>{ sfx.tap();
-    S.daysLeft=+b.dataset.days; again(); });
-  box.querySelectorAll('[data-xp]').forEach(b=>b.onclick=()=>{ sfx.tap();
-    const v=b.dataset.xp;
-    META.xp = v[0]==='+' ? (META.xp|0)+ +v.slice(1) : +v;
-    saveMeta(); again(); });
-  box.querySelectorAll('[data-tier]').forEach(b=>b.onclick=()=>{ sfx.tap();
-    S.tier=+b.dataset.tier; applyTierWeights(); S.daysLeft=gateDaysOf(S.gate||0); again(); });
-  box.querySelectorAll('[data-pat]').forEach(b=>b.onclick=()=>{ sfx.tap();
-    DEV.pat=b.dataset.pat||null; showDevModal(); });
-  box.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{ sfx.tap();
-    const id=b.dataset.w, i=PATTERNS.findIndex(p=>p.id===id);
-    if(!DEV.w){ DEV.w={}; PATTERNS.forEach((p,k)=>DEV.w[p.id]=BASE_WEIGHTS[k]); }
-    DEV.w[id]=Math.max(0,Math.min(0.6,+(DEV.w[id]+ +b.dataset.d).toFixed(2)));
-    applyTierWeights(); showDevModal(); });
-  box.querySelectorAll('[data-wreset]').forEach(b=>b.onclick=()=>{ sfx.tap();
-    DEV.w=null; applyTierWeights(); showDevModal(); });
-  box.querySelectorAll('[data-mid]').forEach(b=>b.onclick=()=>{ sfx.tap();
+  q('[data-days]',b=>b.onclick=()=>{ sfx.tap(); S.daysLeft=+b.dataset.days; again(); });
+  q('[data-gdays]',b=>b.onclick=()=>{ sfx.tap();
+    const d=+b.dataset.gdays;
+    GATE_DAYS=GATE_DAYS.map(x=>Math.max(1,x+d));
+    S.daysLeft=gateDaysOf(S.gate||0); again(); });
+
+  /* 파산 */
+  q('[data-broke]',b=>b.onclick=()=>{ sfx.tap();
+    const now=b.dataset.broke==='now';
+    S.cash = now ? 0 : MIN_BET;
+    S.betAmount=MIN_BET; saveRun(); render();
+    if(now){ $('modal').classList.remove('on'); checkBankrupt(); }
+    else showDevModal(); });
+  q('[data-screen]',b=>b.onclick=()=>{ sfx.tap();
+    $('modal').classList.remove('on');
+    if(b.dataset.screen==='default')showDefaultModal();
+    else showSettleModal(settleOf(0)); });
+
+  /* 밸런스 */
+  q('[data-mid]',b=>b.onclick=()=>{ sfx.tap();
     MID_DIP=Math.max(0,Math.min(1.5,+(MID_DIP + +b.dataset.mid).toFixed(1))); showDevModal(); });
-  /* 초반 25%에 +5% 이상 오르는 판의 비율 — 지금 가중치로 실제 경로를 뽑아 센다 */
-  (()=>{
-    const st=TRADE_STOCKS.find(x=>x.id===S.selectedStock)||TRADE_STOCKS[0];
-    const tot=PATTERNS.reduce((a,p)=>a+p.weight,0);
-    let up=0; const N=400;
-    for(let k=0;k<N;k++){
-      let r=Math.random()*tot,a=0,pk=PATTERNS[0];
-      for(const p of PATTERNS){ a+=p.weight; if(r<=a){pk=p;break;} }
-      const arr=pk.gen(st,ticksOf(st)), q=Math.floor((arr.length-1)*0.25);
-      for(let i=1;i<=q;i++) if(arr[i]>=1.05){ up++; break; }
-    }
-    if($('dvEarly'))$('dvEarly').textContent=`초반 상승 ${(up/N*100).toFixed(0)}%`;
-  })();
-  box.querySelectorAll('[data-dip]').forEach(b=>b.onclick=()=>{ sfx.tap();
+  q('[data-dip]',b=>b.onclick=()=>{ sfx.tap();
     DIP=Math.max(0.60,Math.min(0.98,+(DIP + +b.dataset.dip).toFixed(2))); showDevModal(); });
+  q('[data-acc]',b=>b.onclick=()=>{ sfx.tap(); S.upg.infoLv=+b.dataset.acc; again(); });
+  q('[data-bonus]',b=>b.onclick=()=>{ sfx.tap();
+    EARLY_BONUS_RATE=Math.max(0,Math.min(0.5,+(EARLY_BONUS_RATE + +b.dataset.bonus).toFixed(2)));
+    showDevModal(); });
+
+  /* 템플릿 */
+  q('[data-tplsel]',b=>b.onclick=()=>{ sfx.tap();
+    const t=$('dvTpl'); t.focus(); t.setSelectionRange(0,t.value.length);
+    toast('길게 눌러 복사하세요'); });
+  q('[data-tpledit]',b=>b.onclick=()=>{ sfx.tap();
+    DEV.tplEdit=b.dataset.tpledit==='1'; showDevModal(); });
+  q('[data-tplok]',b=>b.onclick=()=>{ sfx.tap();
+    let o=null;
+    try{ o=JSON.parse($('dvTpl').value); }catch(e){ toast('JSON을 못 읽었어요'); return; }
+    const err=devTplApply(o);
+    if(err){ toast(err); return; }
+    DEV.tplEdit=false; toast('설정을 불러왔어요'); again(); });
+  q('[data-slotsave]',b=>b.onclick=()=>{ sfx.tap();
+    const i=+b.dataset.slotsave, a=devSlots();
+    const nm=(prompt('이름을 붙여주세요','안 '+(i+1))||'').trim();
+    if(!nm)return;
+    const d=new Date();
+    a[i]={name:nm.slice(0,20), at:`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`, data:devTplData()};
+    devSlotsSave(a); showDevModal(); });
+  q('[data-slotload]',b=>b.onclick=()=>{ sfx.tap();
+    const s=devSlots()[+b.dataset.slotload];
+    if(!s)return;
+    const err=devTplApply(s.data);
+    toast(err||`"${s.name}" 불러왔어요`); again(); });
+  q('[data-slotdel]',b=>b.onclick=()=>{ sfx.tap();
+    const a=devSlots(); a[+b.dataset.slotdel]=null; devSlotsSave(a); showDevModal(); });
+
   $('mOk').onclick=()=>{ sfx.tap(); $('modal').classList.remove('on'); saveRun(); render(); };
 }
-/* 로고 연타 — 5번을 1.5초 "안에 전부" 눌러야 한다. 탭 간격만 재면 느긋하게
-   눌러도 계속 쌓여서 실수로 열릴 수 있다. 연타 전체를 창 안에 가둔다. */
+/* 로고 연타 — 2번을 1.5초 "안에 전부" 눌러야 한다. 탭 간격만 재면 느긋하게
+   눌러도 계속 쌓여서 실수로 열릴 수 있다. 연타 전체를 창 안에 가둔다.
+   2번은 브라우저 더블탭 확대와 겹치므로 .brand에 touch-action:manipulation을 걸어뒀다. */
 let devTaps=0, devFirst=0;
 $('brandTap').onclick=()=>{
   const now=Date.now();
   if(now-devFirst>1500){ devFirst=now; devTaps=1; } else devTaps++;
-  if(devTaps>=5){ devTaps=0; devFirst=0;
+  if(devTaps>=2){ devTaps=0; devFirst=0;
     if(!$('modal').classList.contains('on') && !S.activeRound){ sfx.pay(); showDevModal(); } }
 };
-
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),1600);}
 
 $('muteBtn').onclick=()=>{META.mute=!META.mute;saveMeta();$('muteBtn').textContent=META.mute?'🔇':'🔊';if(!META.mute)sfx.tap();};

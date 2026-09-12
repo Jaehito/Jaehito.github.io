@@ -4,7 +4,8 @@
      1) 평소 화면에 흔적이 없다
      2) 한 번 누르거나 느긋하게 두 번 눌러서는 안 열린다
      3) 빠른 2연타로 열리고, 다섯 탭이 다 있다
-     4~8) 탭마다 실제로 게임 값을 움직이는가
+     4~8) 탭마다 실제로 게임 값을 움직이는가 — 🧬 메타는 XP를 꽂는 곳이 아니라
+          XP 공식·해금 문턱을 고치는 곳이고, XP·해금·난이도는 🎬 시작으로 옮겼다
      9) ↺ 이 탭 기본값이 그 탭만 되돌리는가 — 다른 탭에서 맞춘 값을 지우면
         "몇 시간 맞춘 걸 한 번에 날리는 버튼"이 된다
     10) ▶ 재시작이 판만 새로 열고 경험치는 남기는가
@@ -71,6 +72,12 @@ const { launch, GAME: url } = require('../lib/browser');
    const forced=!!document.querySelector('.pat-row.forced');
    document.querySelector('[data-patrow="down"]').click();      // 다시 누르면 해제
    return {DEV:DEV.pat, 뽑힌패턴:[...new Set(ids)], 파란테두리:forced};}));
+ L('6-b. 그림 설명이 요약 바로 밑에 있는가', await p.evaluate(()=>{
+   const sc=document.querySelector('.dv-scroll');
+   const kids=[...sc.children].map(c=>c.className);
+   return {순서:kids.slice(0,3),
+     설명:(sc.querySelector('.dv-help')||{}).textContent.replace(/\s+/g,' ').trim().slice(0,40),
+     버튼:(document.querySelector('[data-redraw]')||{}).textContent};}));
  L('7. 가중치 ±가 확률을 움직인다', await p.evaluate(()=>{
    const before=document.querySelector('.pat-row .pat-prob').textContent;
    for(let i=0;i<3;i++)document.querySelector('[data-w="up"][data-d="0.02"]').click();
@@ -78,7 +85,7 @@ const { launch, GAME: url } = require('../lib/browser');
      확률후:document.querySelector('.pat-row .pat-prob').textContent};}));
 
  console.log('\n=== 🧬 메타 · 🎬 시작 · 💸 파산 · ⚖️ 밸런스 ===');
- await tab('meta');
+ await tab('start');
  L('8. XP 칩이 그 해금까지 채운다', await p.evaluate(()=>{
    document.querySelector('[data-xp="900"]').click();
    return {xp:META.xp, 해금:META_UNLOCKS.filter(u=>metaHas(u.id)).map(u=>u.emo).join('')};}));
@@ -87,6 +94,10 @@ const { launch, GAME: url } = require('../lib/browser');
    document.querySelector('[data-tier="3"]').click();
    return {tier:S.tier, 이름:tierOf().n, 기한:S.daysLeft};}));
  await p.waitForTimeout(200); await tab('start');
+ L('9-b. XP·해금·난이도가 시작 탭으로 옮겨왔는가', await p.evaluate(()=>({
+   XP버튼:!!document.querySelector('[data-xp="900"]'),
+   해금칩:document.querySelectorAll('[data-xp]').length,
+   난이도:document.querySelectorAll('[data-tier]').length})));
  L('10. 시작 현금 · 레버리지 · 거래일', await p.evaluate(()=>{
    document.querySelector('[data-scash="1000000"]').click();
    const cash=START_CASH;
@@ -97,6 +108,42 @@ const { launch, GAME: url } = require('../lib/browser');
    const before=GATE_DAYS.slice();
    document.querySelector('[data-gdays="-3"]').click();
    return {전:before, 후:GATE_DAYS, 지금기한:S.daysLeft};}));
+ await p.waitForTimeout(250); await tab('meta');
+ L('10-c. 🧬 메타 — XP 공식과 해금 문턱', await p.evaluate(()=>{
+   const before={계수:XP_LOG_MULT, '500억':xpOfPeak(5e10), 문턱:META_UNLOCKS.map(u=>u.need)};
+   document.querySelector('[data-xpm="2"]').click();
+   return {전:before};}));
+ await p.waitForTimeout(250); await tab('meta');
+ L('10-d. 계수를 올리면 받는 XP가 는다', await p.evaluate(()=>{
+   const after={계수:XP_LOG_MULT, '500억':xpOfPeak(5e10)};
+   document.querySelector('[data-needall="0.9"]').click();
+   return {후:after};}));
+ await p.waitForTimeout(300); await tab('meta');
+ L('10-e. 문턱 −10% · 몇 판인지가 같이 움직인다', await p.evaluate(()=>{
+   const rows=[...document.querySelectorAll('.dv-gate')].map(x=>x.textContent.replace(/\s+/g,' ').trim());
+   document.querySelector('[data-bp="0.05"]').click();
+   return {문턱:META_UNLOCKS.map(u=>u.need), 줄:rows.slice(0,3)};}));
+ await p.waitForTimeout(300); await tab('meta');
+ L('10-f. 파산 페널티 · 난이도 배수가 정산에 먹히는가', await p.evaluate(()=>{
+   document.querySelector('[data-txm="0.1"]').click();
+   S.peakCash=1e8; S.earlyXp=6;
+   return {페널티:BANKRUPT_PENALTY, 배수:+TIER_XP_MULT.toFixed(1),
+     '정산 XP':settleOf(0).total, '파산 정산':settleOf(BANKRUPT_PENALTY).total};}));
+ await p.waitForTimeout(250); await tab('broke');
+ L('10-g. 💸 파산 — 파산선 · 청산 여유 · 연장', await p.evaluate(()=>{
+   const before={파산선:MIN_BET, 파산한계:BROKE_LIMIT, 청산:+liqMultOf(3,1).toFixed(3), K:LIQ_K};
+   document.querySelector('[data-minbet="2"]').click();
+   return {전:before};}));
+ await p.waitForTimeout(300); await tab('broke');
+ L('10-h. 파산선 ×2 · 청산 여유 −0.05', await p.evaluate(()=>{
+   const mid={파산선:MIN_BET, 파산한계:BROKE_LIMIT};
+   document.querySelector('[data-liq="-0.05"]').click();
+   return {후:mid};}));
+ await p.waitForTimeout(300); await tab('broke');
+ L('10-i. 청산선이 실제로 움직였는가', await p.evaluate(()=>{
+   document.querySelector('[data-exd="1"]').click();
+   return {K:+LIQ_K.toFixed(2), '3배 롱':+liqMultOf(3,1).toFixed(3),
+     '3배 숏':+liqMultOf(3,-1).toFixed(3), 연장일수:EXTEND_DAYS};}));
  await p.waitForTimeout(250); await tab('broke');
  L('11. 즉시 파산이 파산 화면을 띄운다', await (async()=>{
    await p.evaluate(()=>document.querySelector('[data-broke="now"]').click());
@@ -129,6 +176,22 @@ const { launch, GAME: url } = require('../lib/browser');
      MID:MID_DIP, DIP:+DIP.toFixed(2), 적중률:infoAccOf(), 보너스:EARLY_BONUS_RATE}));
    return {전:before, 후:after, '패턴 안 건드림':before.패턴가중===after.패턴가중,
      '시작 안 건드림':before.시작현금===after.시작현금};
+ })());
+ await tab('broke');
+ L('13-b. 파산 탭 ↺ — 파산 값만 돌아오고 메타 문턱은 그대로', await (async()=>{
+   const before=await p.evaluate(()=>({문턱:META_UNLOCKS[0].need, 계수:XP_LOG_MULT}));
+   await p.evaluate(()=>document.querySelector('[data-tabreset]').click());
+   await p.waitForTimeout(300);
+   return {전:before, 후:await p.evaluate(()=>({파산선:MIN_BET, 파산한계:BROKE_LIMIT,
+     K:LIQ_K, 연장일수:EXTEND_DAYS, 연장비용:EXTEND_COST_FRAC,
+     문턱:META_UNLOCKS[0].need, 계수:XP_LOG_MULT}))};
+ })());
+ await tab('meta');
+ L('13-c. 메타 탭 ↺ — 공식과 문턱이 돌아온다', await (async()=>{
+   await p.evaluate(()=>document.querySelector('[data-tabreset]').click());
+   await p.waitForTimeout(300);
+   return await p.evaluate(()=>({계수:XP_LOG_MULT, 조기상환XP:EARLY_XP_PER_DAY,
+     배수:TIER_XP_MULT, 페널티:BANKRUPT_PENALTY, 문턱:META_UNLOCKS.map(u=>u.need)}));
  })());
  await tab('pat');
  L('14. 패턴 탭 ↺ — 가중치만 돌아온다', await (async()=>{

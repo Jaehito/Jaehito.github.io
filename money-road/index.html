@@ -124,7 +124,15 @@
   /* 단타 패널 */
   .trade-panel{margin:12px 20px 0; background:var(--card); border-radius:20px; padding:14px 16px 16px; box-shadow:var(--shadow);}
   .tp-head{display:flex; justify-content:flex-start; align-items:center; margin-bottom:9px;}
-  .tp-limit{font-size:11.5px; font-weight:700; color:var(--gray2); background:var(--field); padding:4px 9px; border-radius:999px;}
+  .tp-goal{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:800;
+    color:var(--gray2); background:var(--field); padding:4px 10px; border-radius:999px;
+    font-variant-numeric:tabular-nums;}
+  .tp-goal b{color:var(--ink); font-weight:900;}
+  .tp-goal .sep{color:var(--gray3); font-weight:700;}
+  .tp-goal .dd{color:var(--gray2);}
+  .tp-goal.p-warn .dd{color:var(--gold);}
+  .tp-goal.p-bad .dd{color:var(--red);}
+  .tp-goal.last{background:var(--red-weak);} .tp-goal.last .dd{color:var(--red);}
   .stock-tabs{display:grid; gap:7px; margin-bottom:11px;}
   .stock-tab{flex:1; border:2px solid var(--line); background:var(--card); border-radius:14px; padding:9px 8px; cursor:pointer; text-align:center;}
   .stock-tab.sel{border-color:var(--blue); background:var(--blue-weak);}
@@ -300,8 +308,6 @@
     cursor:pointer; white-space:nowrap;}
   .dir-toggle button.sel{background:var(--card); color:var(--red); box-shadow:var(--shadow);}
   .dir-toggle button.sel.short{color:var(--blue);}
-  .opt.need{color:var(--gray); font-weight:800; justify-content:center; gap:5px;}
-  .opt.need b{color:var(--ink); font-weight:900;}
   .opt.room{flex:0 0 auto; cursor:default; font-variant-numeric:tabular-nums;}
   .buff-line{display:flex; align-items:center; gap:7px; background:#fff9ec; border:1.5px solid #ffb02040;
     border-radius:10px; padding:7px 10px; margin-bottom:9px; font-size:11px; font-weight:800;
@@ -459,6 +465,28 @@
   .pat-early b{color:var(--blue);}
   .pat-prob{width:44px; text-align:right; font-size:12px; font-weight:900; color:var(--gray);
     font-variant-numeric:tabular-nums; flex-shrink:0;}
+  /* 값 옆에 "무엇이고 어느 쪽이 어려워지나"를 붙인다 — 숫자만 있으면 못 만진다 */
+  .dv-help{font-size:10.5px; font-weight:700; color:var(--gray3); line-height:1.55;
+    background:var(--field); border-radius:10px; padding:8px 10px; margin:-2px 0 8px;}
+  .dv-help b{color:var(--ink);}
+  .dv-help .up{color:var(--red); font-weight:800;}
+  .dv-help .dn{color:var(--blue); font-weight:800;}
+  .dv-prev{font-size:10.5px; font-weight:700; color:var(--gray); background:var(--blue-weak);
+    border-radius:10px; padding:8px 10px; margin-top:7px; line-height:1.6;
+    font-variant-numeric:tabular-nums;}
+  .dv-prev b{color:var(--blue); font-weight:900;}
+  .dv-prev .hd{display:block; font-size:9.5px; font-weight:800; color:var(--gray2);
+    letter-spacing:.03em; margin-bottom:3px;}
+  .dv-gate{display:flex; gap:5px; align-items:center; margin-bottom:4px;}
+  .dv-gate .nm{flex:1; font-size:11px; font-weight:800; color:var(--gray); white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;}
+  .dv-gate button{border:1px solid var(--line); background:var(--field); color:var(--gray);
+    font-family:inherit; font-size:11px; font-weight:900; width:21px; height:21px;
+    border-radius:6px; cursor:pointer; padding:0; flex-shrink:0;}
+  .dv-gate .vv{width:36px; text-align:center; font-size:11px; font-weight:900; color:var(--ink);
+    font-variant-numeric:tabular-nums;}
+  .dv-gate .rn{width:42px; text-align:right; font-size:10.5px; font-weight:800; color:var(--blue);
+    font-variant-numeric:tabular-nums;}
   /* 📋 템플릿 화면 */
   .dv-hd{display:flex; align-items:center; gap:8px; padding-bottom:9px;
     border-bottom:1px solid var(--line); margin-bottom:10px;}
@@ -512,7 +540,7 @@
 
   <div id="panelTrade">
     <div class="trade-panel">
-      <div class="tp-head"><span class="tp-limit" id="tpLimit"></span></div>
+      <div class="tp-head"><span class="tp-goal" id="tpGoal"></span></div>
       <div class="stock-tabs" id="stockTabs"></div>
       <div id="tradeBody"></div>
     </div>
@@ -555,8 +583,9 @@ const STOPLOSS_COSTS=[80000,300000,900000];
 const STOPLOSS_PCT=[0,0.15,0.30,0.45];
 /* 최소 베팅액이 곧 파산선이다. 이 밑으로 떨어지면 한 판도 더 못 하므로 파산.
    레벨에 따라 올리지 않는다 — 후반에는 파산 위험이 사라지고 거기서부터는 은퇴가 마무리를 맡는다. */
-const MIN_BET=10000;
-const BROKE_LIMIT=MIN_BET;
+let MIN_BET=10000;             /* 🛠 테스트 도구가 민다 */
+const MIN_BET_BASE=MIN_BET;
+let BROKE_LIMIT=MIN_BET;       /* 최소 베팅과 늘 같이 움직인다 */
 
 /* ===== 빚내서 시작 =====
    시드머니는 내 돈이 아니라 대출이다. 빚이 남아 있는 동안 최소 레버리지가 강제된다.
@@ -840,10 +869,12 @@ function ensurePending(){ if(!S.pending||!S.pending.tier)rollPending(); }
    숏: (1-mult)*L = -1  →  mult = 1 + 1/L   (위쪽, 1배도 2배에서 청산된다)
    숏이 비대칭으로 위험한 건 이 때문이다. 가격은 아래로 0까지지만 위로는 상한이 없어서
    spike 패턴(최대 3.5배)이면 1배 숏도 전액 손실이 난다. */
+let LIQ_K=1.0;                 /* 🛠 청산 여유 — 1.00이 원금 전액 손실선 */
+const LIQ_K_BASE=LIQ_K;
 function liqMultOf(lev,dir,entry){
   const e=entry||1;                      // 물타기로 평단이 움직이면 청산선도 같이 움직인다
-  if((dir||1)<0)return e*(1+1/lev);      // 숏은 배율 1배에서도 청산선이 있다
-  return lev>1?e*(1-1/lev):0;
+  if((dir||1)<0)return e*(1+LIQ_K/lev);  // 숏은 배율 1배에서도 청산선이 있다
+  return lev>1?e*Math.max(0,1-LIQ_K/lev):0;
 }
 
 /* ===== 상환 기한 =====
@@ -867,7 +898,8 @@ const GATES=[
   {n:'6차', goal:8000000000, days:17},
   {n:'완제', goal:50000000000, days:17},
 ];
-const EXTEND_DAYS=3, EXTEND_COST_FRAC=0.25;   // 기한 연장: 자산의 25%로 3거래일
+let EXTEND_DAYS=3, EXTEND_COST_FRAC=0.25;   // 기한 연장: 자산의 25%로 3거래일 (🛠 도구가 민다)
+const EXTEND_DAYS_BASE=EXTEND_DAYS, EXTEND_COST_BASE=EXTEND_COST_FRAC;
 /* ===== 조기 상환 보너스 (이월을 대체한다) =====
    예전에는 남은 거래일을 다음 관문으로 이월했다(상한 5일). 그런데 거래일은 복리로 붙는다 —
    판당 기댓값이 3배에서 1.68이라 5일이면 13배의 여유다. 그래서 관문을 넘을 때마다 다음
@@ -978,8 +1010,15 @@ const LEVELS=[
 
    메타 해금은 실제로 구현된 것만 적는다. 기능이 하나 붙을 때마다 여기 한 줄이 는다 —
    "곧 나옴" 상태의 빈 항목을 두지 않기 위해서다. */
-function xpOfPeak(peak){return Math.max(1,Math.floor(20*Math.log10(Math.max(peak,MIN_BET)/100000)));}
-const EARLY_XP_PER_DAY=2;   // 관문을 하루 일찍 갚을 때마다 붙는 XP
+/* 🛠 메타 성장 다이얼 — 도구의 🧬 메타 탭이 민다. 해금이 몇 판에 열리는지는
+   이 셋과 META_UNLOCKS의 need가 같이 정한다. */
+let XP_LOG_MULT=20;
+const XP_LOG_MULT_BASE=XP_LOG_MULT;
+function xpOfPeak(peak){return Math.max(1,Math.floor(XP_LOG_MULT*Math.log10(Math.max(peak,MIN_BET)/100000)));}
+let EARLY_XP_PER_DAY=2;     // 관문을 하루 일찍 갚을 때마다 붙는 XP
+const EARLY_XP_BASE=EARLY_XP_PER_DAY;
+let TIER_XP_MULT=1.0;       // 난이도 배수 전체에 곱한다(1단계 기준)
+const TIER_XP_BASE=TIER_XP_MULT;
 
 const META_UNLOCKS=[
   {lv:2, need:40,  id:'short',  emo:'🐻', name:'공매도',
@@ -997,6 +1036,7 @@ const META_UNLOCKS=[
   {lv:8, need:900, id:'coin',   emo:'🪙', name:'코인',
    ds:'한 판이 20초예요 · 변동이 가장 크고 하루는 똑같이 하루예요'},
 ];
+const UNLOCK_NEED_BASE=META_UNLOCKS.map(u=>u.need);   /* 🛠 도구가 need를 밀므로 원본을 남긴다 */
 /* ===== 📋 패턴 도감 =====
    이 게임은 패턴을 읽는 게임인데 읽는 법을 배울 곳이 없었다. 겪은 패턴을 영구히
    쌓아서, 신호 등급별로 "실제로 무엇이 나왔는지"와 "지금 고른 종목에서는 어떤 비율로
@@ -1019,8 +1059,9 @@ function nextUnlock(){ return META_UNLOCKS.find(u=>(META.xp||0)<u.need)||null; }
 /* 방금 끝난 판의 정산 내역. penalty는 파산/반대매매에만 붙는다. */
 function settleOf(penalty){
   const base=xpOfPeak(S.peakCash), early=Math.max(0,S.earlyXp||0), t=tierOf();
-  return {peak:S.peakCash, base, early, penalty, mult:t.xp, tier:tierIdx(), tierName:t.n, tierEmo:t.emo,
-    total:Math.max(1,Math.round((base+early)*(1-penalty)*t.xp))};
+  const mult=t.xp*TIER_XP_MULT;
+  return {peak:S.peakCash, base, early, penalty, mult, tier:tierIdx(), tierName:t.n, tierEmo:t.emo,
+    total:Math.max(1,Math.round((base+early)*(1-penalty)*mult))};
 }
 
 /* ===== 티켓 (연승 보상) =====
@@ -1595,7 +1636,8 @@ function checkBankrupt(){
   return false;
 }
 /* 파산은 경험치가 30% 깎인다. 그 30%가 나중에 광고를 붙일 자리다. */
-const BANKRUPT_PENALTY=0.30;
+let BANKRUPT_PENALTY=0.30;   /* 🛠 도구가 민다 */
+const BANKRUPT_BASE=BANKRUPT_PENALTY;
 function showBankruptModal(){
   const st=settleOf(BANKRUPT_PENALTY);
   $('modalBox').innerHTML=`<div class="emo">💸</div>
@@ -1834,9 +1876,19 @@ function renderTradeTabs(){
 }
 function renderTrade(){
   const maxLev=leverageMultOf();
-  $('tpLimit').textContent=hasDebt()
-    ? `🔗 빚 때문에 최소 ${minLevOf()}배 · 최대 ${maxLev}배`
-    : `🎚️ 레버리지 1~${maxLev}배`;
+  /* 예전에는 여기 "빚 때문에 최소 3배"가 있었다. 고를 배율이 하나뿐이면 아무 선택도
+     안 바꾸는 문장이다(설명은 인트로에 남아 있다). 베팅금을 고르는 자리에 필요한 건
+     "얼마를 언제까지"다 — 탑바 칩과 같은 3단계 색을 쓴다. */
+  const gc=$('tpGoal');
+  if(gateDone()){
+    gc.className='tp-goal';
+    gc.innerHTML='🏆 <b>대출 완제</b>';
+  }else{
+    const gr=riskAt(S.cash,S.daysLeft);
+    gc.className=`tp-goal ${gr.cls}${gr.last?' last':''}`;
+    gc.innerHTML=`🔗 <b>${fmtWon(gateOf().goal)}</b><span class="sep">·</span>`+
+      `<span class="dd">${gr.last?'마지막날':`D-${S.daysLeft}`}</span>`;
+  }
   if(S.activeRound){renderRoundView();return;}
   RV=null; /* 아래에서 tradeBody를 통째로 갈아엎으므로 라운드 뷰 노드 캐시를 버린다 */
   /* 티켓은 위쪽 스트립에 큰 카드로 두지 않고, 시작 버튼 바로 위에 한 줄로만 알린다 —
@@ -1872,12 +1924,8 @@ function renderTrade(){
       ${metaHas('dex')?`<button class="dex-btn" id="dexBtn" title="패턴 도감">📋</button>`:''}
     </div>`;
   const canGo=S.betAmount>=MIN_BET && S.betAmount<=S.cash;
-  /* 예전에는 "🪦 여유 (현금−최소베팅)"을 적었다. 위 탑바의 잔고에서 1만원 뺀 값이라
-     아무 정보가 아니었다. 베팅 크기를 정하는 자리에 필요한 건 "얼마가 모자라나"다. */
-  const left=gateDone()?0:Math.max(0,gateOf().goal-S.cash);
-  const needChip=gateDone()
-    ? `<span class="opt need">🏆 대출 완제</span>`
-    : `<span class="opt need">🔗 <b>${fmtWon(left)}</b> 더</span>`;
+  /* "얼마가 모자라나" 칩은 뺐다. 카드 머리의 목표·D-day 칩이 같은 말을 하고,
+     그 자리를 비우면 방향 토글이 한 줄을 통째로 써서 오발이 줄어든다. */
   const dirRow=canShort
     ? `<span class="dir-toggle" id="dirToggle">
          <button data-d="1" class="${S.betDir!==-1?'sel':''}">📈 상승</button>
@@ -1892,7 +1940,7 @@ function renderTrade(){
     ${levRow}
     <div class="bet-row"><button id="betMinus">−</button><div class="amt">${fmtWon(S.betAmount)}</div><button id="betPlus">+</button></div>
     <div class="bet-quicks"><button data-q="0.25">25%</button><button data-q="0.5">50%</button><button data-q="0.75">75%</button><button data-q="1">최대</button></div>
-    <div class="opt-row">${dirRow}${needChip}</div>
+    ${dirRow?`<div class="opt-row">${dirRow}</div>`:''}
     ${buffLine}
     ${paceLine}
     ${goRowHTML(canGo,canShort,curLev,pr)}
@@ -1914,7 +1962,8 @@ function goRowHTML(canGo,canShort,lev,pr){
   const amt=`${fmtWon(S.betAmount)} × ${lev}배`;
   if(!canShort)return `<button class="trade-go ${pr&&pr.cls==='p-bad'?'danger':''}" id="tradeGo">${amt}로 시작</button>`;
   const short=S.betDir===-1;
-  return `<button class="trade-go ${short?'go-short':'go-long'}" id="tradeGo">${short?'📉 하락':'📈 상승'} · ${amt}</button>`;
+  /* 방향은 토글의 선택 표시·버튼 색·아이콘 셋이 이미 말한다. 단어까지 넣으면 같은 말을 네 번 한다. */
+  return `<button class="trade-go ${short?'go-short':'go-long'}" id="tradeGo">${short?'📉':'📈'} ${amt}</button>`;
 }
 
 /* 라운드 뷰는 "한 번 만들고 좌표만 갱신"한다.
@@ -2356,6 +2405,8 @@ function devPatTab(){
       <span class="m">보통 ${(mix.mid*100).toFixed(0)}%</span>
       <span class="k">약세 ${(mix.weak*100).toFixed(0)}%</span>
       <span class="e">초반↑ ${(agg*100).toFixed(0)}%</span></div>
+    <div class="dv-help">왼쪽 그림은 <b>그 패턴을 실제로 3번 뽑은 것</b>이에요 — 진한 선 1개 + 흐린 선 2개.
+      같은 패턴도 판마다 다르게 열려서(<b>MID_DIP</b>) 한 장으로는 알 수 없어요.</div>
     ${PATTERNS.map((p,i)=>{
       const w=(DEV.w&&DEV.w[p.id]!==undefined)?DEV.w[p.id]:BASE_WEIGHTS[i];
       const tn=DEV_TIER_NAME[PATTERN_TIER[p.id]], e=(early[p.id]*100).toFixed(0);
@@ -2372,13 +2423,62 @@ function devPatTab(){
         </div>
         <div class="pat-prob">${(p.weight*100).toFixed(1)}%</div>
       </div>`;}).join('')}
-    <div class="dv-row"><button class="dv-btn" data-redraw="1">그림 다시 뽑기</button></div>
-    <div class="dv-note">행을 누르면 <b>다음 판에 그 패턴이 나와요.</b> 그림은 실제로 뽑은 경로 3개예요.<br>
+    <div class="dv-row"><button class="dv-btn" data-redraw="1">🎲 경로 다시 뽑기 — 다른 얼굴 보기</button></div>
+    <div class="dv-note">행을 누르면 <b>다음 판에 그 패턴이 나와요.</b><br>
       가중치와 확률이 다른 건 난이도 단계가 강세를 깎고 약세를 얹기 때문이에요.</div>`;
 }
 
-/* 🧬 메타 — 판을 넘어 남는 것 */
+/* 🧬 메타 — 판을 넘어 남는 것이 "얼마나 빨리" 자라는가.
+   XP를 꽂거나 난이도를 고르는 건 상태지 밸런스가 아니라서 🎬 시작으로 옮겼다.
+   여기서 만지는 건 공식과 문턱뿐이다. */
 function devMetaTab(){
+  const px=v=>xpOfPeak(v);
+  /* 한 판에 얼마를 버는지는 사람마다 다르다. "3단계에서 1억까지 가는 판"을 기준 한 판으로
+     잡고 문턱을 나눠서, 문턱을 만질 때 "몇 판 만에 열리나"가 같이 움직이게 한다. */
+  const per=Math.max(1,Math.round((px(1e8)+EARLY_XP_PER_DAY*3)*(TIERS[2].xp*TIER_XP_MULT)));
+  const runs=need=>Math.max(1,Math.ceil(need/per));
+  return `<div class="dv-help">이 탭은 <b>판을 넘어 남는 것이 얼마나 빨리 자라는가</b>만 다뤄요.
+      XP를 직접 넣거나 난이도를 고르는 건 🎬 시작 탭으로 옮겼어요.</div>
+    <div class="dv-sec">XP 공식 — 그 판 최고 기록의 로그</div>
+    <div class="dv-row">
+      <button class="dv-btn" data-xpm="-2">−2</button>
+      <span class="dv-val">${XP_LOG_MULT}<small>계수</small></span>
+      <button class="dv-btn" data-xpm="2">+2</button></div>
+    <div class="dv-prev"><span class="hd">이 계수로 받는 XP</span>
+      50만 <b>${px(5e5)}</b> · 2000만 <b>${px(2e7)}</b> · 10억 <b>${px(1e9)}</b> · 500억 <b>${px(5e10)}</b></div>
+    <div class="dv-sec">조기 상환 XP — 하루 일찍 갚을 때마다</div>
+    <div class="dv-row">
+      <button class="dv-btn" data-exp="-1">−1</button>
+      <span class="dv-val">${EARLY_XP_PER_DAY}</span>
+      <button class="dv-btn" data-exp="1">+1</button></div>
+    <div class="dv-sec">난이도 XP 배수 — 1단계 기준</div>
+    <div class="dv-row">
+      <button class="dv-btn" data-txm="-0.1">−0.1</button>
+      <span class="dv-val">×${TIER_XP_MULT.toFixed(1)}<small>2~5단계도 비례해서 같이</small></span>
+      <button class="dv-btn" data-txm="0.1">+0.1</button></div>
+    <div class="dv-sec">파산 XP 페널티</div>
+    <div class="dv-row">
+      <button class="dv-btn" data-bp="-0.05">−5%p</button>
+      <span class="dv-val">${Math.round(BANKRUPT_PENALTY*100)}%<small>파산하면 이만큼 깎여요</small></span>
+      <button class="dv-btn" data-bp="0.05">+5%p</button></div>
+    <div class="dv-sec">해금 문턱 — 필요 XP</div>
+    ${META_UNLOCKS.map((u,i)=>`<div class="dv-gate">
+      <span class="nm">${u.emo} ${u.name}</span>
+      <button data-need="${i}" data-d="-20">−</button>
+      <span class="vv">${u.need}</span>
+      <button data-need="${i}" data-d="20">+</button>
+      <span class="rn">${runs(u.need)}판</span></div>`).join('')}
+    <div class="dv-row">
+      <button class="dv-btn" data-needall="0.9">문턱 전체 −10%</button>
+      <button class="dv-btn" data-needall="1.1">전체 +10%</button></div>
+    <div class="dv-prev"><span class="hd">이 설정이면 · 3단계에서 1억까지 가는 판 기준</span>
+      한 판에 <b>${per} XP</b> · 전부 해금까지 <b>${runs(META_UNLOCKS[META_UNLOCKS.length-1].need)}판</b></div>
+    <div class="dv-note">오른쪽 파란 숫자가 <b>"몇 판 만에 열리나"</b>예요 — 문턱을 만지면 같이 움직여요.</div>`;
+}
+
+/* 🎬 시작 — 이 판을 어디서부터. XP·해금·난이도는 "상태"라서 여기다. */
+function devStartTab(){
+  const maxLev=leverageMultOf();
   const done=META_UNLOCKS.filter(u=>(META.xp|0)>=u.need).length;
   return `<div class="dv-sec">경험치 — 지금 ${META.xp|0}</div>
     <div class="dv-row">
@@ -2393,13 +2493,7 @@ function devMetaTab(){
     <div class="dv-sec">난이도 단계</div>
     <div class="dv-row wrap">${TIERS.map((t,i)=>
       `<button class="dv-btn sm ${tierIdx()===i?'sel':''}" data-tier="${i}">${i+1} ${t.n}</button>`).join('')}</div>
-    <div class="dv-row"><button class="dv-btn danger" data-wipe="meta">메타만 초기화</button></div>`;
-}
-
-/* 🎬 시작 — 판을 어디서부터 */
-function devStartTab(){
-  const maxLev=leverageMultOf();
-  return `<div class="dv-sec">시작 현금 — 새 판 ${fmtWon(START_CASH)} · 지금 ${fmtWon(S.cash)}</div>
+    <div class="dv-sec">시작 현금 — 새 판 ${fmtWon(START_CASH)} · 지금 ${fmtWon(S.cash)}</div>
     <div class="dv-row">
       ${[[100000,'10만'],[1000000,'100만'],[10000000,'1000만']].map(([v,n])=>
         `<button class="dv-btn ${START_CASH===v?'sel':''}" data-scash="${v}">${n}</button>`).join('')}</div>
@@ -2428,62 +2522,87 @@ function devStartTab(){
     <div class="dv-note">시작 현금·레버리지는 <b>새 판이라야</b> 들어요 — 아래 ▶ 재시작을 눌러주세요.</div>`;
 }
 
-/* 💸 파산 — 지는 길 확인. 만들기가 제일 번거로운데 확인할 일은 잦다. */
+/* 💸 파산 — 지는 쪽의 수치. 만들기가 제일 번거로운데 확인할 일은 잦다. */
 function devBrokeTab(){
   const lev=Math.max(minLevOf(),S.betLeverage||minLevOf());
   const lo=liqMultOf(lev,1), hi=liqMultOf(lev,-1);
-  return `<div class="dv-sec">지금 상태</div>
+  return `<div class="dv-help">지는 쪽의 수치예요. <b class="up">올리면 어려워지는 것</b>은 파산선·연장 비용,
+      <b class="dn">내리면 어려워지는 것</b>은 청산 여유·연장 일수예요.</div>
+    <div class="dv-sec">파산선 — 최소 베팅</div>
+    <div class="dv-row">
+      <button class="dv-btn" data-minbet="0.5">÷2</button>
+      <span class="dv-val">${fmtWon(MIN_BET)}<small>현금이 이 밑이면 파산</small></span>
+      <button class="dv-btn" data-minbet="2">×2</button></div>
+    <div class="dv-sec">청산 여유 — ${lev}배 기준</div>
+    <div class="dv-row">
+      <button class="dv-btn" data-liq="-0.05">−0.05</button>
+      <span class="dv-val">×${LIQ_K.toFixed(2)}<small>롱 ${lo>0?lo.toFixed(2):'—'} (${Math.round((lo-1)*100)}%) · 숏 ${hi.toFixed(2)}</small></span>
+      <button class="dv-btn" data-liq="0.05">+0.05</button></div>
+    <div class="dv-help"><b>1.00이 원금 전액 손실선</b>이에요. 내리면 전액을 잃기 <b>전에</b> 잘리고,
+      올리면 더 버티다 잘려요.</div>
+    <div class="dv-sec">기한 연장</div>
+    <div class="dv-row"><span class="dv-lab">일수</span>
+      <button class="dv-btn" data-exd="-1">−1</button>
+      <span class="dv-val">${EXTEND_DAYS}</span>
+      <button class="dv-btn" data-exd="1">+1</button></div>
+    <div class="dv-row"><span class="dv-lab">비용</span>
+      <button class="dv-btn" data-exc="-0.05">−5%p</button>
+      <span class="dv-val">${Math.round(EXTEND_COST_FRAC*100)}%<small>자산 대비</small></span>
+      <button class="dv-btn" data-exc="0.05">+5%p</button></div>
+    <div class="dv-sec">지금 상태 · 만들기</div>
     <div class="dv-row"><span class="dv-lab">현금</span>
-      <span class="dv-val">${fmtWon(S.cash)}<small>최소 베팅 ${fmtWon(MIN_BET)} · 이 밑이면 파산</small></span></div>
-    <div class="dv-sec">파산 만들기</div>
+      <span class="dv-val">${fmtWon(S.cash)}<small>파산까지 ${fmtWon(Math.max(0,S.cash-BROKE_LIMIT))}</small></span></div>
     <div class="dv-row">
       <button class="dv-btn danger" data-broke="now">즉시 파산</button>
       <button class="dv-btn" data-broke="edge">최소 베팅만 남기기</button></div>
-    <div class="dv-sec">청산선 — ${lev}배 기준</div>
-    <div class="dv-row">
-      <span class="dv-val">${lo.toFixed(2)}<small>롱 ${Math.round((lo-1)*100)}%에서 청산</small></span>
-      <span class="dv-val">${hi.toFixed(2)}<small>숏 +${Math.round((hi-1)*100)}%에서 청산</small></span></div>
-    <div class="dv-sec">끝나는 화면</div>
     <div class="dv-row">
       <button class="dv-btn" data-screen="default">반대매매</button>
-      <button class="dv-btn" data-screen="settle">정산 화면</button></div>
-    <div class="dv-note">이 탭은 화면을 띄우는 동작뿐이라 되돌릴 값이 없어요 — 템플릿에도 안 담겨요.</div>`;
+      <button class="dv-btn" data-screen="settle">정산 화면</button></div>`;
 }
 
-/* ⚖️ 밸런스 — 숫자 손잡이 */
+/* ⚖️ 밸런스 — 숫자 손잡이. 값마다 "무엇이고 어느 쪽이 어려워지나"를 옆에 붙인다. */
 function devBalTab(){
   const lv=S.upg.infoLv||0;
-  return `<div class="dv-sec">보통 등급이 눌리며 여는 비율 (MID_DIP)</div>
+  return `<div class="dv-help"><b>어려워지는 방향</b> — MID_DIP <span class="up">↑</span> ·
+      DIP <span class="dn">↓</span> · 적중률 <span class="dn">↓</span> · 보너스 <span class="dn">↓</span></div>
+    <div class="dv-sec">MID_DIP — 보통 4종이 급락으로 여는 확률의 배수</div>
     <div class="dv-row">
       <button class="dv-btn" data-mid="-0.1">−0.1</button>
       <span class="dv-val">${MID_DIP.toFixed(1)}<small>${MID_DIP<=0?'전부 오르며 연다':'1.0이 기본'}</small></span>
       <button class="dv-btn" data-mid="0.1">+0.1</button></div>
-    <div class="dv-sec">급락 바닥 (DIP)</div>
+    <div class="dv-help">눌림목·급등급락·고점후하락·이중고점이 <b>떨어지며 열지 오르며 열지</b>를 정해요.
+      올리면 초반 급등이 줄어 <b>어려워져요.</b></div>
+    <div class="dv-sec">DIP — 급락으로 열 때 얼마나 깊이</div>
     <div class="dv-row">
       <button class="dv-btn" data-dip="-0.02">−0.02</button>
-      <span class="dv-val">${DIP.toFixed(2)}<small>3배 ${Math.round((DIP-1)*300)}%</small></span>
+      <span class="dv-val">${DIP.toFixed(2)}<small>3배에서 ${Math.round((DIP-1)*300)}%</small></span>
       <button class="dv-btn" data-dip="0.02">+0.02</button></div>
-    <div class="dv-sec">신호 적중률</div>
+    <div class="dv-help">청산선 <b>${liqMultOf(3,1).toFixed(2)}</b> 밑으로 내리면 열자마자 죽어요.
+      올리면 덜 떨어져 <b>쉬워져요.</b></div>
+    <div class="dv-sec">신호 적중률 — 🟢🟡🔴가 맞을 확률</div>
     <div class="dv-row">${INFO_ACC.map((a,i)=>
       `<button class="dv-btn ${lv===i?'sel':''}" data-acc="${i}">${Math.round(a*100)}%</button>`).join('')}</div>
+    <div class="dv-help">올리면 예측이 쉬워져 <b>쉬워져요.</b> ${Math.round(INFO_ACC[INFO_ACC.length-1]*100)}%는 정보력을 최대로 강화한 상태예요.</div>
     <div class="dv-sec">조기 상환 보너스 — 남은 1일당</div>
     <div class="dv-row">
       <button class="dv-btn" data-bonus="-0.05">−5%p</button>
-      <span class="dv-val">${Math.round(EARLY_BONUS_RATE*100)}%</span>
+      <span class="dv-val">${Math.round(EARLY_BONUS_RATE*100)}%<small>상환금의 몇 %를 현금으로</small></span>
       <button class="dv-btn" data-bonus="0.05">+5%p</button></div>
-    <div class="dv-note">여기 값들은 저장 안 해요 — 새로고침하면 돌아와요.<br>
-      기본: MID_DIP ${MID_DIP_BASE.toFixed(1)} · DIP ${DIP_BASE.toFixed(2)} ·
-      적중률 ${Math.round(INFO_ACC[0]*100)}% · 보너스 ${Math.round(EARLY_BONUS_BASE*100)}%</div>`;
+    <div class="dv-help">기한보다 일찍 갚으면 남은 하루마다 받아요. <b>후반이 헐거워지는 주범</b>이에요.</div>
+    <div class="dv-note">여기 값들은 저장 안 해요 — 새로고침하면 돌아와요.</div>`;
 }
 
 /* 그 탭이 만지는 값만 되돌린다. 다른 탭에서 맞춰둔 건 안 건드린다 — 그게 이 버튼의 요지다. */
 function devTabReset(){
   if(DEV.tab==='pat'){ DEV.w=null; DEV.pat=null; applyTierWeights(); }
-  else if(DEV.tab==='meta'){ META.xp=0; saveMeta(); S.tier=0; applyTierWeights();
-    S.daysLeft=gateDaysOf(S.gate||0); }
+  else if(DEV.tab==='meta'){ XP_LOG_MULT=XP_LOG_MULT_BASE; EARLY_XP_PER_DAY=EARLY_XP_BASE;
+    TIER_XP_MULT=TIER_XP_BASE; BANKRUPT_PENALTY=BANKRUPT_BASE;
+    META_UNLOCKS.forEach((u,i)=>u.need=UNLOCK_NEED_BASE[i]); }
   else if(DEV.tab==='start'){ START_CASH=START_CASH_BASE; MIN_LEVERAGE=MIN_LEVERAGE_BASE;
     S.upg.leverageLv=START_LEVERAGE_LV; GATE_DAYS=GATES.map(g=>g.days);
     S.daysLeft=gateDaysOf(S.gate||0); }
+  else if(DEV.tab==='broke'){ MIN_BET=MIN_BET_BASE; BROKE_LIMIT=MIN_BET; LIQ_K=LIQ_K_BASE;
+    EXTEND_DAYS=EXTEND_DAYS_BASE; EXTEND_COST_FRAC=EXTEND_COST_BASE; setBet(S.betAmount); }
   else if(DEV.tab==='bal'){ MID_DIP=MID_DIP_BASE; DIP=DIP_BASE; S.upg.infoLv=0;
     EARLY_BONUS_RATE=EARLY_BONUS_BASE; }
 }
@@ -2495,10 +2614,15 @@ const DEV_TPL_KEY='moneyroad2_devtpl_v1';
 function devTplData(){
   const w={};
   PATTERNS.forEach((p,i)=>w[p.id]=+((DEV.w&&DEV.w[p.id]!==undefined)?DEV.w[p.id]:BASE_WEIGHTS[i]).toFixed(3));
-  return {v:1, 패턴:w, MID_DIP:+MID_DIP.toFixed(2), DIP:+DIP.toFixed(2),
+  return {v:2, 패턴:w, MID_DIP:+MID_DIP.toFixed(2), DIP:+DIP.toFixed(2),
     신호적중률:+infoAccOf().toFixed(2), 조기상환:+EARLY_BONUS_RATE.toFixed(2),
     레버리지:{최소:MIN_LEVERAGE, 최대:leverageMultOf()},
-    시작현금:START_CASH, 거래일:GATE_DAYS.slice()};
+    시작현금:START_CASH, 거래일:GATE_DAYS.slice(),
+    메타:{XP계수:XP_LOG_MULT, 조기상환XP:EARLY_XP_PER_DAY,
+      난이도배수:+TIER_XP_MULT.toFixed(2), 파산페널티:+BANKRUPT_PENALTY.toFixed(2),
+      해금문턱:META_UNLOCKS.map(u=>u.need)},
+    파산:{파산선:MIN_BET, 청산여유:+LIQ_K.toFixed(2),
+      연장일수:EXTEND_DAYS, 연장비용:+EXTEND_COST_FRAC.toFixed(2)}};
 }
 function devTplApply(o){
   if(!o||typeof o!=='object'||Array.isArray(o))return '읽을 수 없는 형식이에요';
@@ -2522,7 +2646,24 @@ function devTplApply(o){
   }
   if(typeof o.시작현금==='number')START_CASH=o.시작현금;
   if(Array.isArray(o.거래일))GATE_DAYS=GATES.map((g,i)=>+o.거래일[i]||g.days);
+  const m=o.메타;
+  if(m&&typeof m==='object'){
+    if(typeof m.XP계수==='number')XP_LOG_MULT=m.XP계수;
+    if(typeof m.조기상환XP==='number')EARLY_XP_PER_DAY=m.조기상환XP;
+    if(typeof m.난이도배수==='number')TIER_XP_MULT=m.난이도배수;
+    if(typeof m.파산페널티==='number')BANKRUPT_PENALTY=m.파산페널티;
+    if(Array.isArray(m.해금문턱))META_UNLOCKS.forEach((u,i)=>{
+      if(typeof m.해금문턱[i]==='number')u.need=m.해금문턱[i]; });
+  }
+  const k=o.파산;
+  if(k&&typeof k==='object'){
+    if(typeof k.파산선==='number'){ MIN_BET=Math.max(1,Math.round(k.파산선)); BROKE_LIMIT=MIN_BET; }
+    if(typeof k.청산여유==='number')LIQ_K=k.청산여유;
+    if(typeof k.연장일수==='number')EXTEND_DAYS=k.연장일수;
+    if(typeof k.연장비용==='number')EXTEND_COST_FRAC=k.연장비용;
+  }
   S.daysLeft=gateDaysOf(S.gate||0);
+  setBet(S.betAmount);
   return '';
 }
 /* 슬롯은 전부 초기화에서 빠진다(devWipe가 devtpl 키를 건너뛴다). 맞춰둔 값을
@@ -2567,10 +2708,9 @@ function showDevModal(){
     :                     devPatTab();
   const tabs = DEV.tpl ? '' : `<div class="dv-tabs">${DEV_TABS.map(([id,e,n])=>
     `<button class="dv-tab ${DEV.tab===id?'on':''}" data-tab="${id}"><b>${e}</b>${n}</button>`).join('')}</div>`;
-  /* 파산 탭은 값이 없어서 되돌릴 것도 없다 — 버튼을 두면 아무 일도 안 하는 버튼이 된다. */
-  const foot = DEV.tpl ? '' : `<div class="dv-foot">${
-    DEV.tab==='broke' ? '' : `<button class="dv-btn" data-tabreset="1">↺ 이 탭 기본값</button>`
-  }<button class="dv-btn go" data-restart="1">▶ 재시작</button></div>`;
+  const foot = DEV.tpl ? '' : `<div class="dv-foot">
+    <button class="dv-btn" data-tabreset="1">↺ 이 탭 기본값</button>
+    <button class="dv-btn go" data-restart="1">▶ 재시작</button></div>`;
   $('modalBox').innerHTML=`
     <div class="dv-top"><span class="dv-title">🛠 테스트 도구</span>
       <span class="dv-state">${devState()}</span>
@@ -2611,7 +2751,23 @@ function bindDevModal(){
     applyTierWeights(); showDevModal(); });
   q('[data-redraw]',b=>b.onclick=()=>{ sfx.tap(); showDevModal(); });
 
-  /* 메타 */
+  /* 🧬 메타 — 공식과 문턱 */
+  q('[data-xpm]',b=>b.onclick=()=>{ sfx.tap();
+    XP_LOG_MULT=Math.max(2,Math.min(80,XP_LOG_MULT + +b.dataset.xpm)); showDevModal(); });
+  q('[data-exp]',b=>b.onclick=()=>{ sfx.tap();
+    EARLY_XP_PER_DAY=Math.max(0,Math.min(40,EARLY_XP_PER_DAY + +b.dataset.exp)); showDevModal(); });
+  q('[data-txm]',b=>b.onclick=()=>{ sfx.tap();
+    TIER_XP_MULT=Math.max(0.1,Math.min(5,+(TIER_XP_MULT + +b.dataset.txm).toFixed(1))); showDevModal(); });
+  q('[data-bp]',b=>b.onclick=()=>{ sfx.tap();
+    BANKRUPT_PENALTY=Math.max(0,Math.min(1,+(BANKRUPT_PENALTY + +b.dataset.bp).toFixed(2))); showDevModal(); });
+  q('[data-need]',b=>b.onclick=()=>{ sfx.tap();
+    const u=META_UNLOCKS[+b.dataset.need];
+    u.need=Math.max(0,u.need + +b.dataset.d); again(); });
+  q('[data-needall]',b=>b.onclick=()=>{ sfx.tap();
+    const f=+b.dataset.needall;
+    META_UNLOCKS.forEach(u=>u.need=Math.max(0,Math.round(u.need*f))); again(); });
+
+  /* 🎬 시작 — XP·해금·난이도는 상태라서 여기다 */
   q('[data-xp]',b=>b.onclick=()=>{ sfx.tap();
     const v=b.dataset.xp;
     META.xp = v[0]==='+' ? (META.xp|0)+ +v.slice(1) : +v;
@@ -2645,7 +2801,16 @@ function bindDevModal(){
     GATE_DAYS=GATE_DAYS.map(x=>Math.max(1,x+d));
     S.daysLeft=gateDaysOf(S.gate||0); again(); });
 
-  /* 파산 */
+  /* 💸 파산 — 수치 */
+  q('[data-minbet]',b=>b.onclick=()=>{ sfx.tap();
+    MIN_BET=Math.max(100,Math.min(1e8,Math.round(MIN_BET*(+b.dataset.minbet))));
+    BROKE_LIMIT=MIN_BET; setBet(S.betAmount); again(); });
+  q('[data-liq]',b=>b.onclick=()=>{ sfx.tap();
+    LIQ_K=Math.max(0.2,Math.min(2,+(LIQ_K + +b.dataset.liq).toFixed(2))); again(); });
+  q('[data-exd]',b=>b.onclick=()=>{ sfx.tap();
+    EXTEND_DAYS=Math.max(1,Math.min(20,EXTEND_DAYS + +b.dataset.exd)); again(); });
+  q('[data-exc]',b=>b.onclick=()=>{ sfx.tap();
+    EXTEND_COST_FRAC=Math.max(0,Math.min(0.9,+(EXTEND_COST_FRAC + +b.dataset.exc).toFixed(2))); again(); });
   q('[data-broke]',b=>b.onclick=()=>{ sfx.tap();
     const now=b.dataset.broke==='now';
     S.cash = now ? 0 : MIN_BET;

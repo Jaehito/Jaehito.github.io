@@ -412,6 +412,13 @@
   .dv-lab{font-size:11px; font-weight:800; color:var(--gray3); flex-shrink:0; margin-right:3px;}
   .dv-val{flex:1; text-align:center; font-size:14px; font-weight:900; color:var(--ink); font-variant-numeric:tabular-nums;}
   .dv-val small{display:block; font-size:10px; font-weight:700; color:var(--gray3);}
+  .dv-hint{font-weight:800; color:var(--blue); margin-left:6px;}
+  .dv-pn{flex:1; font-size:11px; font-weight:800; color:var(--gray); white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;}
+  .dv-wv{width:34px; text-align:center; font-size:11.5px; font-weight:900; color:var(--ink);
+    font-variant-numeric:tabular-nums;}
+  .dv-wp{width:40px; text-align:right; font-size:10.5px; font-weight:800; color:var(--gray3);
+    font-variant-numeric:tabular-nums;}
   .dv-note{font-size:10.5px; font-weight:700; color:var(--gray3); margin-top:6px; line-height:1.5;}
   .modal .ok.dark{background:linear-gradient(135deg,#4e5968,#191f28);}
   .modal .ok.danger{background:linear-gradient(135deg,#f04452,#ff6b78);}
@@ -570,8 +577,26 @@ function dev(base,mult){return Math.max(0.05,1+(base-1)*mult);}
    결과(sim/bounce.js · 103일 기준): 어느 전략도 정답이 아니게 된다.
      쫄보 65%→15% · 트레일링 21%→6% · 반등탈출 20%→7% · 신호믿기 2%→12%
    조정 손잡이는 이 숫자 하나다. 올리면(0.86~0.88) 트레일링이 다시 살아난다. */
+/* 🛠 테스트 도구가 밀어 넣는 값들. applyTierWeights가 부팅 시점에 DEV.w를 읽으므로
+   선언이 여기(위쪽)에 있어야 한다 — 도구 쪽에 두면 TDZ에 걸린다. */
+const DEV={pat:null, w:null};
+
 let DIP=0.84;
 const DIP_BASE=DIP;   // 테스트 도구가 DIP를 밀어도 돌아올 자리
+
+/* 보통 등급의 머리. 같은 패턴이라도 판마다 다르게 열린다 — p 확률로 눌리며
+   시작하고, 아니면 예전처럼 오르며 시작한다.
+
+   왜 확률인가: 전부 눌리게 했더니 매 판 손실로 시작해서 수익 낼 구간 자체가
+   사라졌다(모든 전략 0~6%). 전부 오르게 두면 "초반 급등 = 보통 등급"이 규칙이
+   된다. 섞어야 전반부가 정보를 잃으면서도 게임이 산다. */
+let MID_DIP=1.0;            // 보통 등급이 "눌리며 여는" 비율의 배수. 0이면 전부 오르며 연다
+const MID_DIP_BASE=MID_DIP;
+function midHead(st,p,lo,hi){
+  return Math.random()<p*MID_DIP
+    ? [0.23+Math.random()*0.08, dev(DIP+lo+Math.random()*0.05,st.pMult)]
+    : [0.18+Math.random()*0.08, dev(hi+Math.random()*0.12,st.pMult)];
+}
 /* 여러 구간(keypoint)을 사인 이징으로 잇는 범용 경로 생성기 — 구간을 몇 개, 어떤 값으로
    두느냐에 따라 상승/하락/V자는 물론 이중 바닥(W)·이중 고점(M)·지연 반응까지 전부 표현 가능 */
 function buildMultiPhase(keypoints,noiseAmt,T){
@@ -620,29 +645,42 @@ const PATTERNS=[
       [1,                       dev(0.45+Math.random()*0.15,st.pMult)],
     ],0.013*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'v',emo:'✅',name:'눌림목',spark:'M2 16 L16 6 L34 18 L50 12 L70 5',weight:.12,gen:(st,T)=>{
+  {id:'v',emo:'✅',name:'눌림목',spark:'M2 11 L14 18 L32 7 L48 14 L70 6',weight:.12,gen:(st,T)=>{
     return buildMultiPhase([
-      [0.20+Math.random()*0.08, dev(1.25+Math.random()*0.20,st.pMult)],
-      [0.45+Math.random()*0.10, dev(0.80+Math.random()*0.10,st.pMult)],
-      [1,                       dev(1.15+Math.random()*0.30,st.pMult)],
+      midHead(st,0.85,0.05,1.10),   // 이름 그대로 대개 눌리며 연다
+      [0.44+Math.random()*0.10, dev(1.20+Math.random()*0.18,st.pMult)],
+      [0.70+Math.random()*0.06, dev(1.00+Math.random()*0.10,st.pMult)],
+      [1,                       dev(1.20+Math.random()*0.25,st.pMult)],
     ],0.013*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'spike',emo:'🎢',name:'급등급락',spark:'M2 16 L14 3 L26 8 L44 15 L70 20',weight:.10,gen:(st,T)=>{
-    const peakFrac=0.08+Math.random()*0.17, peakV=dev(1.8+Math.random()*1.7,st.pMult), endV=dev(0.5+Math.random()*0.35,st.pMult);
-    return buildMultiPhase([[peakFrac,peakV],[1,endV]],0.02*noiseScale(T)*st.noiseMult,T);
+  {id:'spike',emo:'🎢',name:'급등급락',spark:'M2 12 L14 19 L34 2 L48 9 L70 21',weight:.10,gen:(st,T)=>{
+    /* 폭등을 중반으로 미뤘다. 예전에는 8~25%에서 2.65배까지 치솟아서, 이 패턴
+       하나가 "초반에 오르는 판"의 큰 지분이었다. 롤러코스터라는 성격은 그대로다. */
+    return buildMultiPhase([
+      midHead(st,0.5,0.03,1.25),
+      [0.40+Math.random()*0.14, dev(1.9+Math.random()*1.2,st.pMult)],
+      [1,                       dev(0.5+Math.random()*0.35,st.pMult)],
+    ],0.02*noiseScale(T)*st.noiseMult,T);
   }},
   {id:'flat',emo:'➖',name:'횡보',spark:'M2 12 L20 11 L38 13 L54 11 L70 12',weight:.08,gen:(st,T)=>buildFlat(0.01*noiseScale(T)*st.noiseMult,0.15*st.pMult,T)},
-  {id:'invv',emo:'⛰️',name:'고점 후 하락',spark:'M2 18 L20 9 L36 4 L54 12 L70 19',weight:.10,gen:(st,T)=>{
-    const peakFrac=0.4+Math.random()*0.2, peakV=dev(1.4+Math.random()*0.7,st.pMult), endV=dev(0.55+Math.random()*0.3,st.pMult);
-    return buildMultiPhase([[peakFrac,peakV],[1,endV]],0.014*noiseScale(T)*st.noiseMult,T);
+  {id:'invv',emo:'⛰️',name:'고점 후 하락',spark:'M2 12 L14 18 L34 4 L52 11 L70 20',weight:.10,gen:(st,T)=>{
+    return buildMultiPhase([
+      midHead(st,0.7,0.04,1.15),
+      [0.44+Math.random()*0.12, dev(1.4+Math.random()*0.7,st.pMult)],
+      [1,                       dev(0.55+Math.random()*0.3,st.pMult)],
+    ],0.014*noiseScale(T)*st.noiseMult,T);
   }},
   {id:'w',emo:'🌊',name:'이중 바닥',spark:'M2 10 L14 19 L28 11 L42 20 L56 12 L70 13',weight:.10,gen:(st,T)=>{
     const d1=dev(0.5+Math.random()*0.25,st.pMult), b1=dev(1.15+Math.random()*0.25,st.pMult), d2=dev(0.55+Math.random()*0.25,st.pMult), endV=dev(0.95+Math.random()*0.2,st.pMult);
     return buildMultiPhase([[0.22,d1],[0.5,b1],[0.75,d2],[1,endV]],0.013*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'m',emo:'🐫',name:'이중 고점',spark:'M2 14 L14 5 L28 13 L42 7 L56 16 L70 20',weight:.10,gen:(st,T)=>{
-    const p1=dev(1.35+Math.random()*0.35,st.pMult), d1=dev(0.75+Math.random()*0.2,st.pMult), p2=dev(1.05+Math.random()*0.2,st.pMult), endV=dev(0.65+Math.random()*0.2,st.pMult);
-    return buildMultiPhase([[0.22,p1],[0.5,d1],[0.75,p2],[1,endV]],0.013*noiseScale(T)*st.noiseMult,T);
+  {id:'m',emo:'🐫',name:'이중 고점',spark:'M2 12 L12 18 L26 6 L40 14 L54 8 L70 21',weight:.10,gen:(st,T)=>{
+    const p1=dev(1.35+Math.random()*0.35,st.pMult), d1=dev(0.75+Math.random()*0.2,st.pMult),
+          p2=dev(1.05+Math.random()*0.2,st.pMult), endV=dev(0.65+Math.random()*0.2,st.pMult);
+    return buildMultiPhase([
+      midHead(st,0.5,0.06,1.12),
+      [0.40,p1],[0.60,d1],[0.80,p2],[1,endV],
+    ],0.013*noiseScale(T)*st.noiseMult,T);
   }},
   {id:'delayup',emo:'⏫',name:'지연 상승',spark:'M2 13 L24 12 L40 13 L54 8 L70 3',weight:.04,gen:(st,T)=>{
     const flatV=dev(0.98+Math.random()*0.08,1), endV=dev(1.6+Math.random()*0.5,st.pMult);
@@ -705,7 +743,7 @@ const BASE_WEIGHTS=PATTERNS.map(p=>p.weight);
 function applyTierWeights(){
   const d=tierOf().down, HALF=0.29;   // strong 합 = weak 합 = 0.29
   PATTERNS.forEach((p,i)=>{
-    const t=PATTERN_TIER[p.id], w0=BASE_WEIGHTS[i];
+    const t=PATTERN_TIER[p.id], w0=(DEV.w&&DEV.w[p.id]!==undefined)?DEV.w[p.id]:BASE_WEIGHTS[i];
     p.weight = t==='weak' ? w0+d*(w0/HALF)
              : t==='strong' ? w0-d*(w0/HALF)
              : w0;
@@ -2162,7 +2200,6 @@ function showIntroModal(){
 
    DEV.pat / DEV.dip 은 저장하지 않는다 — 새로고침하면 원래대로 돌아온다.
    XP를 임의로 넣어 기록이 오염되면 "메타만 초기화"로 되돌리면 된다. */
-const DEV={pat:null};
 /* 키를 이름으로 하나씩 지우면 놓친다. loadMeta는 meta_v5가 없으면 옛 meta_v4에서
    XP를 다시 끌어오므로, v5만 지우면 경험치가 되살아난다. 예전 버전 키가 몇 개나
    남아 있는지도 알 수 없다. 그래서 접두어로 훑는다. */
@@ -2234,13 +2271,32 @@ function showDevModal(){
       <div class="dv-row wrap">${pats}
         <button class="dv-btn sm ${DEV.pat?'':'sel'}" data-pat="">끄기</button></div>
 
+      <div class="dv-sec">패턴 가중치 <span class="dv-hint" id="dvEarly">…</span></div>
+      ${PATTERNS.map((p,i)=>{
+        const w=(DEV.w&&DEV.w[p.id]!==undefined)?DEV.w[p.id]:BASE_WEIGHTS[i];
+        return `<div class="dv-row">
+          <span class="dv-pn">${p.emo} ${p.name}</span>
+          <button class="dv-btn sm" data-w="${p.id}" data-d="-0.02">−</button>
+          <span class="dv-wv">${w.toFixed(2)}</span>
+          <button class="dv-btn sm" data-w="${p.id}" data-d="0.02">+</button>
+          <span class="dv-wp">${(p.weight*100).toFixed(1)}%</span>
+        </div>`;}).join('')}
+      <div class="dv-row"><button class="dv-btn" data-wreset="1">가중치 기본값으로</button></div>
+
+      <div class="dv-sec">보통 등급이 눌리며 여는 비율</div>
+      <div class="dv-row">
+        <button class="dv-btn" data-mid="-0.1">−0.1</button>
+        <span class="dv-val">${MID_DIP.toFixed(1)}<small>${MID_DIP<=0?'전부 오르며 연다':'1.0이 기본'}</small></span>
+        <button class="dv-btn" data-mid="0.1">+0.1</button>
+      </div>
+
       <div class="dv-sec">급락 바닥 (DIP)</div>
       <div class="dv-row">
         <button class="dv-btn" data-dip="-0.02">−0.02</button>
         <span class="dv-val">${DIP.toFixed(2)}<small>3배 ${Math.round((DIP-1)*300)}%</small></span>
         <button class="dv-btn" data-dip="0.02">+0.02</button>
       </div>
-      <div class="dv-note">패턴 강제와 DIP는 저장 안 해요 — 새로고침하면 돌아와요 (기본 ${DIP_BASE.toFixed(2)}).</div>
+      <div class="dv-note">가중치·눌림 비율·DIP·패턴 강제는 저장 안 해요 — 새로고침하면 돌아와요.<br>기본값: DIP ${DIP_BASE.toFixed(2)} · 눌림 ${MID_DIP_BASE.toFixed(1)}</div>
     </div>
     <button class="ok dark" id="mOk">닫기</button>`;
   $('modal').classList.add('on');
@@ -2271,6 +2327,28 @@ function showDevModal(){
     S.tier=+b.dataset.tier; applyTierWeights(); S.daysLeft=gateDaysOf(S.gate||0); again(); });
   box.querySelectorAll('[data-pat]').forEach(b=>b.onclick=()=>{ sfx.tap();
     DEV.pat=b.dataset.pat||null; showDevModal(); });
+  box.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{ sfx.tap();
+    const id=b.dataset.w, i=PATTERNS.findIndex(p=>p.id===id);
+    if(!DEV.w){ DEV.w={}; PATTERNS.forEach((p,k)=>DEV.w[p.id]=BASE_WEIGHTS[k]); }
+    DEV.w[id]=Math.max(0,Math.min(0.6,+(DEV.w[id]+ +b.dataset.d).toFixed(2)));
+    applyTierWeights(); showDevModal(); });
+  box.querySelectorAll('[data-wreset]').forEach(b=>b.onclick=()=>{ sfx.tap();
+    DEV.w=null; applyTierWeights(); showDevModal(); });
+  box.querySelectorAll('[data-mid]').forEach(b=>b.onclick=()=>{ sfx.tap();
+    MID_DIP=Math.max(0,Math.min(1.5,+(MID_DIP + +b.dataset.mid).toFixed(1))); showDevModal(); });
+  /* 초반 25%에 +5% 이상 오르는 판의 비율 — 지금 가중치로 실제 경로를 뽑아 센다 */
+  (()=>{
+    const st=TRADE_STOCKS.find(x=>x.id===S.selectedStock)||TRADE_STOCKS[0];
+    const tot=PATTERNS.reduce((a,p)=>a+p.weight,0);
+    let up=0; const N=400;
+    for(let k=0;k<N;k++){
+      let r=Math.random()*tot,a=0,pk=PATTERNS[0];
+      for(const p of PATTERNS){ a+=p.weight; if(r<=a){pk=p;break;} }
+      const arr=pk.gen(st,ticksOf(st)), q=Math.floor((arr.length-1)*0.25);
+      for(let i=1;i<=q;i++) if(arr[i]>=1.05){ up++; break; }
+    }
+    if($('dvEarly'))$('dvEarly').textContent=`초반 상승 ${(up/N*100).toFixed(0)}%`;
+  })();
   box.querySelectorAll('[data-dip]').forEach(b=>b.onclick=()=>{ sfx.tap();
     DIP=Math.max(0.60,Math.min(0.98,+(DIP + +b.dataset.dip).toFixed(2))); showDevModal(); });
   $('mOk').onclick=()=>{ sfx.tap(); $('modal').classList.remove('on'); saveRun(); render(); };

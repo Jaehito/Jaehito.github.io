@@ -38,6 +38,8 @@ const parts = [
   /* DIP는 테스트 도구가 실시간으로 밀 수 있어야 해서 let이다. const로 찾으면
      조용히 안 깨지고 요란하게 깨진다 — 그게 낫다. */
   slice('let DIP=', '\n'),
+  slice('let MID_DIP=', '\n'),
+  slice('function midHead(st,p,lo,hi){', '\n}'),   // 보통 등급의 머리
   slice('function buildMultiPhase(keypoints,noiseAmt,T){', '\n}'),
   slice('function buildFlat(noiseAmt,driftAmt,T){', '\n}'),
   slice('const PATTERNS=[', '\n];'),
@@ -48,7 +50,7 @@ const G = {};
 (function () {
   // eslint-disable-next-line no-eval
   eval(parts.join('\n') + '\nG.randn=randn; G.ROUND_TICKS=ROUND_TICKS; G.noiseScale=noiseScale;' +
-    'G.dev=dev; G.buildMultiPhase=buildMultiPhase; G.buildFlat=buildFlat;' +
+    'G.dev=dev; G.buildMultiPhase=buildMultiPhase; G.buildFlat=buildFlat; G.midHead=midHead;' +
     'G.PATTERNS=PATTERNS; G.PATTERN_TIER=PATTERN_TIER;');
 })();
 

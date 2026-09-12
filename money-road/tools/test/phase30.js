@@ -8,7 +8,8 @@
      5) 패턴 강제가 genRound를 실제로 고정하는가
      6) DIP 조절이 경로에 반영되는가 · 기본값은 따로 남아 있는가
      7) 라운드 중에는 안 열린다 (15초짜리 판 위에 모달이 뜨면 그 판을 잃는다)
-     8) 초기화가 진짜로 지우는가 — reload가 pagehide→saveRun을 부르므로 잠그지
+     8) 패턴 가중치 편집기 · 눌림 비율(MID_DIP) — 초반 상승 비율이 따라 움직이는가
+     9) 초기화가 진짜로 지우는가 — reload가 pagehide→saveRun을 부르므로 잠그지
         않으면 방금 지운 판이 되살아난다. 옛 meta_v4에서 XP가 되돌아오지도 않아야 한다. */
 const { launch, GAME: url } = require('../lib/browser');
 (async()=>{
@@ -79,6 +80,26 @@ const { launch, GAME: url } = require('../lib/browser');
    const on=$('modal').classList.contains('on');
    S.activeRound=null; render();
    return {모달:on};}));
+ L('13-b. 가중치 편집기', await (async()=>{
+   for(let i=0;i<5;i++) await p.evaluate(()=>$('brandTap').click());
+   await p.waitForTimeout(300);
+   return await p.evaluate(()=>{
+     const before=$('dvEarly').textContent;
+     for(let i=0;i<3;i++)document.querySelector('[data-w="up"][data-d="0.02"]').click();
+     const up=DEV.w.up;
+     document.querySelector('[data-wreset]').click();
+     return {초반표시:before, '상승 가중 +0.06':up, 되돌림:DEV.w};
+   });
+ })());
+ L('13-c. 눌림 비율이 초반 상승을 움직인다', await p.evaluate(()=>{
+   const out={};
+   for(let i=0;i<12;i++)document.querySelector('[data-mid="-0.1"]').click();
+   out['눌림 0.0']=$('dvEarly').textContent; out.MID0=MID_DIP;
+   for(let i=0;i<10;i++)document.querySelector('[data-mid="0.1"]').click();
+   out['눌림 1.0']=$('dvEarly').textContent; out.MID1=MID_DIP;
+   return out;}));
+ await p.evaluate(()=>$('mOk').click());
+
  /* 여기부터는 실제로 devWipe를 눌러 새로고침까지 간다. 직접 removeItem을 부르면
     reload 경로(pagehide→saveRun)를 안 타서 진짜 버그를 못 잡는다. */
  const seed=async(page)=>{ await page.evaluate(()=>{

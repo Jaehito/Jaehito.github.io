@@ -393,6 +393,30 @@
   /* 조기 상환 보너스는 레벨 보상과 나란히 뜨므로 금색으로 갈라둔다 — 현금이 들어온 줄이다 */
   .lv-gain.early{background:#fff9ec;} .lv-gain.early b{color:#8a5a00;}
 
+  /* 🛠 테스트 도구 — 상단 로고를 5번 연타하면 열린다. 평소엔 아무 흔적이 없다. */
+  .dv-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:10px;}
+  .dv-title{font-size:16px; font-weight:900; color:var(--ink);}
+  .dv-ver{font-size:10.5px; font-weight:700; color:var(--gray3); font-variant-numeric:tabular-nums;}
+  .dv-scroll{max-height:56vh; overflow-y:auto; -webkit-overflow-scrolling:touch; text-align:left;}
+  .dv-sec{font-size:10.5px; font-weight:800; color:var(--gray3); letter-spacing:.04em; margin:12px 0 6px;}
+  .dv-sec:first-child{margin-top:0;}
+  .dv-row{display:flex; gap:5px; align-items:center; margin-bottom:5px;}
+  .dv-row.wrap{flex-wrap:wrap;}
+  .dv-btn{flex:1; border:1px solid var(--line); background:var(--field); color:var(--gray);
+    font-family:inherit; font-size:11.5px; font-weight:800; padding:8px 6px; border-radius:9px;
+    cursor:pointer; white-space:nowrap;}
+  .dv-btn.sm{flex:0 0 auto; padding:6px 9px; font-size:11px;}
+  .dv-btn.sel{border-color:var(--blue); background:var(--blue-weak); color:var(--blue);}
+  .dv-btn.danger{border-color:var(--red); background:var(--red-weak); color:var(--red);}
+  .dv-lab{font-size:11px; font-weight:800; color:var(--gray3); flex-shrink:0; margin-right:3px;}
+  .dv-val{flex:1; text-align:center; font-size:14px; font-weight:900; color:var(--ink); font-variant-numeric:tabular-nums;}
+  .dv-val small{display:block; font-size:10px; font-weight:700; color:var(--gray3);}
+  .dv-note{font-size:10.5px; font-weight:700; color:var(--gray3); margin-top:6px; line-height:1.5;}
+  .modal .ok.dark{background:linear-gradient(135deg,#4e5968,#191f28);}
+  .modal .ok.danger{background:linear-gradient(135deg,#f04452,#ff6b78);}
+  .modal .ok.ghost{margin-top:8px; background:var(--field); color:var(--gray); box-shadow:none;}
+  .brand{cursor:pointer;}
   .toast{position:fixed; left:50%; bottom:28px; translate:-50% 0; background:rgba(25,31,40,.92); color:#fff; font-size:13.5px; font-weight:700; padding:11px 18px; border-radius:14px; z-index:70; opacity:0; transition:.25s; pointer-events:none; max-width:88%; text-align:center;} .toast.on{opacity:1;}
 </style>
 </head>
@@ -400,7 +424,7 @@
 <div id="app">
   <div class="topbar">
     <div class="tb-left">
-      <div class="brand">머니<span>로드</span></div>
+      <div class="brand" id="brandTap">머니<span>로드</span></div>
       <div class="cash-top" id="cashView">0원</div>
     </div>
     <div class="top-right">
@@ -546,7 +570,8 @@ function dev(base,mult){return Math.max(0.05,1+(base-1)*mult);}
    결과(sim/bounce.js · 103일 기준): 어느 전략도 정답이 아니게 된다.
      쫄보 65%→15% · 트레일링 21%→6% · 반등탈출 20%→7% · 신호믿기 2%→12%
    조정 손잡이는 이 숫자 하나다. 올리면(0.86~0.88) 트레일링이 다시 살아난다. */
-const DIP=0.84;
+let DIP=0.84;
+const DIP_BASE=DIP;   // 테스트 도구가 DIP를 밀어도 돌아올 자리
 /* 여러 구간(keypoint)을 사인 이징으로 잇는 범용 경로 생성기 — 구간을 몇 개, 어떤 값으로
    두느냐에 따라 상승/하락/V자는 물론 이중 바닥(W)·이중 고점(M)·지연 반응까지 전부 표현 가능 */
 function buildMultiPhase(keypoints,noiseAmt,T){
@@ -653,7 +678,9 @@ function pickInTier(tier,stock){
    적중률을 재던 시뮬은 sim/news.js에 기록으로 남겼다. */
 
 function genRound(stock,tier){
-  const pat=pickInTier(tier||'mid',stock);
+  /* 테스트 도구로 패턴을 고정했으면 등급을 무시하고 그걸 쓴다. 신호는 따로 굴러가므로
+     신호와 실제가 어긋날 수 있는데, 확인용으로는 그게 오히려 맞다. */
+  const pat=(DEV.pat&&PATTERNS.find(x=>x.id===DEV.pat))||pickInTier(tier||'mid',stock);
   const T=ticksOf(stock);
   return {patternId:pat.id, patternEmo:pat.emo, path:pat.gen(stock,T), ticks:T};
 }
@@ -2122,6 +2149,128 @@ function showIntroModal(){
   META.introV=INTRO_V; saveMeta();
   $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
 }
+/* ===== 🛠 테스트 도구 =====
+   밸런스를 만질 때마다 새 판을 처음부터 굴려야 확인이 된다 — 해금 하나 보려고
+   900 XP를 모으고, 마지막 상환 단계를 보려고 100판을 돌린다. 그걸 건너뛴다.
+
+   상단 로고를 1.5초 안에 5번 누르면 열린다. 평소 화면에는 아무 흔적이 없고,
+   모달 하나만 쓰므로 게임 구조도 안 건드린다.
+
+   DEV.pat / DEV.dip 은 저장하지 않는다 — 새로고침하면 원래대로 돌아온다.
+   XP를 임의로 넣어 기록이 오염되면 "메타만 초기화"로 되돌리면 된다. */
+const DEV={pat:null};
+function devWipe(what){
+  try{
+    if(what!=='meta')localStorage.removeItem(RUN_KEY);
+    if(what!=='run') localStorage.removeItem(META_KEY);
+  }catch(e){}
+  location.reload();
+}
+function showDevWipeModal(){
+  const unlocked=META_UNLOCKS.filter(u=>META.xp>=u.need).length;
+  $('modalBox').innerHTML=`<div class="emo">🧹</div>
+    <div class="tt">전부 지울까요?</div>
+    <div class="dc">진행 중인 판과 <b>모아둔 경험치·해금이 전부</b> 사라져요.<br>되돌릴 수 없어요.</div>
+    <div class="stat-grid">
+      <div class="s"><div class="k">지금 XP</div><div class="v">${META.xp|0}</div></div>
+      <div class="s"><div class="k">해금</div><div class="v">${unlocked}종</div></div></div>
+    <button class="ok danger" id="mOk">네, 전부 지울게요</button>
+    <button class="ok ghost" id="mNo">아니요</button>`;
+  $('mOk').onclick=()=>devWipe('all');
+  $('mNo').onclick=()=>{sfx.tap();showDevModal();};
+}
+function showDevModal(){
+  const pats=PATTERNS.map(p=>
+    `<button class="dv-btn sm ${DEV.pat===p.id?'sel':''}" data-pat="${p.id}">${p.emo}${p.name}</button>`).join('');
+  $('modalBox').innerHTML=`
+    <div class="dv-head"><span class="dv-title">🛠 테스트 도구</span>
+      <span class="dv-ver">XP ${META.xp|0} · ${gateDone()?'완제':gateOf().n} · D-${S.daysLeft}</span></div>
+    <div class="dv-scroll">
+      <div class="dv-sec">저장</div>
+      <div class="dv-row">
+        <button class="dv-btn danger" data-wipe="all">전부 초기화</button>
+        <button class="dv-btn" data-wipe="run">판만</button>
+        <button class="dv-btn" data-wipe="meta">메타만</button>
+      </div>
+
+      <div class="dv-sec">이 판 — 현금 ${fmtWon(S.cash)}</div>
+      <div class="dv-row">
+        <button class="dv-btn" data-cash="10">현금 ×10</button>
+        <button class="dv-btn" data-cash="100">×100</button>
+        <button class="dv-btn" data-goal="1">목표 −1만</button>
+      </div>
+      <div class="dv-row">
+        <button class="dv-btn" data-gate="next">다음 상환</button>
+        <button class="dv-btn" data-gate="last">완제 직전</button>
+        <button class="dv-btn" data-days="1">D-1</button>
+      </div>
+
+      <div class="dv-sec">메타</div>
+      <div class="dv-row">
+        <button class="dv-btn" data-xp="0">XP 0</button>
+        <button class="dv-btn" data-xp="400">400</button>
+        <button class="dv-btn" data-xp="900">900</button>
+        <button class="dv-btn" data-xp="+100">+100</button>
+      </div>
+      <div class="dv-row"><span class="dv-lab">난이도</span>
+        ${TIERS.map((t,i)=>`<button class="dv-btn sm ${tierIdx()===i?'sel':''}" data-tier="${i}">${i+1}</button>`).join('')}
+      </div>
+
+      <div class="dv-sec">다음 판 패턴 강제</div>
+      <div class="dv-row wrap">${pats}
+        <button class="dv-btn sm ${DEV.pat?'':'sel'}" data-pat="">끄기</button></div>
+
+      <div class="dv-sec">급락 바닥 (DIP)</div>
+      <div class="dv-row">
+        <button class="dv-btn" data-dip="-0.02">−0.02</button>
+        <span class="dv-val">${DIP.toFixed(2)}<small>3배 ${Math.round((DIP-1)*300)}%</small></span>
+        <button class="dv-btn" data-dip="0.02">+0.02</button>
+      </div>
+      <div class="dv-note">패턴 강제와 DIP는 저장 안 해요 — 새로고침하면 돌아와요 (기본 ${DIP_BASE.toFixed(2)}).</div>
+    </div>
+    <button class="ok dark" id="mOk">닫기</button>`;
+  $('modal').classList.add('on');
+  const box=$('modalBox');
+  const again=()=>{ saveRun(); render(); showDevModal(); };
+  box.querySelectorAll('[data-wipe]').forEach(b=>b.onclick=()=>{ sfx.tap();
+    const w=b.dataset.wipe;
+    if(w==='all')showDevWipeModal(); else devWipe(w); });
+  box.querySelectorAll('[data-cash]').forEach(b=>b.onclick=()=>{ sfx.tap();
+    S.cash=Math.round(S.cash*(+b.dataset.cash));
+    S.peakCash=Math.max(S.peakCash||0,S.cash); setBet(S.betAmount); again(); });
+  box.querySelectorAll('[data-goal]').forEach(b=>b.onclick=()=>{ sfx.tap();
+    if(!gateDone()){ S.cash=Math.max(MIN_BET,gateOf().goal-10000);
+      S.peakCash=Math.max(S.peakCash||0,S.cash); setBet(S.betAmount); } again(); });
+  box.querySelectorAll('[data-gate]').forEach(b=>b.onclick=()=>{ sfx.tap();
+    if(b.dataset.gate==='last'){ S.gate=GATES.length-1; S.level=GATES.length; }
+    else S.gate=Math.min(GATES.length-1,(S.gate||0)+1);
+    S.daysLeft=gateDaysOf(S.gate);
+    S.cash=Math.max(MIN_BET,Math.round(GATES[S.gate].goal*0.5));
+    S.peakCash=Math.max(S.peakCash||0,S.cash); setBet(S.betAmount); again(); });
+  box.querySelectorAll('[data-days]').forEach(b=>b.onclick=()=>{ sfx.tap();
+    S.daysLeft=+b.dataset.days; again(); });
+  box.querySelectorAll('[data-xp]').forEach(b=>b.onclick=()=>{ sfx.tap();
+    const v=b.dataset.xp;
+    META.xp = v[0]==='+' ? (META.xp|0)+ +v.slice(1) : +v;
+    saveMeta(); again(); });
+  box.querySelectorAll('[data-tier]').forEach(b=>b.onclick=()=>{ sfx.tap();
+    S.tier=+b.dataset.tier; applyTierWeights(); S.daysLeft=gateDaysOf(S.gate||0); again(); });
+  box.querySelectorAll('[data-pat]').forEach(b=>b.onclick=()=>{ sfx.tap();
+    DEV.pat=b.dataset.pat||null; showDevModal(); });
+  box.querySelectorAll('[data-dip]').forEach(b=>b.onclick=()=>{ sfx.tap();
+    DIP=Math.max(0.60,Math.min(0.98,+(DIP + +b.dataset.dip).toFixed(2))); showDevModal(); });
+  $('mOk').onclick=()=>{ sfx.tap(); $('modal').classList.remove('on'); saveRun(); render(); };
+}
+/* 로고 연타 — 5번을 1.5초 "안에 전부" 눌러야 한다. 탭 간격만 재면 느긋하게
+   눌러도 계속 쌓여서 실수로 열릴 수 있다. 연타 전체를 창 안에 가둔다. */
+let devTaps=0, devFirst=0;
+$('brandTap').onclick=()=>{
+  const now=Date.now();
+  if(now-devFirst>1500){ devFirst=now; devTaps=1; } else devTaps++;
+  if(devTaps>=5){ devTaps=0; devFirst=0;
+    if(!$('modal').classList.contains('on') && !S.activeRound){ sfx.pay(); showDevModal(); } }
+};
+
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),1600);}
 
 $('muteBtn').onclick=()=>{META.mute=!META.mute;saveMeta();$('muteBtn').textContent=META.mute?'🔇':'🔊';if(!META.mute)sfx.tap();};

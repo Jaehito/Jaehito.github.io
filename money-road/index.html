@@ -531,9 +531,9 @@
   <div class="level-strip" id="repayStrip"></div>
 
   <div class="main-tabs">
-    <button class="main-tab on" data-tab="trade">🎯 단타</button>
-    <button class="main-tab" data-tab="shop">🛒 상점</button>
-    <button class="main-tab" data-tab="unlock">🔓 해금</button>
+    <button class="main-tab on" data-tab="trade" id="mtTrade">🎯 단타</button>
+    <button class="main-tab" data-tab="shop" id="mtShop">🛒 상점</button>
+    <button class="main-tab" data-tab="unlock" id="mtUnlock">🔓 해금</button>
   </div>
 
   <div class="strip" id="strip"></div>
@@ -547,12 +547,12 @@
   </div>
 
   <div id="panelShop" class="hide">
-    <div class="section-title">🛒 상점 <small style="font-weight:600;color:var(--gray3)">· 현금으로 투자해요</small></div>
+    <div class="section-title" id="shopTitle">🛒 상점 <small style="font-weight:600;color:var(--gray3)">· 현금으로 투자해요</small></div>
     <div id="shopList"></div>
   </div>
 
   <div id="panelUnlock" class="hide">
-    <div class="section-title">🏆 해금 <small style="font-weight:600;color:var(--gray3)">· 레벨을 올리면 무료로 열려요</small></div>
+    <div class="section-title" id="unlockTitle">🏆 해금 <small style="font-weight:600;color:var(--gray3)">· 레벨을 올리면 무료로 열려요</small></div>
     <div id="unlockList"></div>
     <div id="retireBox"></div>
   </div>
@@ -565,6 +565,81 @@
 "use strict";
 const $=id=>document.getElementById(id);
 const RUN_KEY='moneyroad2_run_v12', META_KEY='moneyroad2_meta_v5';
+
+/* ===== 언어 =====
+   해외판을 내면서 한국어와 영어를 같이 든다. 지금 단계는 **배선만**이다 —
+   문자열은 458개인데 그걸 한 번에 옮기면 절반만 번역된 화면이 서비스로 나간다.
+   그래서 t()는 **없는 키를 한국어로 떨어뜨린다**. 영어를 한 줄씩 채워 넣어도
+   화면에 키 이름이 튀어나오지 않고, 한국어 사용자에게는 아무것도 안 달라진다.
+
+   언어는 진행도가 아니라 환경설정이라 키를 따로 쓴다. devWipe가 'moneyroad'
+   접두어를 훑어 지우므로 거기서도 빼둔다 — 전부 초기화로 언어까지 돌아가면
+   매번 다시 고르게 된다(맞춰둔 템플릿 슬롯을 살리는 것과 같은 이유). */
+const LANG_KEY='moneyroad2_lang';
+const L={
+  ko:{
+    /* 메인 탭 · 섹션 */
+    tabTrade:'🎯 단타', tabShop:'🛒 상점', tabUnlock:'🔓 해금',
+    shopTitle:'🛒 상점', shopNote:'· 현금으로 투자해요',
+    unlockTitle:'🏆 해금', unlockNote:'· 레벨을 올리면 무료로 열려요',
+    /* 오늘 기록 스트립 */
+    stRounds:'오늘 판수', stBestMult:'최고 배율', stBestProfit:'최대 수익',
+    stBestStreak:'최다 연승', stSCount:'S등급 매도', stNextTicket:'다음 티켓까지',
+    stWinRate:'승률 {p}%', stStreakN:'🔥 {n}연승', stStreakNone:'🔥 연승 없음',
+    stToday:'오늘 {n}판', stBest:'최고 {v}',
+    unitRounds:'{n}판', unitStreak:'{n}연승', unitTimes:'{n}회',
+    /* 단타 카드 */
+    goalDone:'🏆 <b>대출 완제</b>', lastDay:'마지막날', dday:'D-{n}',
+    liqAt:'청산 {v}x', liqBoth:'청산 {a}·{b}', liqNone:'청산 없음',
+    levUnit:'{n}배', qMax:'최대',
+    dirLong:'📈 상승', dirShort:'📉 하락',
+    buffLine:'다음 판 한정 · {names}',
+    paceLast:'⚠️ 마지막 거래일', paceNeed:'판당 <b>{p}</b> 필요',
+    tradeNote:'끝까지 들고만 있으면 손해예요 — 패턴을 보고 반응하세요!',
+    goNoFunds:'베팅금이 부족해요', goStart:'{amt}로 시작', amtLev:'{v} × {n}배',
+    sigAcc:'이 신호가 맞을 확률 {p}%', sigSure:'🔎 이번 판은 이 신호가 반드시 맞아요'
+  },
+  en:{
+    tabTrade:'🎯 Trade', tabShop:'🛒 Shop', tabUnlock:'🔓 Unlock',
+    shopTitle:'🛒 Shop', shopNote:'· spend cash',
+    unlockTitle:'🏆 Unlock', unlockNote:'· opens free as you level up',
+    stRounds:'Sessions today', stBestMult:'Best mult', stBestProfit:'Best profit',
+    stBestStreak:'Best streak', stSCount:'S-grade sells', stNextTicket:'Next ticket',
+    stWinRate:'win {p}%', stStreakN:'🔥 {n} in a row', stStreakNone:'🔥 no streak',
+    stToday:'{n} today', stBest:'best {v}',
+    unitRounds:'{n}', unitStreak:'{n} in a row', unitTimes:'{n}',
+    goalDone:'🏆 <b>Loan cleared</b>', lastDay:'Last day', dday:'D-{n}',
+    liqAt:'Liq {v}x', liqBoth:'Liq {a}·{b}', liqNone:'No liq',
+    levUnit:'{n}×', qMax:'Max',
+    dirLong:'📈 Long', dirShort:'📉 Short',
+    buffLine:'This session only · {names}',
+    paceLast:'⚠️ Last session', paceNeed:'need <b>{p}</b> per session',
+    tradeNote:'Holding to the end loses — read the pattern and react!',
+    goNoFunds:'Not enough to stake', goStart:'Start with {amt}', amtLev:'{v} × {n}',
+    sigAcc:'This signal is right {p}% of the time',
+    sigSure:'🔎 This signal is guaranteed this session'
+  }
+};
+/* 브라우저 설정으로 첫 언어를 정한다. 고른 뒤에는 저장값이 이긴다. */
+function detectLang(){
+  try{ return String(navigator.language||'').toLowerCase().indexOf('ko')===0?'ko':'en'; }
+  catch(e){ return 'ko'; }
+}
+let LANG=(function(){
+  try{ const v=localStorage.getItem(LANG_KEY); if(v==='ko'||v==='en')return v; }catch(e){}
+  return detectLang();
+})();
+function t(k,v){
+  const d=L[LANG]||L.ko;
+  const s=(d&&d[k]!=null)?d[k]:(L.ko[k]!=null?L.ko[k]:k);
+  return v?String(s).replace(/\{(\w+)\}/g,function(_,n){return v[n]!=null?v[n]:'';}):s;
+}
+function setLang(l){
+  if(l!=='ko'&&l!=='en')return;
+  LANG=l;
+  try{ localStorage.setItem(LANG_KEY,l); }catch(e){}
+  if(typeof render==='function')render();
+}
 
 function fmtWon(v){const neg=v<0;let x=Math.round(Math.abs(v));if(x<10000)return (neg?'-':'')+x.toLocaleString()+'원';
   const eok=Math.floor(x/100000000),man=Math.floor((x%100000000)/10000);let s='';if(eok)s+=eok+'억';if(man)s+=(s?' ':'')+man.toLocaleString()+'만';return (neg?'-':'')+s+'원';}
@@ -1882,12 +1957,12 @@ function renderTrade(){
   const gc=$('tpGoal');
   if(gateDone()){
     gc.className='tp-goal';
-    gc.innerHTML='🏆 <b>대출 완제</b>';
+    gc.innerHTML=t('goalDone');
   }else{
     const gr=riskAt(S.cash,S.daysLeft);
     gc.className=`tp-goal ${gr.cls}${gr.last?' last':''}`;
     gc.innerHTML=`🔗 <b>${fmtWon(gateOf().goal)}</b><span class="sep">·</span>`+
-      `<span class="dd">${gr.last?'마지막날':`D-${S.daysLeft}`}</span>`;
+      `<span class="dd">${gr.last?t('lastDay'):t('dday',{n:S.daysLeft})}</span>`;
   }
   if(S.activeRound){renderRoundView();return;}
   RV=null; /* 아래에서 tradeBody를 통째로 갈아엎으므로 라운드 뷰 노드 캐시를 버린다 */
@@ -1895,7 +1970,7 @@ function renderTrade(){
      "지금 시작할 이 판"에 걸리는 것이므로 그 자리가 맞다. */
   const bl=(S.buffs||[]);
   const buffLine=bl.length?`<div class="buff-line">${bl.map(b=>BUFFS[b].emo).join('')}
-      <span>다음 판 한정 · ${bl.map(b=>BUFFS[b].name).join(' + ')}</span></div>`:'';
+      <span>${t('buffLine',{names:bl.map(b=>BUFFS[b].name).join(' + ')})}</span></div>`:'';
   const minLev=minLevOf();
   const levOptions=LEVERAGE_MULTS.filter(m=>m>=minLev&&m<=maxLev);
   const curLev=Math.min(Math.max(minLev,S.betLeverage||minLev),maxLev);
@@ -1907,9 +1982,9 @@ function renderTrade(){
       const lL=liqMultOf(m,1), lS=liqMultOf(m,-1);
       /* 공매도를 열면 청산선이 방향마다 다르다. 두 값을 같이 적어야 배율을 고를 때
          "숏은 1배도 2배에서 죽는다"가 보인다. */
-      const txt=canShort?`청산 ${lL>0?lL.toFixed(2):'—'}·${lS.toFixed(2)}`
-                        :(lL>0?`청산 ${lL.toFixed(2)}x`:'청산 없음');
-      return `<button data-lev="${m}" class="${curLev===m?'sel':''}">${m}배
+      const txt=canShort?t('liqBoth',{a:lL>0?lL.toFixed(2):'—',b:lS.toFixed(2)})
+                        :(lL>0?t('liqAt',{v:lL.toFixed(2)}):t('liqNone'));
+      return `<button data-lev="${m}" class="${curLev===m?'sel':''}">${t('levUnit',{n:m})}
         <small>${txt}</small></button>`;
     }).join('')}</div>`;
   ensurePending();
@@ -1920,7 +1995,7 @@ function renderTrade(){
   const signalRow=`<div class="signal ${sigId}">
       <div class="sg-left"><span class="sg-emo">${sg.emo}</span><span class="sg-name">${sg.name}</span></div>
       <div class="sg-mid"><div class="sg-ds">${sg.ds}</div>
-        <div class="sg-acc">${(S.buffs||[]).includes('info')?'🔎 이번 판은 이 신호가 반드시 맞아요':`이 신호가 맞을 확률 ${acc}%`}</div></div>
+        <div class="sg-acc">${(S.buffs||[]).includes('info')?t('sigSure'):t('sigAcc',{p:acc})}</div></div>
       ${metaHas('dex')?`<button class="dex-btn" id="dexBtn" title="패턴 도감">📋</button>`:''}
     </div>`;
   const canGo=S.betAmount>=MIN_BET && S.betAmount<=S.cash;
@@ -1928,23 +2003,23 @@ function renderTrade(){
      그 자리를 비우면 방향 토글이 한 줄을 통째로 써서 오발이 줄어든다. */
   const dirRow=canShort
     ? `<span class="dir-toggle" id="dirToggle">
-         <button data-d="1" class="${S.betDir!==-1?'sel':''}">📈 상승</button>
-         <button data-d="-1" class="${S.betDir===-1?'sel short':''}">📉 하락</button>
+         <button data-d="1" class="${S.betDir!==-1?'sel':''}">${t('dirLong')}</button>
+         <button data-d="-1" class="${S.betDir===-1?'sel short':''}">${t('dirShort')}</button>
        </span>`
     : '';
   /* 페이스 경고는 위험할 때만 뜬다 — 늘 떠 있으면 단타 화면만 더 빽빽해지고 경고 구실을 못 한다 */
   const pr=gateDone()?null:riskAt(S.cash,S.daysLeft);
-  const paceLine=(pr&&pr.cls!=='p-ok')?`<div class="pace-line ${pr.cls}">${pr.last?'⚠️ 마지막 거래일':`D-${S.daysLeft}`} · 판당 <b>${pr.txt}</b> 필요</div>`:'';
+  const paceLine=(pr&&pr.cls!=='p-ok')?`<div class="pace-line ${pr.cls}">${pr.last?t('paceLast'):t('dday',{n:S.daysLeft})} · ${t('paceNeed',{p:pr.txt})}</div>`:'';
   $('tradeBody').innerHTML=`
     ${signalRow}
     ${levRow}
     <div class="bet-row"><button id="betMinus">−</button><div class="amt">${fmtWon(S.betAmount)}</div><button id="betPlus">+</button></div>
-    <div class="bet-quicks"><button data-q="0.25">25%</button><button data-q="0.5">50%</button><button data-q="0.75">75%</button><button data-q="1">최대</button></div>
+    <div class="bet-quicks"><button data-q="0.25">25%</button><button data-q="0.5">50%</button><button data-q="0.75">75%</button><button data-q="1">${t('qMax')}</button></div>
     ${dirRow?`<div class="opt-row">${dirRow}</div>`:''}
     ${buffLine}
     ${paceLine}
     ${goRowHTML(canGo,canShort,curLev,pr)}
-    ${(S.today.rounds<3)?'<div class="trade-note">끝까지 들고만 있으면 손해예요 — 패턴을 보고 반응하세요!</div>':''}`;
+    ${(S.today.rounds<3)?`<div class="trade-note">${t('tradeNote')}</div>`:''}`;
   const step=Math.max(MIN_BET,Math.round(S.cash*0.05));
   $('betMinus').onclick=()=>{sfx.tap();setBet(S.betAmount-step);};
   $('betPlus').onclick=()=>{sfx.tap();setBet(S.betAmount+step);};
@@ -1958,9 +2033,9 @@ function renderTrade(){
 /* 시작 버튼은 하나다. 방향은 위 토글에서 이미 골랐고, 버튼은 색과 문구로 그걸
    다시 한 번 확인시킨다 — 이 게임은 기본 버튼도 파랑이라 색만으로는 구분이 안 된다. */
 function goRowHTML(canGo,canShort,lev,pr){
-  if(!canGo)return `<button class="trade-go" id="tradeGo" disabled>베팅금이 부족해요</button>`;
-  const amt=`${fmtWon(S.betAmount)} × ${lev}배`;
-  if(!canShort)return `<button class="trade-go ${pr&&pr.cls==='p-bad'?'danger':''}" id="tradeGo">${amt}로 시작</button>`;
+  if(!canGo)return `<button class="trade-go" id="tradeGo" disabled>${t('goNoFunds')}</button>`;
+  const amt=t('amtLev',{v:fmtWon(S.betAmount),n:lev});
+  if(!canShort)return `<button class="trade-go ${pr&&pr.cls==='p-bad'?'danger':''}" id="tradeGo">${t('goStart',{amt:amt})}</button>`;
   const short=S.betDir===-1;
   /* 방향은 토글의 선택 표시·버튼 색·아이콘 셋이 이미 말한다. 단어까지 넣으면 같은 말을 네 번 한다. */
   return `<button class="trade-go ${short?'go-short':'go-long'}" id="tradeGo">${short?'📉':'📈'} ${amt}</button>`;
@@ -2235,17 +2310,17 @@ function renderStrip(){
   const buffRow='';   // 티켓 안내는 베팅 화면 하단 한 줄로 옮겼다
   const open=S.stripOpen?`
     <div class="rec-grid">
-      <div class="rec"><div class="k">오늘 판수</div><div class="v">${T.rounds}판 <small style="font-size:10px;color:var(--gray3)">승률 ${winRate}%</small></div></div>
-      <div class="rec"><div class="k">최고 배율</div><div class="v">${T.bestMult?T.bestMult.toFixed(2)+'x':'—'}</div></div>
-      <div class="rec"><div class="k">최대 수익</div><div class="v">${T.bestProfit>0?'+'+fmtWon(T.bestProfit):'—'}</div></div>
-      <div class="rec"><div class="k">최다 연승</div><div class="v">${T.bestStreak}연승</div></div>
-      <div class="rec"><div class="k">S등급 매도</div><div class="v">${T.sCount}회</div></div>
-      <div class="rec"><div class="k">다음 티켓까지</div><div class="v">${nextStreakTxt(st)}</div></div>
+      <div class="rec"><div class="k">${t('stRounds')}</div><div class="v">${t('unitRounds',{n:T.rounds})} <small style="font-size:10px;color:var(--gray3)">${t('stWinRate',{p:winRate})}</small></div></div>
+      <div class="rec"><div class="k">${t('stBestMult')}</div><div class="v">${T.bestMult?T.bestMult.toFixed(2)+'x':'—'}</div></div>
+      <div class="rec"><div class="k">${t('stBestProfit')}</div><div class="v">${T.bestProfit>0?'+'+fmtWon(T.bestProfit):'—'}</div></div>
+      <div class="rec"><div class="k">${t('stBestStreak')}</div><div class="v">${t('unitStreak',{n:T.bestStreak})}</div></div>
+      <div class="rec"><div class="k">${t('stSCount')}</div><div class="v">${t('unitTimes',{n:T.sCount})}</div></div>
+      <div class="rec"><div class="k">${t('stNextTicket')}</div><div class="v">${nextStreakTxt(st)}</div></div>
     </div>`:'';
   $('strip').innerHTML=`<div class="strip-row">
-      <span class="fire">${st>0?`🔥 ${st}연승`:'🔥 연승 없음'}</span>
-      <span>오늘 ${T.rounds}판</span>
-      <span>최고 ${T.bestMult?T.bestMult.toFixed(2)+'x':'—'}</span>
+      <span class="fire">${st>0?t('stStreakN',{n:st}):t('stStreakNone')}</span>
+      <span>${t('stToday',{n:T.rounds})}</span>
+      <span>${t('stBest',{v:T.bestMult?T.bestMult.toFixed(2)+'x':'—'})}</span>
       <span class="cv">${S.stripOpen?'∧':'∨'}</span>
     </div>${buffRow}${open}`;
   $('strip').onclick=()=>{sfx.tap();S.stripOpen=!S.stripOpen;saveRun();renderStrip();};
@@ -2259,7 +2334,16 @@ function nextStreakTxt(st){
 /* ===== 히어로 ===== */
 function renderHero(){$('cashView').textContent=fmtWon(S.cash);}
 
+/* 정적 HTML로 박혀 있는 라벨은 render에서 채운다 — 언어를 바꾸면 여기도 같이 돈다 */
+function applyStaticLabels(){
+  const set=(id,html)=>{const e=$(id); if(e)e.innerHTML=html;};
+  set('mtTrade',t('tabTrade')); set('mtShop',t('tabShop')); set('mtUnlock',t('tabUnlock'));
+  const sm='font-weight:600;color:var(--gray3)';
+  set('shopTitle',`${t('shopTitle')} <small style="${sm}">${t('shopNote')}</small>`);
+  set('unlockTitle',`${t('unlockTitle')} <small style="${sm}">${t('unlockNote')}</small>`);
+}
 function render(){
+  applyStaticLabels();
   renderHero();renderLevel();renderStrip();
   switchMainTab(S.mainTab||'trade');
   renderTradeTabs();renderTrade();
@@ -2321,6 +2405,7 @@ function devWipe(what){
       const k=localStorage.key(i);
       if(!k||!/^moneyroad/.test(k))continue;
       if(/devtpl/.test(k))continue;      // 맞춰둔 템플릿 슬롯은 살린다
+      if(k===LANG_KEY)continue;          // 언어는 진행도가 아니라 환경설정이다
       const isRun=/_run/.test(k), isMeta=/_meta/.test(k);
       if(what==='all' || (what==='run'&&isRun) || (what==='meta'&&isMeta))kill.push(k);
     }
@@ -2480,7 +2565,15 @@ function devMetaTab(){
 function devStartTab(){
   const maxLev=leverageMultOf();
   const done=META_UNLOCKS.filter(u=>(META.xp|0)>=u.need).length;
-  return `<div class="dv-sec">경험치 — 지금 ${META.xp|0}</div>
+  /* 언어 — 아직 사용자에게 노출하지 않는다. 458개 중 일부만 번역된 상태로
+     드롭다운을 열면 영어로 바꾼 사람이 반은 한국어인 화면을 본다.
+     번역이 충분히 찬 뒤 메뉴바로 옮긴다(demo/i18n.html 참고). */
+  return `<div class="dv-sec">언어 — 지금 ${LANG==='ko'?'한국어':'English'}</div>
+    <div class="dv-row">
+      <button class="dv-btn ${LANG==='ko'?'sel':''}" data-lang="ko">한국어</button>
+      <button class="dv-btn ${LANG==='en'?'sel':''}" data-lang="en">English</button></div>
+    <div class="dv-note">번역이 없는 문장은 한국어로 남아요 — 배선만 들어간 단계예요.</div>
+    <div class="dv-sec">경험치 — 지금 ${META.xp|0}</div>
     <div class="dv-row">
       <button class="dv-btn" data-xp="0">0</button>
       <button class="dv-btn" data-xp="400">400</button>
@@ -2768,6 +2861,7 @@ function bindDevModal(){
     META_UNLOCKS.forEach(u=>u.need=Math.max(0,Math.round(u.need*f))); again(); });
 
   /* 🎬 시작 — XP·해금·난이도는 상태라서 여기다 */
+  q('[data-lang]',b=>b.onclick=()=>{ sfx.tap(); setLang(b.dataset.lang); again(); });
   q('[data-xp]',b=>b.onclick=()=>{ sfx.tap();
     const v=b.dataset.xp;
     META.xp = v[0]==='+' ? (META.xp|0)+ +v.slice(1) : +v;

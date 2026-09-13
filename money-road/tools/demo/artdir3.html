@@ -1,0 +1,760 @@
+<title>픽셀 농도 21–30</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Manrope:wght@500;700;800&family=Pixelify+Sans:wght@400;500;700&family=Press+Start+2P&family=Silkscreen:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   3차 — 왕도 레이아웃 위에서 "픽셀을 어디에 얼마나" 만 바꾼다.
+
+   조건 셋:
+     1. 차트는 반드시 유지하고, 라운드 화면에서 주인공이다(높이의 35~45%).
+     2. 픽셀은 과하지 않아도 된다 — 농도를 0~5로 놓고 스펙트럼을 깐다.
+     3. 레트로부터 현대까지 고르게.
+
+   1·2차와 달리 레이아웃을 크게 흔들지 않는 것이 의도다. 비교해야 할 변수가
+   "픽셀의 정도"라서, 다른 변수를 고정해야 그게 보인다. 대신 고정한 것은
+   정보 순서뿐이고, 차트 렌더는 일곱 가지가 전부 다르다 —
+   도트 · 디더 · 계단 · 픽셀캔들 · 블록 · 매끈한 선 · 네온계단.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  --ground:#eeeef1; --surface:#fff; --surface2:#f6f6f9;
+  --ink:#17171c; --muted:#5c5c69; --faint:#8b8b99;
+  --rule:#dcdce2; --rule2:#c5c5ce;
+  --acc:#4a45a8; --acc-weak:#ecebf7;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0e0e12; --surface:#17171d; --surface2:#1d1d25;
+    --ink:#e9e9ee; --muted:#9a9aa8; --faint:#70707e;
+    --rule:#26262f; --rule2:#35353f;
+    --acc:#a6a2f5; --acc-weak:#1c1a33;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0e0e12; --surface:#17171d; --surface2:#1d1d25;
+  --ink:#e9e9ee; --muted:#9a9aa8; --faint:#70707e;
+  --rule:#26262f; --rule2:#35353f;
+  --acc:#a6a2f5; --acc-weak:#1c1a33;
+}
+*{box-sizing:border-box;}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:'IBM Plex Sans','Helvetica Neue',system-ui,sans-serif;
+  margin:0; padding-block:28px 72px; padding-left:20px; padding-right:20px; line-height:1.55;
+}
+.wrap{max-width:1120px; margin:0 auto;}
+
+.masthead{border-top:3px solid var(--acc); padding-top:14px; margin-bottom:28px;}
+.eyebrow{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--acc); margin:0 0 10px; font-weight:500;}
+h1{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:clamp(25px,4vw,38px);
+  line-height:1.12; letter-spacing:-.02em; margin:0 0 14px; text-wrap:balance;}
+.lede{max-width:64ch; color:var(--muted); font-size:15px; margin:0 0 16px;}
+.lede b{color:var(--ink); font-weight:600;}
+
+/* 농도 범례 */
+.legend{border:1px solid var(--rule); background:var(--surface); padding:13px 15px; margin-bottom:22px;}
+.legend h2{font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--acc); margin:0 0 9px; font-weight:600;}
+.lgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(184px,1fr)); gap:9px 18px;}
+.lrow{display:flex; align-items:center; gap:9px; font-size:12.5px; color:var(--muted);}
+.lrow b{color:var(--ink); font-weight:600;}
+
+.dens{display:inline-flex; gap:2px; flex-shrink:0;}
+.dens i{width:8px; height:8px; background:var(--rule2); display:block;}
+.dens i.on{background:var(--acc);}
+
+.jump{display:flex; flex-wrap:wrap; gap:6px;}
+.jump a{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--muted);
+  text-decoration:none; padding:5px 9px; border:1px solid var(--rule2); background:var(--surface);}
+.jump a:hover,.jump a:focus-visible{color:var(--ink); border-color:var(--ink);}
+.jump a b{color:var(--acc); font-weight:600;}
+
+.dir{margin-top:46px; scroll-margin-top:14px;}
+.dir-head{display:flex; align-items:flex-start; gap:14px;
+  border-bottom:1px solid var(--rule2); padding-bottom:11px; margin-bottom:16px;}
+.dir-no{font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:var(--acc);
+  padding-top:3px; flex-shrink:0; font-variant-numeric:tabular-nums;}
+.dir-id{flex:1; min-width:0;}
+.dir-top{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.dir-name{font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:600; margin:0;}
+.dir-era{font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.1em;
+  text-transform:uppercase; padding:2px 7px; border:1px solid var(--rule2); color:var(--muted);}
+.dir-era.retro{color:#8a5a1c; border-color:#c9a568; background:#fbf3e4;}
+.dir-era.modern{color:#1f5f7a; border-color:#7fb4c9; background:#e8f3f8;}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .dir-era.retro{color:#e0b876; border-color:#6b5228; background:#2a2114;}
+  :root:not([data-theme="light"]) .dir-era.modern{color:#8fcbe2; border-color:#2c5364; background:#132630;}
+}
+:root[data-theme="dark"] .dir-era.retro{color:#e0b876; border-color:#6b5228; background:#2a2114;}
+:root[data-theme="dark"] .dir-era.modern{color:#8fcbe2; border-color:#2c5364; background:#132630;}
+.dir-dens{display:flex; align-items:center; gap:6px; margin-left:auto;
+  font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--faint);}
+.dir-say{color:var(--muted); font-size:13.5px; margin:7px 0 0; max-width:66ch;}
+.dir-say b{color:var(--ink); font-weight:600;}
+.dir-meta{display:flex; flex-wrap:wrap; gap:5px; margin-top:9px;}
+.tagx{font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--muted); border:1px solid var(--rule2);
+  padding:3px 7px; background:var(--surface2);}
+.tagx.on{color:var(--acc); border-color:var(--acc); background:var(--acc-weak);}
+
+.pair{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; align-items:start;}
+@media (max-width:760px){ .pair{grid-template-columns:minmax(0,1fr);} }
+.slot{min-width:0;}
+.slot-cap{font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--faint); margin:0 0 7px;}
+
+/* ══════════════════════════════════════════════════════════════
+   화면 뼈대 — 정보 순서와 간격만. 색·서체·모서리·차트는 안이 정한다.
+   ══════════════════════════════════════════════════════════════ */
+.s{
+  --fs:12px; --bg:#101014; --pan:#191920; --pan2:#22222b;
+  --ink2:#eceaf2; --dim:#9a9aab; --dim2:#63636f; --ln:#2e2e39;
+  --up:#ff4d5e; --dn:#37c48a; --gold:#f2c14e; --acc2:#5b8dfb;
+  --btn:#ff4d5e; --btni:#fff; --go:#37c48a; --goi:#08160f;
+  --rad:0px; --bw:1px; --caps:uppercase; --tr:.06em;
+  position:relative; width:100%; max-width:380px; margin:0 auto;
+  background:var(--bg); color:var(--ink2); font-size:var(--fs); line-height:1.3;
+  border:var(--bw) solid var(--ln); border-radius:var(--rad); overflow:hidden;
+  font-variant-numeric:tabular-nums; display:flex; flex-direction:column; min-height:534px;
+}
+.s *{box-sizing:border-box;}
+.s button{font:inherit; color:inherit; border:0; background:none; cursor:default; text-align:inherit;}
+.s > :last-child{margin-top:auto;}
+
+/* 머리 */
+.s-hd{display:flex; align-items:center; gap:calc(var(--fs)*.5);
+  padding:calc(var(--fs)*.75) calc(var(--fs)*.85);
+  background:var(--pan); border-bottom:var(--bw) solid var(--ln);}
+.s-hd .sym{font-weight:700; letter-spacing:var(--tr); text-transform:var(--caps);}
+.s-hd .tag{font-size:calc(var(--fs)*.78); color:var(--dim); border:var(--bw) solid var(--ln);
+  padding:calc(var(--fs)*.1) calc(var(--fs)*.35); border-radius:var(--rad);}
+.s-hd .tag.g{color:var(--gold); border-color:var(--gold);}
+.s-hd .rt{margin-left:auto; font-weight:700; color:var(--gold);}
+
+/* 목표 띠 */
+.s-goal{display:flex; gap:calc(var(--fs)*.6); padding:calc(var(--fs)*.45) calc(var(--fs)*.85);
+  border-bottom:var(--bw) solid var(--ln); color:var(--dim); font-size:calc(var(--fs)*.8);
+  letter-spacing:.04em; text-transform:var(--caps);}
+.s-goal b{color:var(--gold); font-weight:700;}
+.s-goal .r{margin-left:auto;}
+
+/* 큰 숫자 */
+.s-big{padding:calc(var(--fs)*.7) calc(var(--fs)*.85) calc(var(--fs)*.3);
+  display:flex; align-items:baseline; gap:calc(var(--fs)*.6);}
+.s-big .v{font-size:calc(var(--fs)*2.6); font-weight:700; line-height:1; letter-spacing:.01em;}
+.s-big .k{font-size:calc(var(--fs)*.78); color:var(--dim); letter-spacing:.1em; text-transform:uppercase;}
+.s-big .r{margin-left:auto; text-align:right;}
+.s-big .r .v2,.s-big .r .k2{display:block;}
+.s-big .r .v2{font-size:calc(var(--fs)*1.5); font-weight:700; color:var(--dn); line-height:1.1;}
+.s-big .r .k2{font-size:calc(var(--fs)*.72); color:var(--dim2); letter-spacing:.08em; text-transform:uppercase;}
+
+/* 차트 — 이 페이지의 주인공 */
+.s-chart{margin:calc(var(--fs)*.5) calc(var(--fs)*.85) 0; position:relative;
+  border:var(--bw) solid var(--ln); background:var(--pan); border-radius:var(--rad);}
+.s-chart svg{display:block; width:100%; height:auto;}
+.s-chart.plain{border:0; background:none; margin-left:0; margin-right:0;}
+.s-marks{display:flex; gap:calc(var(--fs)*.7); padding:calc(var(--fs)*.4) calc(var(--fs)*.85) 0;
+  font-size:calc(var(--fs)*.74); color:var(--dim2); letter-spacing:.06em; text-transform:uppercase;}
+.s-marks b{font-weight:700;}
+.s-marks .e{color:var(--dim);} .s-marks .p{color:var(--gold);} .s-marks .l{color:var(--up);}
+
+/* 정보 줄 */
+.s-kv{display:flex; padding:calc(var(--fs)*.35) calc(var(--fs)*.85);
+  border-bottom:var(--bw) solid var(--ln); font-size:calc(var(--fs)*.85);}
+.s-kv span{color:var(--dim); letter-spacing:.04em; text-transform:var(--caps);}
+.s-kv b{margin-left:auto; font-weight:700;}
+.s-kv b.g{color:var(--dn);} .s-kv b.r{color:var(--up);} .s-kv b.a{color:var(--gold);}
+
+/* 종목 리스트 */
+.s-list{padding:calc(var(--fs)*.2) 0;}
+.s-row{display:grid; grid-template-columns:1fr 54px 50px 54px; gap:calc(var(--fs)*.4);
+  align-items:center; padding:calc(var(--fs)*.4) calc(var(--fs)*.85);
+  border-bottom:var(--bw) solid var(--ln);}
+.s-row .n{font-weight:700; letter-spacing:var(--tr);}
+.s-row .n small{display:block; font-weight:400; color:var(--dim2);
+  font-size:calc(var(--fs)*.68); letter-spacing:.04em; text-transform:uppercase;}
+.s-row .p{text-align:right; color:var(--dim);}
+.s-row .c{text-align:right; font-size:calc(var(--fs)*.82);}
+.s-row .c.g{color:var(--dn);} .s-row .c.r{color:var(--up);}
+.s-row.sel{background:var(--pan2); box-shadow:inset 3px 0 0 var(--gold);}
+.s-row.sel .n{color:var(--gold);}
+.s-row.lk{opacity:.42;}
+
+/* 종목 카드 격자 */
+.s-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:calc(var(--fs)*.35);
+  padding:calc(var(--fs)*.5) calc(var(--fs)*.85) 0;}
+.s-card{border:var(--bw) solid var(--ln); border-radius:var(--rad); background:var(--pan);
+  padding:calc(var(--fs)*.42) calc(var(--fs)*.25); text-align:center; overflow:hidden;}
+.s-card .n{font-weight:700; font-size:calc(var(--fs)*.88); letter-spacing:var(--tr);}
+.s-card .c{font-size:calc(var(--fs)*.72); margin-top:calc(var(--fs)*.1);}
+.s-card .c.g{color:var(--dn);} .s-card .c.r{color:var(--up);} .s-card .c.n{color:var(--dim2);}
+.s-card.sel{border-color:var(--gold); background:var(--pan2);}
+.s-card.sel .n{color:var(--gold);}
+.s-card.lk{opacity:.42;}
+
+/* 주문 패드 */
+.s-pad{padding:calc(var(--fs)*.6) calc(var(--fs)*.85) 0;}
+.s-pline{display:flex; align-items:center; gap:calc(var(--fs)*.5); margin-bottom:calc(var(--fs)*.45);}
+.s-pline .k{font-size:calc(var(--fs)*.74); color:var(--dim2); letter-spacing:.12em;
+  text-transform:uppercase; width:calc(var(--fs)*4.2); flex-shrink:0;}
+.s-pline .v{font-size:calc(var(--fs)*1.3); font-weight:700;}
+.s-pline .seg{margin-left:auto; display:flex; gap:calc(var(--fs)*.25);}
+.s-pline .seg span{border:var(--bw) solid var(--ln); border-radius:var(--rad);
+  padding:calc(var(--fs)*.18) calc(var(--fs)*.42); font-size:calc(var(--fs)*.78); color:var(--dim);}
+.s-pline .seg span.on{border-color:var(--gold); color:var(--gold); background:var(--pan2); font-weight:700;}
+
+/* 신호 */
+.s-sig{display:flex; align-items:center; gap:calc(var(--fs)*.5);
+  margin:calc(var(--fs)*.5) calc(var(--fs)*.85) 0; padding:calc(var(--fs)*.42) calc(var(--fs)*.55);
+  border:var(--bw) solid var(--ln); border-radius:var(--rad); background:var(--pan);}
+.s-sig .g{font-weight:700; color:var(--dn); letter-spacing:var(--tr); text-transform:var(--caps);}
+.s-sig .d{color:var(--dim); font-size:calc(var(--fs)*.8);}
+.s-sig .a{margin-left:auto; color:var(--dim2); font-size:calc(var(--fs)*.76);}
+
+/* 버튼 */
+.s .s-cta{display:block; width:calc(100% - var(--fs)*1.7); margin:calc(var(--fs)*.7) calc(var(--fs)*.85);
+  padding:calc(var(--fs)*1.05) 0; text-align:center; border-radius:var(--rad);
+  background:var(--go); color:var(--goi); font-weight:700;
+  font-size:calc(var(--fs)*1.15); letter-spacing:calc(var(--tr) + .06em); text-transform:var(--caps);}
+.s .s-cta.sell{background:var(--btn); color:var(--btni);}
+.s-foot{display:block;}
+.s-sub{display:flex; gap:calc(var(--fs)*.35); padding:0 calc(var(--fs)*.85) calc(var(--fs)*.85);}
+.s-sub span{flex:1; text-align:center; border:var(--bw) solid var(--ln); border-radius:var(--rad);
+  padding:calc(var(--fs)*.45) 0; color:var(--dim); font-size:calc(var(--fs)*.8);
+  letter-spacing:.06em; text-transform:var(--caps);}
+
+/* 사이드 레일(안 26·29) */
+.s-split{display:grid; grid-template-columns:minmax(0,1fr) 82px; gap:0; align-items:stretch;}
+.s-split > *{min-width:0;}
+.s-split .rail{border-left:var(--bw) solid var(--ln); padding:calc(var(--fs)*.6) calc(var(--fs)*.5);
+  display:flex; flex-direction:column; gap:calc(var(--fs)*.55);}
+.s-split .rail .k{font-size:calc(var(--fs)*.68); color:var(--dim2); letter-spacing:.1em; text-transform:uppercase;}
+.s-split .rail .v{font-size:calc(var(--fs)*1.05); font-weight:700;}
+.s-split .rail .v.g{color:var(--dn);} .s-split .rail .v.a{color:var(--gold);} .s-split .rail .v.r{color:var(--up);}
+
+/* ══ 21 LCD DOT — 도트 매트릭스 액정. 차트가 점으로만 그려진다. ══ */
+.s21{--fs:11px; --bg:#bcc8a8; --pan:#b2bf9c; --pan2:#a6b48e;
+  --ink2:#1d2716; --dim:#41512f; --dim2:#5d6c49; --ln:#1d2716;
+  --up:#1d2716; --dn:#1d2716; --gold:#1d2716; --acc2:#1d2716;
+  --btn:#1d2716; --btni:#bcc8a8; --go:#1d2716; --goi:#bcc8a8;
+  --bw:2px; --tr:.02em;
+  font-family:'Silkscreen',monospace;}
+.s21 .s-row.sel,.s21 .s-card.sel{background:#1d2716;}
+.s21 .s-row.sel .n,.s21 .s-card.sel .n{color:#bcc8a8;}
+.s21 .s-row.sel .p,.s21 .s-row.sel .c{color:#9db08a;}
+.s21 .s-goal b,.s21 .s-kv b.a{color:#1d2716;}
+.s21 .s-pline .seg span.on{background:#1d2716; color:#bcc8a8;}
+
+/* ══ 22 DITHER — 1비트. 면 채움이 체크무늬 디더다. ══ */
+.s22{--fs:11.5px; --bg:#f4f4ef; --pan:#f4f4ef; --pan2:#e2e2da;
+  --ink2:#14140f; --dim:#4a4a42; --dim2:#75756b; --ln:#14140f;
+  --up:#14140f; --dn:#14140f; --gold:#14140f;
+  --btn:#14140f; --btni:#f4f4ef; --go:#14140f; --goi:#f4f4ef;
+  --bw:2px; --tr:.04em;
+  font-family:'Silkscreen',monospace;}
+.s22 .s-row.sel,.s22 .s-card.sel{background:#14140f; box-shadow:none;}
+.s22 .s-row.sel .n,.s22 .s-card.sel .n{color:#f4f4ef;}
+.s22 .s-row.sel .p,.s22 .s-row.sel .c{color:#b4b4ac;}
+.s22 .s-goal b,.s22 .s-kv b.a,.s22 .s-kv b.g,.s22 .s-big .r .v2{color:#14140f;}
+.s22 .s-pline .seg span.on{background:#14140f; color:#f4f4ef;}
+.s22 .s-sig .g{color:#14140f;}
+
+/* ══ 23 CRT ARCADE — 1차 PHOSPHOR를 읽히게 고친 판. 글로우는 차트에만. ══ */
+.s23{--fs:11px; --bg:#0e1420; --pan:#152032; --pan2:#1d2b42;
+  --ink2:#e4ecf7; --dim:#8fa3c0; --dim2:#5e738f; --ln:#2a3c58;
+  --up:#ff5f6d; --dn:#4ade9b; --gold:#ffd166; --acc2:#63a4ff;
+  --btn:#ff5f6d; --btni:#1a0409; --go:#4ade9b; --goi:#06210f;
+  --bw:2px; --tr:.05em;
+  font-family:'Silkscreen',monospace;}
+.s23 .scan{position:absolute; inset:0; pointer-events:none; z-index:4;
+  background:repeating-linear-gradient(180deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px);}
+.s23 .s-chart{box-shadow:0 0 0 2px #0e1420, 0 0 14px rgba(99,164,255,.18);}
+
+/* ══ 24 PIXEL CANDLE — 현대 UI에 픽셀 캔들만. 농도 낮음. ══ */
+.s24{--fs:12px; --bg:#0b0f16; --pan:#121926; --pan2:#1a2433;
+  --ink2:#e7edf5; --dim:#8b97a8; --dim2:#5e6a7a; --ln:#1e2836;
+  --up:#f2555f; --dn:#2fbd82; --gold:#f5b83d; --acc2:#4d8ffb;
+  --btn:#f2555f; --btni:#fff; --go:#2fbd82; --goi:#04170e;
+  --rad:9px; --bw:1px; --caps:none; --tr:0em;
+  font-family:'Space Grotesk',system-ui,sans-serif; font-weight:500;}
+.s24{border-radius:14px;}
+.s24 .s-big .v,.s24 .s-pline .v{font-weight:700; letter-spacing:-.02em;}
+.s24 .s-hd .sym{letter-spacing:.02em;}
+.s24 .s-cta{font-weight:700; box-shadow:0 5px 18px -8px rgba(47,189,130,.8);}
+.s24 .s-cta.sell{box-shadow:0 5px 18px -8px rgba(242,85,95,.8);}
+.s24 .s-marks{font-family:'Silkscreen',monospace; font-size:8px;}
+
+/* ══ 25 8-BIT — NES 계열 팔레트와 두꺼운 프레임. 농도 최대. ══ */
+.s25{--fs:9.5px; --bg:#0b1030; --pan:#1a2050; --pan2:#252c6b;
+  --ink2:#fcfcfc; --dim:#a6b0e8; --dim2:#6a74b8; --ln:#3d47a0;
+  --up:#e84a5f; --dn:#4ad06a; --gold:#fbd44c; --acc2:#5aa9f8;
+  --btn:#e84a5f; --btni:#1a0409; --go:#4ad06a; --goi:#062b10;
+  --bw:3px; --tr:.02em;
+  font-family:'Silkscreen',monospace;}
+.s25{box-shadow:inset 0 0 0 3px #0b1030;}
+.s25 .s-cta{box-shadow:0 4px 0 #1a6b2e, 0 4px 0 3px #0b1030; font-family:'Press Start 2P',monospace;
+  font-size:10px; letter-spacing:.02em;}
+.s25 .s-cta.sell{box-shadow:0 4px 0 #8f1a28, 0 4px 0 3px #0b1030;}
+.s25 .s-big .v{font-family:'Press Start 2P',monospace; font-size:20px; letter-spacing:0;}
+.s25 .s-chart{box-shadow:3px 3px 0 #060a22;}
+.s25 .s-card,.s25 .s-sig{box-shadow:2px 2px 0 #060a22;}
+
+/* ══ 26 SOFT PIXEL — 요즘 인디 모바일. 픽셀은 차트와 라벨에만. ══ */
+.s26{--fs:12px; --bg:#14131b; --pan:#1d1c26; --pan2:#272533;
+  --ink2:#efedf5; --dim:#9b97ad; --dim2:#6d6982; --ln:#2d2b3a;
+  --up:#f2617a; --dn:#4fd6a0; --gold:#ffc95c; --acc2:#8b7bf7;
+  --btn:#f2617a; --btni:#fff; --go:#4fd6a0; --goi:#06251a;
+  --rad:11px; --bw:1px; --caps:none; --tr:0em;
+  font-family:'Manrope',system-ui,sans-serif; font-weight:500;}
+.s26{border-radius:16px;}
+.s26 .s-big .v{font-weight:800; letter-spacing:-.03em;}
+.s26 .s-big .k,.s26 .s-pline .k,.s26 .s-marks,.s26 .s-big .r .k2{
+  font-family:'Silkscreen',monospace; font-size:8.5px; letter-spacing:.06em;}
+.s26 .s-cta{font-weight:800; box-shadow:0 6px 20px -8px rgba(79,214,160,.85);}
+.s26 .s-cta.sell{box-shadow:0 6px 20px -8px rgba(242,97,122,.85);}
+.s26 .s-split .rail .k{font-family:'Silkscreen',monospace; font-size:8px;}
+
+/* ══ 27 TERMINAL PIXEL — 비트맵 서체 + 현대 레이아웃. 중간 지대. ══ */
+.s27{--fs:12px; --bg:#14171a; --pan:#1b1f23; --pan2:#242a2f;
+  --ink2:#dfe5e8; --dim:#93a0a8; --dim2:#66727a; --ln:#2b3238;
+  --up:#e8615f; --dn:#46bd8c; --gold:#e6b64c; --acc2:#5fa8d3;
+  --btn:#e8615f; --btni:#fff; --go:#46bd8c; --goi:#052018;
+  --bw:1px; --tr:.06em;
+  font-family:'DotGothic16',monospace;}
+.s27 .s-big .v{letter-spacing:.02em;}
+.s27 .s-hd,.s27 .s-goal{letter-spacing:.08em;}
+
+/* ══ 28 PIXEL PAPER — 밝은 픽셀. 눈이 가장 편한 픽셀 안. ══ */
+.s28{--fs:11px; --bg:#f6f2e6; --pan:#efe9d8; --pan2:#e3dcc6;
+  --ink2:#2b2721; --dim:#6b6458; --dim2:#948c7c; --ln:#b8ae97;
+  --up:#c6413b; --dn:#2e7d4f; --gold:#a3761a; --acc2:#3a6b99;
+  --btn:#c6413b; --btni:#fdfaf2; --go:#2e7d4f; --goi:#fdfaf2;
+  --bw:2px; --tr:.04em;
+  font-family:'Silkscreen',monospace;}
+.s28 .s-row.sel,.s28 .s-card.sel{background:#e9e0c6; box-shadow:inset 3px 0 0 #a3761a;}
+.s28 .s-chart{box-shadow:2px 2px 0 #d5cbb2;}
+.s28 .s-cta{box-shadow:0 3px 0 #1d5936;}
+.s28 .s-cta.sell{box-shadow:0 3px 0 #8c2b26;}
+
+/* ══ 29 NEON GRID — 신스웨이브 절제판. 글로우는 차트에만. ══ */
+.s29{--fs:11px; --bg:#0a0718; --pan:#120d29; --pan2:#1b1440;
+  --ink2:#ece7ff; --dim:#a094d0; --dim2:#6d61a0; --ln:#2d2264;
+  --up:#ff4fa3; --dn:#3ce0c8; --gold:#ffd95e; --acc2:#7b6cff;
+  --btn:#ff4fa3; --btni:#180417; --go:#3ce0c8; --goi:#04231f;
+  --bw:2px; --tr:.08em;
+  font-family:'Pixelify Sans',system-ui,sans-serif; font-weight:500;}
+.s29 .grid{position:absolute; inset:auto 0 0 0; height:38%; pointer-events:none; z-index:0;
+  background:
+    repeating-linear-gradient(90deg,rgba(123,108,255,.13) 0 1px,transparent 1px 26px),
+    repeating-linear-gradient(180deg,rgba(123,108,255,.13) 0 1px,transparent 1px 18px);
+  mask-image:linear-gradient(180deg,transparent,#000);}
+.s29 > *{position:relative; z-index:1;}
+.s29 .s-big .v{font-weight:700;}
+.s29 .s-chart{box-shadow:0 0 18px -4px rgba(60,224,200,.35);}
+.s29 .s-cta{font-weight:700;}
+
+/* ══ 30 HYBRID — 평소엔 현대 UI, 픽셀은 차트와 결과 숫자에만. ══ */
+.s30{--fs:12px; --bg:#0c0d10; --pan:#15171c; --pan2:#1e2127;
+  --ink2:#eaecef; --dim:#8e949e; --dim2:#606670; --ln:#212429;
+  --up:#ef4c56; --dn:#22b877; --gold:#f0b429; --acc2:#3b82f6;
+  --btn:#ef4c56; --btni:#fff; --go:#22b877; --goi:#03180f;
+  --rad:8px; --bw:1px; --caps:none; --tr:0em;
+  font-family:'Manrope',system-ui,sans-serif; font-weight:500;}
+.s30{border-radius:14px;}
+.s30 .s-big .v{font-family:'Silkscreen',monospace; font-size:26px; letter-spacing:.01em;}
+.s30 .s-big .r .v2{font-family:'Silkscreen',monospace; font-size:15px;}
+.s30 .s-marks{font-family:'Silkscreen',monospace; font-size:8px;}
+.s30 .s-cta{font-weight:800;}
+.s30 .s-row .p,.s30 .s-row .c,.s30 .s-kv b{font-family:'Silkscreen',monospace; font-size:10px;}
+
+.closing{margin-top:56px; border-top:3px solid var(--acc); padding-top:16px;}
+.closing h2{font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:600; margin:0 0 10px;}
+.closing p{color:var(--muted); font-size:14px; max-width:66ch; margin:0 0 10px;}
+.closing ul{color:var(--muted); font-size:14px; max-width:66ch; padding-left:19px; margin:0 0 10px;}
+.closing li{margin-bottom:6px;}
+.closing b{color:var(--ink); font-weight:600;}
+.closing code{font-family:'IBM Plex Mono',monospace; font-size:12.5px; background:var(--surface2);
+  border:1px solid var(--rule); padding:1px 5px;}
+@media (prefers-reduced-motion:reduce){ *{animation:none !important;} }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <p class="eyebrow">머니로드 · 해외판 · 3차 제안</p>
+    <h1>픽셀 농도 21–30</h1>
+    <p class="lede">
+      조건 셋을 그대로 받았습니다 — <b>차트는 반드시 유지</b>(라운드 화면에서 높이의 35~45%를 차지합니다),
+      <b>픽셀은 과하지 않아도 된다</b>, <b>레트로부터 현대까지</b>.
+      그래서 이번에는 레이아웃을 왕도로 고정하고 <b>"픽셀을 어디에 얼마나 넣는가"</b>만 변수로 뒀습니다.
+      비교해야 할 것이 픽셀의 정도라면, 나머지를 고정해야 그게 보입니다.
+      대신 차트 렌더 방식은 <b>일곱 가지가 전부 다릅니다</b> — 도트·디더·계단·픽셀캔들·블록·매끈한 선·네온계단.
+    </p>
+    <div class="legend">
+      <h2>픽셀 농도 &mdash; 무엇까지 픽셀인가</h2>
+      <div class="lgrid">
+        <div class="lrow"><span class="dens"><i class="on"></i><i></i><i></i><i></i><i></i></span>
+          <span><b>1</b> 차트만</span></div>
+        <div class="lrow"><span class="dens"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span>
+          <span><b>2</b> 차트 + 작은 라벨</span></div>
+        <div class="lrow"><span class="dens"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span>
+          <span><b>3</b> 차트 + 서체 전반</span></div>
+        <div class="lrow"><span class="dens"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>
+          <span><b>4</b> 위 + 테두리·그림자</span></div>
+        <div class="lrow"><span class="dens"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>
+          <span><b>5</b> 전부 &mdash; 색 수까지 제한</span></div>
+      </div>
+    </div>
+    <nav class="jump" id="jump"></nav>
+  </header>
+
+  <main id="board"></main>
+
+  <section class="closing">
+    <h2>고르실 때</h2>
+    <ul>
+      <li><b>"과하지 않게"의 정답 후보는 24·26·30입니다.</b> 셋 다 현대적인 화면인데 픽셀이 차트와
+        작은 라벨에만 들어갑니다. 특히 <b>30 HYBRID</b>는 평소엔 완전히 현대 UI인데 <b>숫자와 차트만 픽셀</b>이라,
+        "게임 순간에만 픽셀이 나타나는" 구조입니다.</li>
+      <li><b>레트로를 제대로 가고 싶으면 22·25·28입니다.</b> 22 DITHER는 1비트 흑백에 체크무늬 디더로
+        면을 채우는데, 이건 진짜 픽셀아트의 기법이라 <b>생성형 티가 가장 안 나는</b> 화면입니다.</li>
+      <li><b>23은 1차 PHOSPHOR를 고친 판입니다.</b> 단색 발광을 버리고 남색 바탕에 다색으로 바꿔서
+        눈이 아프지 않고, 글로우는 <b>차트에만</b> 남겼습니다.</li>
+      <li><b>28 PIXEL PAPER는 유일한 밝은 픽셀</b>입니다. 픽셀인데 눈이 가장 편합니다 —
+        장시간 플레이를 생각하면 이쪽이 유리합니다.</li>
+      <li><b>차트 렌더만 따로 고르셔도 됩니다.</b> 도트(21)·디더(22)·계단(23·28)·픽셀캔들(24·30)·
+        블록(25)·네온계단(29)은 UI와 독립적이라, "UI는 26인데 차트는 22처럼" 같은 조합이 가능합니다.</li>
+    </ul>
+    <p>
+      번호 주시면 그 방향으로 인트로·단계 통과·계좌 회수·정산 모달까지 마저 그려서 다시 보여드리겠습니다.
+      게임 코드는 아직 한 줄도 안 건드렸습니다.
+    </p>
+  </section>
+</div>
+
+<script>
+"use strict";
+
+/* ══ 세 페이지가 공유하는 게임 상태 ══
+   MERIDIAN #4471 · 잔고 $34,800 · PHASE 3 목표 $200,000 · D-7
+   NOVA 3배 $24,000 · 현재 1.18배 · +$12,960 · 고점 1.24 · 청산 0.67 */
+const PATH = [
+  1.000,0.992,0.981,0.973,0.964,0.958,0.949,0.941,0.947,0.955,0.962,0.958,
+  0.966,0.975,0.984,0.979,0.988,0.998,1.007,1.015,1.010,1.021,1.033,1.044,
+  1.038,1.049,1.062,1.074,1.068,1.081,1.095,1.108,1.101,1.115,1.130,1.146,
+  1.139,1.155,1.172,1.190,1.205,1.221,1.238,1.230,1.215,1.198,1.186,1.180
+];
+const LO = 0.90, HI = 1.28;
+
+let uid = 0;
+
+/* ══════════════════════════════════════════════════════════════
+   차트 엔진 — 일곱 가지 렌더. 픽셀 모드는 전부 격자에 스냅한다.
+   ══════════════════════════════════════════════════════════════ */
+function chart(mode, o){
+  o = o || {};
+  const w = 252, h = o.h || 96, px = o.px || 4;
+  const padT = 5, padB = 5;
+  const line = o.line || "#37c48a", ink = o.ink || line;
+  const grid = o.grid || "rgba(255,255,255,.07)";
+  const axis = o.axis || "#777";
+  const y = v => padT + (1 - (v - LO) / (HI - LO)) * (h - padT - padB);
+  const snap = n => Math.round(n / px) * px;
+  const yBase = y(1.00), yNow = y(1.180), yPeak = y(1.238);
+  const id = "g" + (++uid);
+
+  /* 격자 */
+  let bg = "";
+  if (o.grid !== "none") {
+    for (let gx = px * 3; gx < w; gx += px * 6)
+      bg += `<line x1="${gx}" y1="2" x2="${gx}" y2="${h - 2}" stroke="${grid}" stroke-width="1"></line>`;
+    for (let gy = padT; gy < h - padB; gy += px * 4)
+      bg += `<line x1="2" y1="${gy.toFixed(0)}" x2="${w - 2}" y2="${gy.toFixed(0)}" stroke="${grid}" stroke-width="1"></line>`;
+  }
+
+  let art = "", defs = "";
+
+  if (mode === "dot") {
+    /* 액정 도트 — 값이 있는 칸만 사각 점을 찍는다 */
+    const cols = Math.floor((w - 6) / px);
+    for (let i = 0; i < cols; i++) {
+      const v = PATH[Math.min(PATH.length - 1, Math.round(i / (cols - 1) * (PATH.length - 1)))];
+      const cy = snap(y(v)), cx = 3 + i * px;
+      art += `<rect x="${cx}" y="${cy}" width="${px - 1}" height="${px - 1}" fill="${ink}"></rect>`;
+      for (let fy = cy + px; fy < h - padB; fy += px * 2)
+        art += `<rect x="${cx}" y="${fy}" width="${px - 1}" height="${px - 1}" fill="${ink}" opacity=".22"></rect>`;
+    }
+  } else if (mode === "dither") {
+    /* 1비트 디더 — 면 채움이 체크무늬다 */
+    defs = `<pattern id="${id}" width="4" height="4" patternUnits="userSpaceOnUse">
+        <rect width="4" height="4" fill="none"></rect>
+        <rect x="0" y="0" width="2" height="2" fill="${ink}"></rect>
+        <rect x="2" y="2" width="2" height="2" fill="${ink}"></rect>
+      </pattern>`;
+    const pts = [];
+    const cols = Math.floor((w - 6) / px);
+    for (let i = 0; i < cols; i++) {
+      const v = PATH[Math.min(PATH.length - 1, Math.round(i / (cols - 1) * (PATH.length - 1)))];
+      const cx = 3 + i * px, cy = snap(y(v));
+      pts.push(`${cx},${cy}`, `${cx + px},${cy}`);
+    }
+    art = `<polygon points="3,${h - padB} ${pts.join(" ")} ${w - 3},${h - padB}" fill="url(#${id})"></polygon>
+      <polyline points="${pts.join(" ")}" fill="none" stroke="${ink}" stroke-width="2"></polyline>`;
+  } else if (mode === "blocks") {
+    /* 8비트 막대 — 한 칸이 한 기둥 */
+    const cols = Math.floor((w - 6) / (px * 2));
+    for (let i = 0; i < cols; i++) {
+      const v = PATH[Math.min(PATH.length - 1, Math.round(i / (cols - 1) * (PATH.length - 1)))];
+      const cy = snap(y(v)), cx = 3 + i * px * 2;
+      const col = v >= 1 ? (o.up || ink) : (o.dn || ink);
+      art += `<rect x="${cx}" y="${cy}" width="${px * 2 - 2}" height="${(h - padB - cy).toFixed(0)}"
+        fill="${col}" opacity=".55"></rect>
+        <rect x="${cx}" y="${cy}" width="${px * 2 - 2}" height="${px}" fill="${col}"></rect>`;
+    }
+  } else if (mode === "pixcandle") {
+    /* 픽셀 캔들 — 3틱을 한 봉으로, 좌표를 격자에 스냅 */
+    const n = 16, per = Math.floor(PATH.length / n);
+    for (let i = 0; i < n; i++) {
+      const seg = PATH.slice(i * per, i * per + per + 1);
+      const op = seg[0], cl = seg[seg.length - 1];
+      const hi = Math.max.apply(null, seg), lo = Math.min.apply(null, seg);
+      const cx = snap(4 + i * ((w - 10) / n) + ((w - 10) / n) / 2);
+      const col = cl >= op ? (o.up || "#2fbd82") : (o.dn || "#f2555f");
+      const yo = snap(y(op)), yc = snap(y(cl));
+      const top = Math.min(yo, yc), bh = Math.max(px, Math.abs(yc - yo));
+      art += `<rect x="${cx - 1}" y="${snap(y(hi))}" width="2" height="${(snap(y(lo)) - snap(y(hi))).toFixed(0)}" fill="${col}"></rect>
+        <rect x="${cx - px}" y="${top}" width="${px * 2}" height="${bh}" fill="${col}"></rect>`;
+    }
+  } else {
+    /* step · line · neonstep */
+    const pts = [];
+    const cols = (mode === "line") ? PATH.length : Math.floor((w - 6) / px);
+    for (let i = 0; i < cols; i++) {
+      const v = PATH[Math.min(PATH.length - 1, Math.round(i / (cols - 1) * (PATH.length - 1)))];
+      const cx = (mode === "line") ? (3 + (i / (cols - 1)) * (w - 6)) : (3 + i * px);
+      const cy = (mode === "line") ? y(v) : snap(y(v));
+      if (mode === "line") pts.push(`${cx.toFixed(1)},${cy.toFixed(1)}`);
+      else pts.push(`${cx},${cy}`, `${cx + px},${cy}`);
+    }
+    const glow = (mode === "neonstep")
+      ? `<polyline points="${pts.join(" ")}" fill="none" stroke="${ink}" stroke-width="7"
+           opacity=".26" stroke-linejoin="round"></polyline>` : "";
+    const fill = o.fill
+      ? `<polygon points="3,${h - padB} ${pts.join(" ")} ${w - 3},${h - padB}" fill="${o.fill}"></polygon>` : "";
+    art = fill + glow + `<polyline points="${pts.join(" ")}" fill="none" stroke="${ink}"
+      stroke-width="${mode === "line" ? 2 : 2.5}"
+      stroke-linejoin="${mode === "line" ? "round" : "miter"}"
+      stroke-linecap="${mode === "line" ? "round" : "butt"}"></polyline>`;
+  }
+
+  const crisp = (mode === "line") ? "" : ` shape-rendering="crispEdges"`;
+  return `<svg viewBox="0 0 ${w} ${h}"${crisp} role="img"
+      aria-label="진입 1.00배에서 현재 1.18배까지의 가격 경로, 고점은 1.24배">
+    <defs>${defs}</defs>
+    ${bg}
+    <line x1="3" y1="${snap(yBase)}" x2="${w - 3}" y2="${snap(yBase)}"
+      stroke="${axis}" stroke-width="1" stroke-dasharray="${px} ${px}"></line>
+    <line x1="3" y1="${snap(yPeak)}" x2="${w - 3}" y2="${snap(yPeak)}"
+      stroke="${o.peak || axis}" stroke-width="1" stroke-dasharray="2 ${px * 2}" opacity=".8"></line>
+    ${art}
+    <rect x="${w - 30}" y="${snap(yNow) - 6}" width="28" height="12" fill="${o.tagBg || o.peak || axis}"></rect>
+    <text x="${w - 27}" y="${snap(yNow) + 3}" fill="${o.tagInk || "#111"}" font-size="8"
+      font-weight="700" font-family="inherit">1.18</text>
+  </svg>`;
+}
+
+const INST = [
+  { n:"NOVA",   d:"normal vol",  last:"1.180", chg:"+18.0%", up:true, sel:true },
+  { n:"HELIX",  d:"high vol",    last:"0.944", chg:"−5.6%", up:false },
+  { n:"ORION",  d:"lv.5",        last:"—", chg:"—", lock:true },
+  { n:"INDEX",  d:"no spikes",   last:"1.031", chg:"+3.1%",  up:true },
+  { n:"PENNY",  d:"pump / dump", last:"1.620", chg:"+62.0%", up:true },
+  { n:"CRYPTO", d:"locked",      last:"—", chg:"—", lock:true }
+];
+
+function listRows(){
+  return INST.map(s => `<div class="s-row ${s.sel ? "sel" : ""}${s.lock ? " lk" : ""}">
+    <span class="n">${s.n}<small>${s.d}</small></span>
+    <span class="p">${s.last}</span>
+    <span class="c ${s.lock ? "" : (s.up ? "g" : "r")}">${s.chg}</span>
+    <span class="sp"></span></div>`).join("");
+}
+function cardGrid(){
+  return INST.map(s => `<div class="s-card ${s.sel ? "sel" : ""}${s.lock ? " lk" : ""}">
+    <div class="n">${s.n}</div>
+    <div class="c ${s.lock ? "n" : (s.up ? "g" : "r")}">${s.chg}</div></div>`).join("");
+}
+
+/* 메인 화면 — 두 계열. 어느 쪽이든 차트가 들어간다. */
+function main(v){
+  const ch = `<div class="s-chart">${chart(v.chart, v.co(72))}</div>`;
+  const head = `<div class="s-hd"><span class="sym">Meridian</span>
+      <span class="tag">#4471</span><span class="rt">Lv.4</span></div>
+    <div class="s-goal"><span>Phase 3</span><b>$200,000</b><span class="r">D-7 &middot; need 28%/day</span></div>
+    <div class="s-big"><span class="v">$34,800</span><span class="k">equity</span>
+      <span class="r"><span class="v2">NOVA</span><span class="k2">selected</span></span></div>`;
+  const pad = `<div class="s-sig"><span class="g">Bullish</span><span class="d">likely to rise</span>
+      <span class="a">70% accurate</span></div>
+    <div class="s-pad">
+      <div class="s-pline"><span class="k">Size</span><span class="v">$24,000</span>
+        <span class="seg"><span>25</span><span>50</span><span class="on">75</span><span>Max</span></span></div>
+      <div class="s-pline"><span class="k">Lever</span><span class="v">3&times;</span>
+        <span class="seg"><span class="on">3&times;</span><span>5&times;</span><span>10&times;</span></span></div>
+      <div class="s-pline"><span class="k">Side</span><span class="v">Long</span>
+        <span class="seg"><span class="on">Long</span><span>Short</span></span></div>
+    </div>
+    <button class="s-cta">Open position</button>`;
+  const fx = (v.fx || "");
+  return v.mainKind === "grid"
+    ? `${fx}${head}<div class="s-grid">${cardGrid()}</div>${ch}
+       <div class="s-marks"><span class="e">entry <b>1.00</b></span>
+         <span class="p">peak <b>1.24</b></span><span class="l">liq <b>0.67</b></span></div>${pad}`
+    : `${fx}${head}${ch}
+       <div class="s-marks"><span class="e">entry <b>1.00</b></span>
+         <span class="p">peak <b>1.24</b></span><span class="l">liq <b>0.67</b></span></div>
+       <div class="s-list">${listRows()}</div>${pad}`;
+}
+
+/* 라운드 화면 — 차트가 주인공. 세 계열. */
+function round(v){
+  const fx = (v.fx || "");
+  const head = `<div class="s-hd"><span class="sym">NOVA</span><span class="tag g">3&times;</span>
+      <span class="tag">$24,000</span><span class="rt">8.4s</span></div>`;
+  const marks = `<div class="s-marks"><span class="e">entry <b>1.00</b></span>
+      <span class="p">peak <b>1.24</b></span><span class="l">liq <b>0.67</b></span>
+      <span style="margin-left:auto">76% of range</span></div>`;
+  const cta = `<div class="s-foot"><button class="s-cta sell">Sell now</button>
+    <div class="s-sub"><span>Sell 50%</span><span>Average down</span></div></div>`;
+  const big = `<div class="s-big"><span class="v">1.18&times;</span><span class="k">mark</span>
+      <span class="r"><span class="v2">+$12,960</span><span class="k2">unrealised</span></span></div>`;
+  const kv = `<div class="s-kv"><span>Equity if closed</span><b>$47,760</b></div>`;
+
+  if (v.roundKind === "rail") {
+    return `${fx}${head}
+      <div class="s-split">
+        <div>${big}<div class="s-chart plain" style="padding:0 4px 0 10px">${chart(v.chart, v.co(122))}</div></div>
+        <div class="rail">
+          <div><div class="k">Entry</div><div class="v">1.00</div></div>
+          <div><div class="k">Peak</div><div class="v a">1.24</div></div>
+          <div><div class="k">Liq</div><div class="v r">0.67</div></div>
+          <div><div class="k">Range</div><div class="v">76%</div></div>
+          <div><div class="k">Out at</div><div class="v g">$47.7K</div></div>
+        </div>
+      </div>${cta}`;
+  }
+  if (v.roundKind === "chartfirst") {
+    return `${fx}${head}
+      <div class="s-chart">${chart(v.chart, v.co(146))}</div>${marks}${big}${kv}${cta}`;
+  }
+  return `${fx}${head}${big}
+    <div class="s-chart">${chart(v.chart, v.co(138))}</div>${marks}${kv}${cta}`;
+}
+
+/* ══ 열 개의 방향 ══════════════════════════════════════════════ */
+function co(base){ return h => Object.assign({ h: h }, base); }
+
+const DIRS = [
+  { id:"s21", no:21, name:"LCD DOT", era:"retro", dens:5,
+    say:"도트 매트릭스 액정. 차트가 선이 아니라 <b>점의 격자</b>로만 그려지고, 아래는 성긴 점으로 채워진다. 색을 두 가지로 묶어서 손익을 색이 아니라 <b>밝기와 채움</b>으로 말한다 — 이 목록에서 가장 조용한 픽셀.",
+    meta:["Silkscreen","2색 액정","도트 차트","4px 격자"],
+    chart:"dot", mainKind:"list", roundKind:"classic",
+    co:co({ px:4, ink:"#1d2716", axis:"#5d6c49", grid:"rgba(29,39,22,.10)",
+            peak:"#41512f", tagBg:"#1d2716", tagInk:"#bcc8a8" }) },
+
+  { id:"s22", no:22, name:"DITHER", era:"retro", dens:5,
+    say:"1비트 흑백. 면 채움을 회색으로 하지 않고 <b>체크무늬 디더</b>로 찍는다 — 색이 두 개뿐이던 시절 농담을 만들던 진짜 기법이라, 어떤 팔레트 조합보다 출처가 분명하다. 눈도 편하다.",
+    meta:["Silkscreen","1비트","디더 채움","밝은 배경"],
+    chart:"dither", mainKind:"list", roundKind:"chartfirst",
+    co:co({ px:4, ink:"#14140f", axis:"#75756b", grid:"none",
+            peak:"#75756b", tagBg:"#14140f", tagInk:"#f4f4ef" }) },
+
+  { id:"s23", no:23, name:"CRT ARCADE", era:"retro", dens:4,
+    say:"1차 PHOSPHOR를 <b>읽히게 고친 판</b>이다. 단색 발광을 버리고 남색 바탕에 다색으로 바꿨고, 글로우는 글자에서 전부 걷어내 <b>차트에만</b> 남겼다. 주사선은 유지하되 농도를 절반으로 낮췄다.",
+    meta:["Silkscreen","남색 다색","글로우는 차트만","주사선"],
+    chart:"step", mainKind:"grid", roundKind:"classic",
+    fx:'<div class="scan"></div>',
+    co:co({ px:4, ink:"#4ade9b", axis:"#5e738f", grid:"rgba(99,164,255,.09)",
+            peak:"#ffd166", tagBg:"#ffd166", tagInk:"#1a1200" }) },
+
+  { id:"s24", no:24, name:"PIXEL CANDLE", era:"modern", dens:2,
+    say:"현대 트레이딩 앱의 화면인데 <b>캔들만 픽셀</b>이다. 봉의 좌표를 4px 격자에 스냅해서 계단이 살짝 보이게 하고, UI는 둥근 모서리와 부드러운 그림자를 그대로 둔다. \"과하지 않게\"의 가장 안전한 해석.",
+    meta:["Space Grotesk","픽셀 캔들","둥근 모서리","농도 낮음"],
+    chart:"pixcandle", mainKind:"list", roundKind:"chartfirst",
+    co:co({ px:4, up:"#2fbd82", dn:"#f2555f", axis:"#5e6a7a", grid:"rgba(255,255,255,.045)",
+            peak:"#f5b83d", tagBg:"#f5b83d", tagInk:"#14110a" }) },
+
+  { id:"s25", no:25, name:"8-BIT", era:"retro", dens:5,
+    say:"콘솔 시절 팔레트와 <b>3px 프레임</b>, 검정 오프셋 그림자. 차트는 선이 아니라 <b>기둥 블록</b>이라 한 칸이 한 틱처럼 읽힌다. 가장 게임 같고, 그만큼 금융 화면에서 가장 멀다.",
+    meta:["Press Start 2P","콘솔 팔레트","블록 차트","3px 프레임"],
+    chart:"blocks", mainKind:"grid", roundKind:"classic",
+    co:co({ px:4, ink:"#4ad06a", up:"#4ad06a", dn:"#e84a5f", axis:"#6a74b8",
+            grid:"rgba(93,103,200,.16)", peak:"#fbd44c", tagBg:"#fbd44c", tagInk:"#0b1030" }) },
+
+  { id:"s26", no:26, name:"SOFT PIXEL", era:"modern", dens:2,
+    say:"요즘 인디 모바일 게임의 문법 — 부드러운 다크, 큰 둥근 모서리, 넉넉한 여백. 픽셀은 <b>차트와 작은 라벨</b>에만 들어간다. 라운드 화면은 차트를 왼쪽에 두고 오른쪽에 세로 정보 레일을 세워 <b>차트를 더 크게</b> 쓴다.",
+    meta:["Manrope + Silkscreen","사이드 레일","차트 최대","농도 낮음"],
+    chart:"step", mainKind:"list", roundKind:"rail",
+    co:co({ px:3, ink:"#4fd6a0", axis:"#6d6982", grid:"rgba(255,255,255,.05)",
+            peak:"#ffc95c", tagBg:"#ffc95c", tagInk:"#1a1405", fill:"rgba(79,214,160,.10)" }) },
+
+  { id:"s27", no:27, name:"TERMINAL PIXEL", era:"modern", dens:3,
+    say:"<b>비트맵 서체를 본문 전체에 쓰되</b> 색과 여백은 현대 단말기 그대로 둔 중간 지대. DotGothic16은 한글 글리프가 있어서 <b>국내판을 같이 낼 때 서체를 바꾸지 않아도 되는</b> 유일한 안이다.",
+    meta:["DotGothic16","한글 지원","차분한 회색","계단 차트"],
+    chart:"step", mainKind:"list", roundKind:"chartfirst",
+    co:co({ px:3, ink:"#46bd8c", axis:"#66727a", grid:"rgba(255,255,255,.05)",
+            peak:"#e6b64c", tagBg:"#e6b64c", tagInk:"#141710" }) },
+
+  { id:"s28", no:28, name:"PIXEL PAPER", era:"retro", dens:4,
+    say:"<b>유일한 밝은 픽셀</b>이다. 종이색 바탕에 잉크 글씨라 픽셀인데도 눈이 가장 편하고, 손익만 빨강·초록으로 튄다. 15초를 수십 판 반복하는 게임에서 <b>장시간 피로</b>를 가장 적게 만든다.",
+    meta:["Silkscreen","종이 바탕","밝은 픽셀","저피로"],
+    chart:"step", mainKind:"grid", roundKind:"classic",
+    co:co({ px:4, ink:"#2e7d4f", axis:"#948c7c", grid:"rgba(43,39,33,.07)",
+            peak:"#a3761a", tagBg:"#a3761a", tagInk:"#fdfaf2", fill:"rgba(46,125,79,.12)" }) },
+
+  { id:"s29", no:29, name:"NEON GRID", era:"modern", dens:3,
+    say:"신스웨이브를 절제한 판. 바닥에 <b>원근 격자</b>를 깔고 차트에만 네온을 입히되, <b>글자에는 글로우를 일절 쓰지 않아</b> 1차 ARCADE의 가독성 문제를 없앴다. Pixelify Sans라 픽셀인데 자간이 부드럽다.",
+    meta:["Pixelify Sans","바닥 격자","네온은 차트만","사이드 레일"],
+    chart:"neonstep", mainKind:"grid", roundKind:"rail",
+    fx:'<div class="grid"></div>',
+    co:co({ px:4, ink:"#3ce0c8", axis:"#6d61a0", grid:"rgba(123,108,255,.10)",
+            peak:"#ffd95e", tagBg:"#ffd95e", tagInk:"#180417" }) },
+
+  { id:"s30", no:30, name:"HYBRID", era:"modern", dens:1,
+    say:"평소엔 <b>완전한 현대 UI</b>인데 픽셀이 <b>차트와 숫자에만</b> 나타난다. 즉 픽셀이 장식이 아니라 \"지금이 게임 순간이다\"라는 신호로 쓰인다. 농도가 가장 낮고, 지금 코드에서 가장 가깝다.",
+    meta:["Manrope + Silkscreen","숫자만 픽셀","픽셀 캔들","현행과 가까움"],
+    chart:"pixcandle", mainKind:"list", roundKind:"chartfirst",
+    co:co({ px:4, up:"#22b877", dn:"#ef4c56", axis:"#606670", grid:"rgba(255,255,255,.04)",
+            peak:"#f0b429", tagBg:"#f0b429", tagInk:"#14100a" }) }
+];
+
+function densHTML(n){
+  let s = "";
+  for (let i = 1; i <= 5; i++) s += `<i class="${i <= n ? "on" : ""}"></i>`;
+  return `<span class="dens">${s}</span>`;
+}
+
+document.getElementById("board").innerHTML = DIRS.map(v => `
+  <section class="dir" id="${v.id}">
+    <div class="dir-head">
+      <div class="dir-no">${v.no}</div>
+      <div class="dir-id">
+        <div class="dir-top">
+          <h2 class="dir-name">${v.name}</h2>
+          <span class="dir-era ${v.era}">${v.era === "retro" ? "레트로" : "현대"}</span>
+          <span class="dir-dens">픽셀 농도 ${densHTML(v.dens)} ${v.dens}/5</span>
+        </div>
+        <p class="dir-say">${v.say}</p>
+        <div class="dir-meta">${v.meta.map((m, k) =>
+          `<span class="tagx${k === 0 ? " on" : ""}">${m}</span>`).join("")}</div>
+      </div>
+    </div>
+    <div class="pair">
+      <div class="slot"><p class="slot-cap">Main</p>
+        <div class="s ${v.id}">${main(v)}</div></div>
+      <div class="slot"><p class="slot-cap">Round &mdash; 15s &middot; 차트가 주인공</p>
+        <div class="s ${v.id}">${round(v)}</div></div>
+    </div>
+  </section>`).join("");
+
+document.getElementById("jump").innerHTML = DIRS.map(v =>
+  `<a href="#${v.id}"><b>${v.no}</b> ${v.name}</a>`).join("");
+</script>

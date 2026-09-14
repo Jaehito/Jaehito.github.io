@@ -728,7 +728,11 @@ const L={
     in1:'단타 <b>한 판이 끝날 때마다 하루</b>가 지나요.',
     in2:'기한 안에 못 갚으면 <b>반대매매</b>로 계좌가 청산돼요.',
     in3:'일찍 갚으면 남은 거래일 하루당 상환금의 {p}%를 현금으로 받아요.',
-    inGo:'시작하기'
+    inGo:'시작하기',
+    /* ⑤ 날짜 — 요일·월 이름은 목록이라 한 칸에 쉼표로 넣고 split해서 쓴다 */
+    dateWd:'일,월,화,수,목,금,토',
+    dateMon:'1,2,3,4,5,6,7,8,9,10,11,12',
+    dateFmt:'{mon}월 {d}일 ({w})'
   },
   en:{
     tabTrade:'🎯 Trade', tabShop:'🛒 Shop', tabUnlock:'🔓 Unlock',
@@ -860,7 +864,10 @@ const L={
     in1:'Every session you finish burns <b>one day</b>.',
     in2:'Miss the window and the firm <b>closes the account</b>.',
     in3:'Hit it early and every unused session pays {p}% of the target in cash.',
-    inGo:'Start'
+    inGo:'Start',
+    dateWd:'Sun,Mon,Tue,Wed,Thu,Fri,Sat',
+    dateMon:'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec',
+    dateFmt:'{mon} {d} ({w})'
   }
 };
 /* 브라우저 설정으로 첫 언어를 정한다. 고른 뒤에는 저장값이 이긴다. */
@@ -884,9 +891,36 @@ function setLang(l){
   if(typeof render==='function')render();
 }
 
-function fmtWon(v){const neg=v<0;let x=Math.round(Math.abs(v));if(x<10000)return (neg?'-':'')+x.toLocaleString()+'원';
+/* ===== 돈 표기 =====
+   내부 숫자는 하나다 — 원 단위 그대로 두고 표시할 때만 바꾼다. 잔고·목표·베팅이
+   전부 같은 정수를 쓰니 밸런스와 세이브는 언어와 무관하다.
+
+   영어판은 100으로 나눠 달러로 쓴다. 환율이 100이라는 뜻이 아니라, 밸런스를 한 줄도
+   안 건드리고 영어권 눈에 자연스러운 자릿수로 떨어지는 값이라 골랐다 —
+   시드 $1,000 · 1차 목표 $5,000 · 최종 목표 $500M. 시드·최소 베팅·게이트 일곱 개가
+   전부 100으로 나누어지므로 잔돈이 생기지 않는다.
+
+   두 언어 다 아래 자리를 버린다(50만원 · $12.3K). 한국어판이 처음부터 그렇게
+   써왔고, 이유도 그대로다 — 판마다 바뀌는 큰 수를 끝자리까지 읽히면 자릿수
+   감각이 사라진다. 지금 얼마인지가 아니라 목표에 얼마나 가까운지가 중요하다. */
+const USD_PER_WON=1/100;
+function fmtWonKo(v){const neg=v<0;let x=Math.round(Math.abs(v));if(x<10000)return (neg?'-':'')+x.toLocaleString()+'원';
   const eok=Math.floor(x/100000000),man=Math.floor((x%100000000)/10000);let s='';if(eok)s+=eok+'억';if(man)s+=(s?' ':'')+man.toLocaleString()+'만';return (neg?'-':'')+s+'원';}
-const won=n=>Math.round(n).toLocaleString()+'원';
+function fmtUsd(v){
+  const neg=v<0, d=Math.round(Math.abs(v)*USD_PER_WON);
+  let s=d.toLocaleString('en-US');
+  /* 1만 달러 미만은 끝자리까지 쓴다 — 한국어가 1만원 미만을 그대로 쓰는 것과 같은 기준.
+     그 위는 K·M·B로 소수 한 자리만 남긴다. 반올림이 1000을 넘으면 다음 단위로
+     올라간다 — 1000K가 아니라 1M이다. */
+  if(d>=1e4){
+    for(const [base,u] of [[1e3,'K'],[1e6,'M'],[1e9,'B']]){
+      const x=Math.round(d/base*10)/10;
+      if(x<1000||u==='B'){ s=(x%1?x.toFixed(1):String(x))+u; break; }
+    }
+  }
+  return (neg?'-':'')+'$'+s;
+}
+function fmtMoney(v){return LANG==='en'?fmtUsd(v):fmtWonKo(v);}
 function randn(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
 
 /* audio */
@@ -1292,7 +1326,8 @@ function dateOfDay(n){
   const d=new Date(2026,2,2);            // 3월 2일 월요일에서 시작
   let left=n;
   while(left>0){ d.setDate(d.getDate()+1); if(d.getDay()!==0&&d.getDay()!==6)left--; }
-  return `${d.getMonth()+1}월 ${d.getDate()}일 (${'일월화수목금토'[d.getDay()]})`;
+  return t('dateFmt',{mon:t('dateMon').split(',')[d.getMonth()],
+    d:d.getDate(), w:t('dateWd').split(',')[d.getDay()]});
 }
 /* 판당 필요 수익률 = (목표 ÷ 현금)^(1 ÷ 남은 거래일) − 1.
    D 숫자만으로는 위험한지 알 수가 없다 — 같은 D-5라도 목표의 90%를 모았으면 여유고
@@ -1314,13 +1349,13 @@ function riskAt(cash,days){
    "네코프로 해금"과 "HELIX access"가 각각 알아서 나온다. */
 const instName=id=>{const s=TRADE_STOCKS.find(x=>x.id===id);return s?s.name:id;};
 const LEVELS=[
-  {lv:2, need:500000, get tag(){return t('lvCash',{v:fmtWon(200000)});},
+  {lv:2, need:500000, get tag(){return t('lvCash',{v:fmtMoney(200000)});},
    reward:{emo:'🚗',get t(){return t('lv2T');},get d(){return t('lv2D');},
-     get bonusTxt(){return t('lvCash',{v:fmtWon(200000)});},f:S=>{S.cash+=200000;bumpPeak();}}},
+     get bonusTxt(){return t('lvCash',{v:fmtMoney(200000)});},f:S=>{S.cash+=200000;bumpPeak();}}},
   {lv:3, need:3000000, get tag(){return t('lvUnlockTag',{e:'🚀',n:instName('theme')});},
    reward:{emo:'🚀',get t(){return t('lv3T',{n:instName('theme')});},
      get d(){return t('lv3D',{n:instName('theme')});},f:S=>{S.themeUnlocked=true;}}},
-  {lv:4, need:20000000, get tag(){return t('lvCash',{v:fmtWon(500000)});},
+  {lv:4, need:20000000, get tag(){return t('lvCash',{v:fmtMoney(500000)});},
    reward:{emo:'💍',get t(){return t('lv4T');},get d(){return t('lv4D');},
      f:S=>{S.cash+=500000;bumpPeak();}}},
   {lv:5, need:150000000, get tag(){return t('lvUnlockTag',{e:'🔥',n:instName('surge')});},
@@ -1654,7 +1689,7 @@ function renderShop(){
     const can=!info.maxed && S.cash>=info.cost;
     const btn=info.maxed
       ? `<button class="biz-buy cant" disabled><span class="p">${t('shopDone')}</span></button>`
-      : `<button class="biz-buy ${can?'can':'cant'}" data-id="${id}"><span class="p">${fmtWon(info.cost)}</span><span class="l">${info.buyLabel}</span></button>`;
+      : `<button class="biz-buy ${can?'can':'cant'}" data-id="${id}"><span class="p">${fmtMoney(info.cost)}</span><span class="l">${info.buyLabel}</span></button>`;
     return `<div class="biz"><div class="logo">${info.emo}</div>
       <div class="mid"><div class="nm">${info.name}${info.cnt?`<span class="cnt">${info.cnt}</span>`:''}</div>
       <div class="ds">${info.ds}</div></div>
@@ -1679,7 +1714,7 @@ function showSettleModal(st){
   const penLabel=st.penalty>0?t('sePen',{p:Math.round(st.penalty*100)}):null;
   $('modalBox').innerHTML=`<div class="emo">🧬</div><div class="tt">${t('seTitle')}</div>
     <div class="xp-tbl">
-      <div><span>${t('sePeak',{v:fmtWon(st.peak)})}</span><b>+${st.base}</b></div>
+      <div><span>${t('sePeak',{v:fmtMoney(st.peak)})}</span><b>+${st.base}</b></div>
       ${st.early>0?`<div><span>${t('seEarly')}</span><b>+${st.early}</b></div>`:''}
       ${st.mult&&st.mult!==1?`<div><span>${t('seTier',{e:st.tierEmo||'',n:(st.tier||0)+1,name:st.tierName||''})}</span><b>×${st.mult.toFixed(1)}</b></div>`:''}
       ${penLabel?`<div class="pen"><span>${penLabel}</span><b>−${Math.round(st.penalty*100)}%</b></div>`:''}
@@ -1868,12 +1903,12 @@ function resultModalHTML(R){
   const msgs=R.list.map(m=>`<div class="cm-msg"><span class="av">💬</span><span><b>${m.name}</b> ${m.text}
     <span class="rs-like">♥ ${m.likes.toLocaleString()}</span></span></div>`).join('');
   return `<div class="cm-head"><span class="cm-title">${t('rsTitle')}</span>${badge}</div>
-    <div class="rs-money ${up?'up':'down'}">${up?'+':''}${fmtWon(R.profit)}</div>
+    <div class="rs-money ${up?'up':'down'}">${up?'+':''}${fmtMoney(R.profit)}</div>
     <div class="rs-sub">${sub}</div>
     <div class="rs-chips">${chips.join('')}</div>
     ${earnRow}
     <div class="cm-feed" style="margin-top:11px">${msgs}</div>
-    <div class="rs-wallet">${t('rsWallet',{v:fmtWon(S.cash)})}</div>
+    <div class="rs-wallet">${t('rsWallet',{v:fmtMoney(S.cash)})}</div>
     ${closeRowHTML()}`;
 }
 /* 한 판이 끝나면 하루가 간다 — 그런데 팝업을 닫는 순간 D가 조용히 줄면
@@ -1940,15 +1975,15 @@ function showRepayModal(g,nl,early,bonus){
   const st=done?settleOf(0):null;
   $('modalBox').innerHTML=`<div class="emo">${done?'🏆':(r?r.emo:'🔗')}</div>
     <div class="tt">${done?t('rpDone'):t('rpGate',{n:g.n})}</div>
-    <div class="dc">${done?t('rpDoneDesc'):t('rpGateDesc',{v:fmtWon(g.goal)})}</div>
+    <div class="dc">${done?t('rpDoneDesc'):t('rpGateDesc',{v:fmtMoney(g.goal)})}</div>
     ${bonus>0?`<div class="lv-gain early"><b>${t('rpEarly',{n:early})}</b>
-      — <b>${fmtWon(bonus)}</b> · ${t('kXp')} <b>+${early*EARLY_XP_PER_DAY}</b></div>`:''}
+      — <b>${fmtMoney(bonus)}</b> · ${t('kXp')} <b>+${early*EARLY_XP_PER_DAY}</b></div>`:''}
     ${r?`<div class="lv-gain"><b>${r.t}</b> — ${r.bonusTxt||r.d}</div>`:''}
     ${next?`<div class="stat-grid">
-      <div class="s"><div class="k">${t('kNextGoal',{n:next.n})}</div><div class="v">${fmtWon(next.goal)}</div></div>
+      <div class="s"><div class="k">${t('kNextGoal',{n:next.n})}</div><div class="v">${fmtMoney(next.goal)}</div></div>
       <div class="s"><div class="k">${t('kDeadline')}</div><div class="v">${t('vDays',{n:S.daysLeft})}</div></div></div>`:''}
     ${done?`<div class="stat-grid">
-      <div class="s"><div class="k">${t('kRunPeak')}</div><div class="v">${fmtWon(S.peakCash)}</div></div>
+      <div class="s"><div class="k">${t('kRunPeak')}</div><div class="v">${fmtMoney(S.peakCash)}</div></div>
       <div class="s"><div class="k">${t('kXp')}</div><div class="v" style="color:var(--gold)">+${st.total} XP</div></div></div>`:''}
     <button class="ok" id="mOk">${done?t('rpSettle'):t('rpNext')}</button>`;
   $('modal').classList.add('on');
@@ -1962,9 +1997,9 @@ function showDefaultModal(){
   const g=gateOf();
   const st=settleOf(BANKRUPT_PENALTY);
   $('modalBox').innerHTML=`<div class="emo">🏦</div><div class="tt">${t('dfTitle')}</div>
-    <div class="dc">${t('dfDesc',{n:g.n,v:fmtWon(g.goal)})}</div>
+    <div class="dc">${t('dfDesc',{n:g.n,v:fmtMoney(g.goal)})}</div>
     <div class="stat-grid">
-      <div class="s"><div class="k">${t('kRunPeak')}</div><div class="v">${fmtWon(S.peakCash)}</div></div>
+      <div class="s"><div class="k">${t('kRunPeak')}</div><div class="v">${fmtMoney(S.peakCash)}</div></div>
       <div class="s"><div class="k">${t('kXp')}</div><div class="v" style="color:var(--gold)">+${st.total} XP</div></div></div>
     <button class="ok bankrupt" id="mOk">${t('rpSettle')}</button>`;
   $('modal').classList.add('on');
@@ -1977,7 +2012,7 @@ function extendDeadline(){
   const cost=Math.floor(S.cash*EXTEND_COST_FRAC);
   if(cost<=0||S.cash-cost<MIN_BET)return;
   S.cash-=cost; S.daysLeft+=EXTEND_DAYS;
-  sfx.buy(); toast(t('exToast',{n:EXTEND_DAYS,v:fmtWon(cost)}));
+  sfx.buy(); toast(t('exToast',{n:EXTEND_DAYS,v:fmtMoney(cost)}));
   saveRun(); render();
 }
 function renderLevel(){
@@ -1991,7 +2026,7 @@ function renderLevel(){
   if(gateDone()){
     chip.className='repay-chip';
     chip.innerHTML=t('gateDoneChip');
-    el.innerHTML=`<div class="lv-row"><span class="lv-name">${t('gateDoneRow',{v:fmtWon(S.peakCash)})}</span>
+    el.innerHTML=`<div class="lv-row"><span class="lv-name">${t('gateDoneRow',{v:fmtMoney(S.peakCash)})}</span>
       <span class="lv-pct">100%</span></div><div class="lv-bar"><i style="width:100%"></i></div>`;
     return;
   }
@@ -2004,12 +2039,12 @@ function renderLevel(){
      마감이 걸린 게임에서 마감은 늘 보여야 한다. 그래서 스트립에서는 같은 줄을
      빼고 진행바와 설명줄만 남긴다(관문 이름은 설명줄 앞으로 옮겼다). */
   chip.className=`repay-chip ${r.cls}${r.last?' last':''}`;
-  chip.innerHTML=`🔗 <span class="goal">${fmtWon(g.goal)}</span><span class="sep">·</span>` +
+  chip.innerHTML=`🔗 <span class="goal">${fmtMoney(g.goal)}</span><span class="sep">·</span>` +
     `<span class="dd">${r.last?t('lastDay'):t('dday',{n:d})}</span>`;
   el.innerHTML=`<div class="lv-bar ${r.cls}"><i style="width:${pct}%"></i></div>
     <div class="repay-sub ${r.cls}">
       <span>${t('repaySub',{g:g.n,d:dateOfDay(S.dayCount),p:r.txt})}</span>
-      ${urgent&&canExtend?`<button class="extend" id="extendBtn">${t('extendBtn',{n:EXTEND_DAYS,v:fmtWon(Math.floor(S.cash*EXTEND_COST_FRAC))})}</button>`:''}
+      ${urgent&&canExtend?`<button class="extend" id="extendBtn">${t('extendBtn',{n:EXTEND_DAYS,v:fmtMoney(Math.floor(S.cash*EXTEND_COST_FRAC))})}</button>`:''}
     </div>`;
   if($('extendBtn'))$('extendBtn').onclick=()=>{sfx.tap();extendDeadline();};
 }
@@ -2030,9 +2065,9 @@ function showBankruptModal(){
   const st=settleOf(BANKRUPT_PENALTY);
   $('modalBox').innerHTML=`<div class="emo">💸</div>
     <div class="tt">${t('bkTitle')}</div>
-    <div class="dc">${t('bkDesc',{v:fmtWon(MIN_BET)})}</div>
+    <div class="dc">${t('bkDesc',{v:fmtMoney(MIN_BET)})}</div>
     <div class="stat-grid">
-      <div class="s"><div class="k">${t('kRunPeak')}</div><div class="v">${fmtWon(S.peakCash)}</div></div>
+      <div class="s"><div class="k">${t('kRunPeak')}</div><div class="v">${fmtMoney(S.peakCash)}</div></div>
       <div class="s"><div class="k">${t('kXp')}</div><div class="v" style="color:var(--gold)">+${st.total} XP</div></div></div>
     <button class="ok bankrupt" id="mOk">${t('rpSettle')}</button>`;
   $('modal').classList.add('on');
@@ -2047,7 +2082,7 @@ function showRetireModal(){
   $('modalBox').innerHTML=`<div class="emo">🏖️</div><div class="tt">${t('rtTitle')}</div>
     <div class="dc">${t('rtDesc',{p:Math.round(BANKRUPT_PENALTY*100)})}</div>
     <div class="stat-grid">
-      <div class="s"><div class="k">${t('kPeak')}</div><div class="v">${fmtWon(S.peakCash)}</div></div>
+      <div class="s"><div class="k">${t('kPeak')}</div><div class="v">${fmtMoney(S.peakCash)}</div></div>
       <div class="s"><div class="k">${t('rtXpK')}</div><div class="v" style="color:var(--gold)">+${st.total} XP</div></div></div>
     <button class="ok" id="mOk">${t('rtGo')}</button>
     <button class="ok" id="mNo" style="margin-top:8px;background:var(--field);color:var(--gray2)">${t('rtNo')}</button>`;
@@ -2274,7 +2309,7 @@ function renderTrade(){
   }else{
     const gr=riskAt(S.cash,S.daysLeft);
     gc.className=`tp-goal ${gr.cls}${gr.last?' last':''}`;
-    gc.innerHTML=`🔗 <b>${fmtWon(gateOf().goal)}</b><span class="sep">·</span>`+
+    gc.innerHTML=`🔗 <b>${fmtMoney(gateOf().goal)}</b><span class="sep">·</span>`+
       `<span class="dd">${gr.last?t('lastDay'):t('dday',{n:S.daysLeft})}</span>`;
   }
   if(S.activeRound){renderRoundView();return;}
@@ -2326,7 +2361,7 @@ function renderTrade(){
   $('tradeBody').innerHTML=`
     ${signalRow}
     ${levRow}
-    <div class="bet-row"><button id="betMinus">−</button><div class="amt">${fmtWon(S.betAmount)}</div><button id="betPlus">+</button></div>
+    <div class="bet-row"><button id="betMinus">−</button><div class="amt">${fmtMoney(S.betAmount)}</div><button id="betPlus">+</button></div>
     <div class="bet-quicks"><button data-q="0.25">25%</button><button data-q="0.5">50%</button><button data-q="0.75">75%</button><button data-q="1">${t('qMax')}</button></div>
     ${dirRow?`<div class="opt-row">${dirRow}</div>`:''}
     ${buffLine}
@@ -2347,7 +2382,7 @@ function renderTrade(){
    다시 한 번 확인시킨다 — 이 게임은 기본 버튼도 파랑이라 색만으로는 구분이 안 된다. */
 function goRowHTML(canGo,canShort,lev,pr){
   if(!canGo)return `<button class="trade-go" id="tradeGo" disabled>${t('goNoFunds')}</button>`;
-  const amt=t('amtLev',{v:fmtWon(S.betAmount),n:lev});
+  const amt=t('amtLev',{v:fmtMoney(S.betAmount),n:lev});
   if(!canShort)return `<button class="trade-go ${pr&&pr.cls==='p-bad'?'danger':''}" id="tradeGo">${t('goStart',{amt:amt})}</button>`;
   const short=S.betDir===-1;
   /* 방향은 토글의 선택 표시·버튼 색·아이콘 셋이 이미 말한다. 단어까지 넣으면 같은 말을 네 번 한다. */
@@ -2391,7 +2426,7 @@ function buildRoundView(r,stock){
       </svg>
       <div class="round-count" id="rvCount"></div>
     </div>
-    <div class="round-pnl up" id="rvPnl">+${fmtWon(0)}</div>
+    <div class="round-pnl up" id="rvPnl">+${fmtMoney(0)}</div>
     <div class="rv-wallet" id="rvWallet"></div>
     <div class="round-bar"><i id="rvBar"></i></div>
     <div class="water" id="rvWater" hidden>
@@ -2561,13 +2596,13 @@ function renderRoundView(){
   /* 절반을 이미 실현했으면 손익은 "실현 + 지금 팔면"의 합으로 읽혀야 한다 */
   const realized=r.half?r.half.profit:0;
   const shown=profit+realized;
-  RV.pnl.textContent=(shown>=0?'+':'')+fmtWon(shown);
+  RV.pnl.textContent=(shown>=0?'+':'')+fmtMoney(shown);
   RV.pnl.className='round-pnl '+(shown>=0?'up':'down');
   RV.wallet.innerHTML=r.half
-    ? t('rHalfDone',{m:r.half.mult.toFixed(2),p:(realized>=0?'+':'')+fmtWon(realized),rest:fmtWon(r.bet)})
+    ? t('rHalfDone',{m:r.half.mult.toFixed(2),p:(realized>=0?'+':'')+fmtMoney(realized),rest:fmtMoney(r.bet)})
     : (r.watered
-        ? t('rWatered',{v:entry.toFixed(2),bet:fmtWon(r.bet)})
-        : t('rIfSell',{v:fmtWon(S.cash+Math.max(0,r.bet+profit))}));
+        ? t('rWatered',{v:entry.toFixed(2),bet:fmtMoney(r.bet)})
+        : t('rIfSell',{v:fmtMoney(S.cash+Math.max(0,r.bet+profit))}));
   /* 분할 매도는 판당 한 번. 쓰고 나면 버튼이 하나로 돌아간다. */
   /* 📰 장중 뉴스 — 뜨는 순간부터 3초만. 놓치면 그만이고, 그게 이 기능의 긴장이다.
      그래프 위에 겹치면 선을 가린다(y축이 "본 값만"으로 확장돼서 세로로 꽉 차고, 3초면
@@ -2579,7 +2614,7 @@ function renderRoundView(){
   if(waterOn){
     const add=waterAmountOf(r), ok=canWater(r,mult);
     RV.water.classList.toggle('off',!ok);
-    RV.waterAmt.textContent='+'+fmtWon(add);
+    RV.waterAmt.textContent='+'+fmtMoney(add);
     RV.waterNote.textContent = ok?t('rWaterOnce')
       : (S.cash<add?t('rWaterNoCash'):(sdir>0?t('rWaterBelow'):t('rWaterAbove')));
   }
@@ -2587,11 +2622,11 @@ function renderRoundView(){
   RV.halfBtn.hidden=!canSplit;
   /* 숏도 "매도"로 쓴다. 정확한 용어는 숏 커버지만 버튼이 하는 일은 "이 판을 끝낸다"이고,
      방향은 위 줄의 📉 숏이 이미 말하고 있다. */
-  RV.sellLab.textContent=canSplit?t('rSellAll'):(r.half?t('rSellRest',{v:fmtWon(r.bet)}):t('rSellNow'));
-  RV.fullAmt.textContent=(profit>=0?'+':'')+fmtWon(profit);
+  RV.sellLab.textContent=canSplit?t('rSellAll'):(r.half?t('rSellRest',{v:fmtMoney(r.bet)}):t('rSellNow'));
+  RV.fullAmt.textContent=(profit>=0?'+':'')+fmtMoney(profit);
   if(canSplit){
     const hp=cashOutOf(Math.floor(r.bet/2),mult,lev,sdir,entry).profit;
-    RV.halfAmt.textContent=(hp>=0?'+':'')+fmtWon(hp);
+    RV.halfAmt.textContent=(hp>=0?'+':'')+fmtMoney(hp);
   }
 
   const dirTxt=sdir<0?t('rDirShort'):'';
@@ -2625,7 +2660,7 @@ function renderStrip(){
     <div class="rec-grid">
       <div class="rec"><div class="k">${t('stRounds')}</div><div class="v">${t('unitRounds',{n:T.rounds})} <small style="font-size:10px;color:var(--gray3)">${t('stWinRate',{p:winRate})}</small></div></div>
       <div class="rec"><div class="k">${t('stBestMult')}</div><div class="v">${T.bestMult?T.bestMult.toFixed(2)+'x':'—'}</div></div>
-      <div class="rec"><div class="k">${t('stBestProfit')}</div><div class="v">${T.bestProfit>0?'+'+fmtWon(T.bestProfit):'—'}</div></div>
+      <div class="rec"><div class="k">${t('stBestProfit')}</div><div class="v">${T.bestProfit>0?'+'+fmtMoney(T.bestProfit):'—'}</div></div>
       <div class="rec"><div class="k">${t('stBestStreak')}</div><div class="v">${t('unitStreak',{n:T.bestStreak})}</div></div>
       <div class="rec"><div class="k">${t('stSCount')}</div><div class="v">${t('unitTimes',{n:T.sCount})}</div></div>
       <div class="rec"><div class="k">${t('stNextTicket')}</div><div class="v">${nextStreakTxt(st)}</div></div>
@@ -2645,7 +2680,7 @@ function nextStreakTxt(st){
 }
 
 /* ===== 히어로 ===== */
-function renderHero(){$('cashView').textContent=fmtWon(S.cash);}
+function renderHero(){$('cashView').textContent=fmtMoney(S.cash);}
 
 /* 정적 HTML로 박혀 있는 라벨은 render에서 채운다 — 언어를 바꾸면 여기도 같이 돈다 */
 function applyStaticLabels(){
@@ -2666,7 +2701,7 @@ function render(){
 function showAwayModal(report){
   const bits=[];
   if(report.roundRefunded){
-    bits.push(`<div class="lv-gain">${t('awRefund',{v:fmtWon(report.roundRefunded.bet)})}</div>`);
+    bits.push(`<div class="lv-gain">${t('awRefund',{v:fmtMoney(report.roundRefunded.bet)})}</div>`);
   }
   const awayTxt=report.awaySec>=3600
     ?t('awHM',{h:Math.floor(report.awaySec/3600),m:Math.floor(report.awaySec%3600/60)})
@@ -2674,7 +2709,7 @@ function showAwayModal(report){
   $('modalBox').innerHTML=`<div class="emo">⏱️</div><div class="tt">${t('awTitle',{v:awayTxt})}</div>
     <div class="dc">${t('awDesc')}</div>
     ${bits.join('')}
-    <div class="stat-grid" style="margin-top:14px"><div class="s"><div class="k">${t('kBalance')}</div><div class="v">${fmtWon(S.cash)}</div></div></div>
+    <div class="stat-grid" style="margin-top:14px"><div class="s"><div class="k">${t('kBalance')}</div><div class="v">${fmtMoney(S.cash)}</div></div></div>
     <button class="ok" id="mOk">${t('btnOk')}</button>`;
   $('modal').classList.add('on');
   $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
@@ -2690,7 +2725,7 @@ function showIntroModal(){
   $('modalBox').innerHTML=`<div class="emo">🔗</div><div class="tt">${t('inTitle')}</div>
     <div class="dc">${t('inDesc')}</div>
     <div class="stat-grid">
-      <div class="s"><div class="k">${t('inGoalK')}</div><div class="v">${fmtWon(g.goal)}</div></div>
+      <div class="s"><div class="k">${t('inGoalK')}</div><div class="v">${fmtMoney(g.goal)}</div></div>
       <div class="s"><div class="k">${t('kDeadline')}</div><div class="v">${t('vDays',{n:gateDaysOf(0)})}</div></div></div>
     <div class="intro-li"><span class="e">📅</span><span>${t('in1')}</span></div>
     <div class="intro-li"><span class="e">🏦</span><span>${t('in2')}</span></div>
@@ -2901,7 +2936,7 @@ function devStartTab(){
     <div class="dv-sec">난이도 단계</div>
     <div class="dv-row wrap">${TIERS.map((t,i)=>
       `<button class="dv-btn sm ${tierIdx()===i?'sel':''}" data-tier="${i}">${i+1} ${t.n}</button>`).join('')}</div>
-    <div class="dv-sec">시작 현금 — 새 판 ${fmtWon(START_CASH)} · 지금 ${fmtWon(S.cash)}</div>
+    <div class="dv-sec">시작 현금 — 새 판 ${fmtMoney(START_CASH)} · 지금 ${fmtMoney(S.cash)}</div>
     <div class="dv-row">
       ${[[100000,'10만'],[1000000,'100만'],[10000000,'1000만']].map(([v,n])=>
         `<button class="dv-btn ${START_CASH===v?'sel':''}" data-scash="${v}">${n}</button>`).join('')}</div>
@@ -2939,7 +2974,7 @@ function devBrokeTab(){
     <div class="dv-sec">파산선 — 최소 베팅</div>
     <div class="dv-row">
       <button class="dv-btn" data-minbet="0.5">÷2</button>
-      <span class="dv-val">${fmtWon(MIN_BET)}<small>현금이 이 밑이면 파산</small></span>
+      <span class="dv-val">${fmtMoney(MIN_BET)}<small>현금이 이 밑이면 파산</small></span>
       <button class="dv-btn" data-minbet="2">×2</button></div>
     <div class="dv-sec">청산 여유 — ${lev}배 기준</div>
     <div class="dv-row">
@@ -2959,7 +2994,7 @@ function devBrokeTab(){
       <button class="dv-btn" data-exc="0.05">+5%p</button></div>
     <div class="dv-sec">지금 상태 · 만들기</div>
     <div class="dv-row"><span class="dv-lab">현금</span>
-      <span class="dv-val">${fmtWon(S.cash)}<small>파산까지 ${fmtWon(Math.max(0,S.cash-BROKE_LIMIT))}</small></span></div>
+      <span class="dv-val">${fmtMoney(S.cash)}<small>파산까지 ${fmtMoney(Math.max(0,S.cash-BROKE_LIMIT))}</small></span></div>
     <div class="dv-row">
       <button class="dv-btn danger" data-broke="now">즉시 파산</button>
       <button class="dv-btn" data-broke="edge">최소 베팅만 남기기</button></div>

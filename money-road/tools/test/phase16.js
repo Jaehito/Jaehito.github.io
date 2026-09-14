@@ -27,7 +27,7 @@ const { launch, GAME: url } = require('../lib/browser');
  p=await fresh();
  L('', await p.evaluate(()=>({
    스트립:$('repayStrip').textContent.replace(/\s+/g,' ').trim(),
-   gate:S.gate, daysLeft:S.daysLeft, goal:fmtWon(gateOf().goal), 날짜:dateOfDay(0)})));
+   gate:S.gate, daysLeft:S.daysLeft, goal:fmtMoney(gateOf().goal), 날짜:dateOfDay(0)})));
  L('거래일 진행', await p.evaluate(()=>[0,1,4,5,6,10].map(n=>`${n}일차: ${dateOfDay(n)}`)));
  await p.close();
 
@@ -37,7 +37,7 @@ const { launch, GAME: url } = require('../lib/browser');
  L('', await p.evaluate(async()=>{
    const out=[];
    for(let i=0;i<3;i++){ await window.playRound(1.05);
-     out.push({일차:S.dayCount, 남은일:S.daysLeft, 현금:fmtWon(S.cash)}); }
+     out.push({일차:S.dayCount, 남은일:S.daysLeft, 현금:fmtMoney(S.cash)}); }
    return out;
  }));
  await p.close();
@@ -78,7 +78,7 @@ const { launch, GAME: url } = require('../lib/browser');
    S.daysLeft=3; S.cash=1000000; render();
    const before=S.cash, days=S.daysLeft;
    $('extendBtn').click();
-   return {'D-8에 버튼':a, 'D-3에 버튼':true, 지불:fmtWon(before-S.cash), 연장후:S.daysLeft, 이전:days};
+   return {'D-8에 버튼':a, 'D-3에 버튼':true, 지불:fmtMoney(before-S.cash), 연장후:S.daysLeft, 이전:days};
  }));
  await p.close();
 

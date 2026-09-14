@@ -47,7 +47,7 @@ const { launch, GAME: url } = require('../lib/browser');
    const R=S.activeRound;
    const q=(b0/1.0)+(add/0.80);              // 총수량
    const want=(b0+add)/q;
-   return {최초베팅:fmtWon(b0), 추가:fmtWon(add), 총투입:fmtWon(R.bet),
+   return {최초베팅:fmtMoney(b0), 추가:fmtMoney(add), 총투입:fmtMoney(R.bet),
      평단:+R.entry.toFixed(6), 기대평단:+want.toFixed(6), 일치:Math.abs(R.entry-want)<1e-9,
      현금차감:cash0-S.cash, '차감=추가액':cash0-S.cash===add};}));
  L('청산선이 평단을 따라 내려간다', await p.evaluate(()=>({
@@ -81,7 +81,7 @@ const { launch, GAME: url } = require('../lib/browser');
  p=await fresh(400,2100000);
  L('베팅 200만 · 남은 현금 10만 (추가는 100만 필요)', await p.evaluate(()=>{
    window.openAt(1,0.80);
-   return {남은현금:fmtWon(S.cash), 필요:fmtWon(waterAmountOf(S.activeRound)),
+   return {남은현금:fmtMoney(S.cash), 필요:fmtMoney(waterAmountOf(S.activeRound)),
      canWater:canWater(S.activeRound), 안내:$('rvWaterNote').textContent};}));
  await p.close();
 
@@ -95,7 +95,7 @@ const { launch, GAME: url } = require('../lib/browser');
    sellRound(false);
    const r=S.lastResult;
    const want=Math.round(B*(1.15/e-1)*lev);
-   return {평단:+e.toFixed(4), 총투입:fmtWon(B), 손익:r.profit, 기대:want,
+   return {평단:+e.toFixed(4), 총투입:fmtMoney(B), 손익:r.profit, 기대:want,
      일치:Math.abs(r.profit-want)<2,
      '물타기 안 했으면':Math.round(2000000*(1.15-1)*lev),
      칩:[...document.querySelectorAll('.rs-chip')].map(x=>x.textContent.trim())};}));
@@ -137,7 +137,7 @@ const { launch, GAME: url } = require('../lib/browser');
    const r=S.lastResult;
    const wantHalf=Math.round(h.bet*(1.10/e-1)*lev);
    const wantRest=Math.round(rest*(1.20/e-1)*lev);
-   return {평단:+e.toFixed(4), 총투입:fmtWon(B), '절반+나머지=총투입':h.bet+rest===B,
+   return {평단:+e.toFixed(4), 총투입:fmtMoney(B), '절반+나머지=총투입':h.bet+rest===B,
      절반손익:h.profit, 절반기대:wantHalf,
      나머지기대:wantRest, 결과손익:r.profit, 합계기대:wantHalf+wantRest,
      일치:Math.abs(r.profit-(wantHalf+wantRest))<2,

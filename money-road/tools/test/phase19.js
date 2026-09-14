@@ -31,7 +31,7 @@ const { launch, GAME: url } = require('../lib/browser');
    'DEBT_LEVS 없음':typeof DEBT_LEVS==='undefined',
    'legacyPoints 없음':META.legacyPoints===undefined,
    'META.xp 있음':typeof META.xp==='number',
-   시작현금:fmtWon(S.cash), 최소배율:minLevOf(),
+   시작현금:fmtMoney(S.cash), 최소배율:minLevOf(),
    시작보험:S.upg.stoplossLv, 시작티켓:(S.buffs||[]).length})));
  await p.close();
 
@@ -65,7 +65,7 @@ const { launch, GAME: url } = require('../lib/browser');
    S.peakCash=20000000; S.earlyXp=14;
    const base=xpOfPeak(S.peakCash);
    const full=settleOf(0), pen=settleOf(BANKRUPT_PENALTY);
-   return {최고기록:fmtWon(S.peakCash), 기본XP:base, 조기상환XP:S.earlyXp,
+   return {최고기록:fmtMoney(S.peakCash), 기본XP:base, 조기상환XP:S.earlyXp,
      '은퇴/완제(100%)':full.total, '파산/반대매매(-30%)':pen.total,
      검산:full.total===base+14 && pen.total===Math.round((base+14)*0.7)};}));
  await p.close();
@@ -99,7 +99,7 @@ const { launch, GAME: url } = require('../lib/browser');
  await p.evaluate(()=>$('mOk').click()); await p.waitForTimeout(200);
  L('새 판 시작 뒤', await p.evaluate(()=>({
    모달:$('modal').classList.contains('on'), pendingSettle:META.pendingSettle,
-   현금:fmtWon(S.cash), earlyXp:S.earlyXp})));
+   현금:fmtMoney(S.cash), earlyXp:S.earlyXp})));
  await p.close();
 
  console.log('\n=== 오류 ==='); console.log(errs.length?errs.join('\n'):'없음');

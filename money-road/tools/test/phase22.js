@@ -48,7 +48,7 @@ const { launch, GAME: url } = require('../lib/browser');
    sellHalf();
    const h=S.activeRound.half;
    const want=Math.round((bet0/2)*(1.40-1)*lev);
-   return {원래베팅:fmtWon(bet0), 절반:fmtWon(h.bet), 남은베팅:fmtWon(S.activeRound.bet),
+   return {원래베팅:fmtMoney(bet0), 절반:fmtMoney(h.bet), 남은베팅:fmtMoney(S.activeRound.bet),
      '절반+남은=원래':h.bet+S.activeRound.bet===bet0,
      실현손익:h.profit, 기대손익:want, 손익일치:Math.abs(h.profit-want)<2,
      현금증가:S.cash-cash0, '현금=절반+손익':S.cash-cash0===h.bet+h.profit};}));
@@ -72,7 +72,7 @@ const { launch, GAME: url } = require('../lib/browser');
    const r=S.lastResult;
    const rest=bet0-h.bet;
    const wantRest=Math.round(rest*(0.80-1)*lev);
-   return {총베팅:fmtWon(r.bet), '총베팅=원래':r.bet===bet0,
+   return {총베팅:fmtMoney(r.bet), '총베팅=원래':r.bet===bet0,
      절반손익:h.profit, 나머지손익:wantRest, 합계:h.profit+wantRest,
      결과손익:r.profit, 일치:Math.abs(r.profit-(h.profit+wantRest))<2,
      가중평균배율:+r.effMult.toFixed(4),

@@ -30,7 +30,7 @@ const { launch, GAME: url } = require('../lib/browser');
    const cases=[[100000,12],[100000,8],[250000,8],[100000,5],[150000,3],[200000,1],[480000,4]];
    for(const [cash,d] of cases){ S.cash=cash; S.daysLeft=d; renderLevel();
      const dd=$('repayChip');
-     out.push({현금:fmtWon(cash), D:d, 표시:dd.textContent.trim(), 색:dd.className,
+     out.push({현금:fmtMoney(cash), D:d, 표시:dd.textContent.trim(), 색:dd.className,
        하단:document.querySelector('#repayStrip .repay-sub').textContent.replace(/\s+/g,' ').trim()}); }
    return out;}));
  await p.close();
@@ -82,7 +82,7 @@ const { launch, GAME: url } = require('../lib/browser');
    for(const [cash,d] of [[100000,12],[100000,5],[120000,3],[120000,1]]){
      S.cash=cash; S.daysLeft=d; setBet(Math.floor(cash*0.5)); renderTrade();
      const pl=document.querySelector('.pace-line');
-     out.push({현금:fmtWon(cash),D:d, 경고줄:pl?pl.textContent.replace(/\s+/g,' ').trim():'(없음)',
+     out.push({현금:fmtMoney(cash),D:d, 경고줄:pl?pl.textContent.replace(/\s+/g,' ').trim():'(없음)',
        색:pl?pl.className:'-', 버튼:$('tradeGo').className});}
    return out;}));
  await p.close();

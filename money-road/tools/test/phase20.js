@@ -89,7 +89,7 @@ const { launch, GAME: url } = require('../lib/browser');
    META.cleared=0; saveMeta();
    S.peakCash=3000000; S.cash=0; showBankruptModal(); $('mOk').click();  // 정산 화면
    $('mOk').click();                                                      // 새 판 시작
-   return {모달:$('modal').classList.contains('on'), tier:S.tier, 현금:fmtWon(S.cash)};}));
+   return {모달:$('modal').classList.contains('on'), tier:S.tier, 현금:fmtMoney(S.cash)};}));
  await p.waitForTimeout(150);
  L('단계를 깼으면 선택 화면', await p.evaluate(()=>{
    META.cleared=2; saveMeta();

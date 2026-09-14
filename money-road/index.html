@@ -1721,11 +1721,11 @@ function renderUnlock(){
   }).join('');
 }
 
-/* 댓글 작성자 이름 — 전국 순위 연출을 걷어내고 남은 것.
-   순위는 현금을 주지도 받지도 않으면서 탑바 한 자리를 계속 차지했다.
-   그 자리는 이제 상환 칩이 쓴다. */
-const FAKE_NAMES=['존버킹','단타의신','물타기장인','칼손절러','한강뷰거주','우량주러버','고점매수단','익절요정','풀매수맨','존리형','개미핥기','반대매매각','손절은없다','불장기원단','떡상기도중'];
-function nameFor(seed){return FAKE_NAMES[Math.abs(Math.floor(seed))%FAKE_NAMES.length];}
+/* 댓글 작성자 이름과 문장은 아래 CHAT에 언어별로 통째로 둔다 — t() 사전에
+   넣지 않는다. 하나는 문장이 아니라 목록이고, 둘은 영어판이 한국어를 옮긴 게
+   아니기 때문이다. 같은 상황에서 한국 커뮤니티가 하는 말과 영어권 트레이딩
+   채팅이 하는 말은 겹치지 않는다 — "한강"을 걷어내야 하는 것도 같은 이유고,
+   반대로 "exit liquidity"를 한국어로 옮길 방법도 없다. */
 
 /* ===== 거래 결과에 대한 사회적 반응 =====
    베팅 "중"에는 그래프와 배율만 보게 되므로 그때 띄우는 잡담은 아무도 안 본다.
@@ -1739,41 +1739,91 @@ function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
    그래서 개수를 최대 2개로 줄이고, 대신 이번 판의 사건을 문장에 넣는다 —
    매도 등급 · 고점 · 연승 · 청산 · 쓴 티켓 · 배율 · 상환 기한. 문장 총량은 비슷한데
    조합이 폭발하고, 무엇보다 "나를 보고 하는 말"이 된다. */
-const REACTIONS={
-  jackpot:['미쳤다 이걸 잡네 ㄷㄷ','와 이거 실화임? 손 떨림','형님 소리가 절로 나온다','저도 좀 알려주세요 제발','이건 캡처각이다','오늘의 주인공 등장'],
-  win:['깔끔하게 먹었네요','타이밍 좋았다','오 축하합니다','이게 실력이지','부럽습니다 진짜'],
-  meh:['음... 수고하셨습니다','본전치기 ㅋㅋ','조용히 지나가겠습니다','뭐 나쁘진 않네요'],
-  loss:['에고 아쉽다','저도 방금 물렸어요','다음 판 가시죠','괜찮아요 흔한 일'],
-  disaster:['헉 괜찮으세요...?','아이고 이건 좀','제 계좌 보는 것 같아서 눈물이','한강은 참으세요 진짜','같이 웁시다','이건 좀 아프겠는데'],
+const CHAT={
+  ko:{
+    names:['존버킹','단타의신','물타기장인','칼손절러','차트만본다','우량주러버','고점매수단','익절요정','풀매수맨','존리형','개미핥기','반대매매각','손절은없다','불장기원단','떡상기도중'],
+    react:{
+      jackpot:['미쳤다 이걸 잡네 ㄷㄷ','와 이거 실화임? 손 떨림','형님 소리가 절로 나온다','저도 좀 알려주세요 제발','이건 캡처각이다','오늘의 주인공 등장'],
+      win:['깔끔하게 먹었네요','타이밍 좋았다','오 축하합니다','이게 실력이지','부럽습니다 진짜'],
+      meh:['음... 수고하셨습니다','본전치기 ㅋㅋ','조용히 지나가겠습니다','뭐 나쁘진 않네요'],
+      loss:['에고 아쉽다','저도 방금 물렸어요','다음 판 가시죠','괜찮아요 흔한 일'],
+      disaster:['헉 괜찮으세요...?','아이고 이건 좀','제 계좌 보는 것 같아서 눈물이','오늘은 그만 쉬세요','같이 웁시다','이건 좀 아프겠는데'],
+    },
+    lev:{
+      win:['레버리지 배짱 좋네요','풀레버로 이걸 성공한다고?'],
+      loss:['레버리지가 사람 잡네','그러니까 배율을 좀...'],
+    },
+    ev:{
+      wiped:R=>[`${R.lev}배로 청산이라니 ㄷㄷ`,'계좌 녹는 소리가 여기까지 들려요','청산 당하셨네요 ㅠㅠ','이건 진짜 아프다'],
+      missPeak:R=>[`${R.hi.toFixed(2)}까지 갔는데 ${R.mult.toFixed(2)}에 파셨네요 ㅋㅋ`,
+        `아까 ${R.hi.toFixed(2)} 찍었을 때 팔았어야죠`,`${R.hi.toFixed(2)} 보고도 못 파는 게 사람이죠`],
+      perfect:R=>[`${R.mult.toFixed(2)}에 칼같이 터셨네`,'고점에서 정확히 잡으셨다','이게 매도의 정석입니다','손이 기계세요?'],
+      streakBreak:R=>[`${R.prevStreak}연승 끊긴 게 더 아프겠다`,`${R.prevStreak}연승까지 갔었는데...`,'연승 끊길 때가 제일 쓰라리죠'],
+      streakOn:R=>[`${R.streak}연승째다 이거`,`${R.streak}연승 실화?`,'지금 손이 뜨거우신 듯'],
+      buffFail:R=>[`${buffNames(R)} 쓰고도 이러네 ㅠㅠ`,'티켓이 아깝다 진짜','좋은 패 들고 지셨네'],
+      buffWin:R=>[`${buffNames(R)} 제대로 썼네요`,'티켓 값 뽑고도 남았다'],
+      bigLev:R=>[`${R.lev}배로 이걸 성공한다고?`,`${R.lev}배 배짱 미쳤네`,'간이 크시네 ㄷㄷ'],
+      dday:R=>[`D-${R.daysLeft}에 이걸 살리네`,'막판에 저력이 나오네요','마감 직전에 강한 타입'],
+      ddayFail:R=>[`D-${R.daysLeft}인데 이러면 곤란한데`,'상환일 다가오는데 어쩌죠','슬슬 반대매매 각인데'],
+    },
+  },
+  /* 영어판 이름은 한국식 별명의 음역이 아니라 트레이딩 채팅에서 실제로 굴러가는
+     핸들 모양으로 새로 지었다. 문장도 같은 기준이다 — 존댓말·ㅋㅋ·ㄷㄷ 같은
+     한국어 말투를 옮기려 하면 전부 어색해지므로, 같은 감정을 영어권 채팅 말투로
+     다시 썼다. 짧고, 소문자, 마침표 없음. */
+  en:{
+    names:['DiamondHandz','StopLossSkipper','ChartGoblin','AvgDownAndy','ExitLiquidity','BlueChipBrad','TopBuyerClub','TakeProfitFairy','AllInAlan','ValueGuyVic','AntEater','MarginCallMike','NeverStopOut','GreenCandlePrayer','PumpItPlease'],
+    react:{
+      jackpot:['ok that was insane','chat did you all see that','my hands are shaking and it is not even my trade','please teach me, seriously','someone clip this','print of the day right here'],
+      win:['clean exit','timing was right there','oh nice, congrats','that is what skill looks like','genuinely jealous'],
+      meh:['well... good session','round trip, ha','moving right along','not bad honestly'],
+      loss:['ah, that stings','I just got caught in the same one','next one is yours','it happens to everyone'],
+      disaster:['are you ok...?','oof, that is rough','looking at my own account, tearing up','take the rest of the day off','we cry together','that one is going to hurt'],
+    },
+    lev:{
+      win:['took real nerve with that size','full leverage and it worked?'],
+      loss:['leverage gets everybody','maybe ease off the size...'],
+    },
+    ev:{
+      wiped:R=>[`liquidated at ${R.lev}x, brutal`,'I can hear the account melting from here','liquidated, ouch','this one actually hurts'],
+      missPeak:R=>[`it printed ${R.hi.toFixed(2)} and you sold at ${R.mult.toFixed(2)}`,
+        `you had ${R.hi.toFixed(2)} right there`,`seeing ${R.hi.toFixed(2)} and still not selling, very human`],
+      perfect:R=>[`out at ${R.mult.toFixed(2)}, surgical`,'caught the top exactly','textbook exit','are your hands a machine?'],
+      streakBreak:R=>[`losing a ${R.prevStreak} streak stings more`,`you were ${R.prevStreak} deep...`,'the streak breaking is always the worst part'],
+      streakOn:R=>[`that is ${R.streak} in a row`,`${R.streak} straight, seriously?`,'hands are hot right now'],
+      buffFail:R=>[`${buffNames(R)} and still this`,'that ticket is wasted','good cards, lost hand'],
+      buffWin:R=>[`${buffNames(R)} used properly`,'that ticket paid for itself twice over'],
+      bigLev:R=>[`${R.lev}x and you pulled it off?`,`${R.lev}x takes nerve`,'zero fear in this one'],
+      dday:R=>[`saving it on D-${R.daysLeft}`,'strong finish','built for deadlines'],
+      ddayFail:R=>[`D-${R.daysLeft} and this is not great`,'the deadline is right there','this is getting close to a breach'],
+    },
+  },
 };
-/* 사건별 문장 — 조건이 맞을 때만 후보에 오른다. ${} 자리에 이번 판 숫자가 들어간다. */
+function CH(){return CHAT[LANG]||CHAT.ko;}
+function buffNames(R){return (R.buffs||[]).map(b=>BUFFS[b].name).join('+');}
+/* 회귀 테스트가 FAKE_NAMES라는 이름으로 목록이 살아 있는지 본다.
+   이름을 살려두고 현재 언어의 목록을 준다 — 목록이 둘로 갈렸을 뿐 사라진 게 아니다. */
+try{ Object.defineProperty(window,'FAKE_NAMES',{get:()=>CH().names}); }catch(e){}
+function nameFor(seed){const n=CH().names; return n[Math.abs(Math.floor(seed))%n.length];}
+/* 사건별 문장 — 조건이 맞을 때만 후보에 오른다. when은 언어와 무관하니 여기 남고,
+   문장만 CHAT에서 가져온다. 영어에 빠진 사건이 있으면 한국어로 떨어진다. */
 const EVENT_LINES=[
-  {id:'wiped', when:R=>R.profit<=-R.bet*0.95,
-   t:R=>[`${R.lev}배로 청산이라니 ㄷㄷ`,'계좌 녹는 소리가 여기까지 들려요','청산 당하셨네요 ㅠㅠ','이건 진짜 아프다']},
-  {id:'missPeak', when:R=>R.grade&&R.grade.pct<45&&R.hi>=1.15,
-   t:R=>[`${R.hi.toFixed(2)}까지 갔는데 ${R.mult.toFixed(2)}에 파셨네요 ㅋㅋ`,
-        `아까 ${R.hi.toFixed(2)} 찍었을 때 팔았어야죠`,`${R.hi.toFixed(2)} 보고도 못 파는 게 사람이죠`]},
-  {id:'perfect', when:R=>R.grade&&R.grade.g==='S',
-   t:R=>[`${R.mult.toFixed(2)}에 칼같이 터셨네`,'고점에서 정확히 잡으셨다','이게 매도의 정석입니다','손이 기계세요?']},
-  {id:'streakBreak', when:R=>R.prevStreak>=3&&R.profit<=0,
-   t:R=>[`${R.prevStreak}연승 끊긴 게 더 아프겠다`,`${R.prevStreak}연승까지 갔었는데...`,'연승 끊길 때가 제일 쓰라리죠']},
-  {id:'streakOn', when:R=>R.streak>=3&&R.profit>0,
-   t:R=>[`${R.streak}연승째다 이거`,`${R.streak}연승 실화?`,'지금 손이 뜨거우신 듯']},
-  {id:'buffFail', when:R=>(R.buffs||[]).length>0&&R.profit<0,
-   t:R=>[`${(R.buffs||[]).map(b=>BUFFS[b].name).join('+')} 쓰고도 이러네 ㅠㅠ`,'티켓이 아깝다 진짜','좋은 패 들고 지셨네']},
-  {id:'buffWin', when:R=>(R.buffs||[]).length>0&&R.profit>R.bet*0.5,
-   t:R=>[`${(R.buffs||[]).map(b=>BUFFS[b].name).join('+')} 제대로 썼네요`,'티켓 값 뽑고도 남았다']},
-  {id:'bigLev', when:R=>R.lev>=5&&R.profit>R.bet,
-   t:R=>[`${R.lev}배로 이걸 성공한다고?`,`${R.lev}배 배짱 미쳤네`,'간이 크시네 ㄷㄷ']},
-  {id:'dday', when:R=>R.daysLeft<=2&&R.profit>0,
-   t:R=>[`D-${R.daysLeft}에 이걸 살리네`,'막판에 저력이 나오네요','마감 직전에 강한 타입']},
-  {id:'ddayFail', when:R=>R.daysLeft<=2&&R.profit<0,
-   t:R=>[`D-${R.daysLeft}인데 이러면 곤란한데`,'상환일 다가오는데 어쩌죠','슬슬 반대매매 각인데']},
+  {id:'wiped',       when:R=>R.profit<=-R.bet*0.95},
+  {id:'missPeak',    when:R=>R.grade&&R.grade.pct<45&&R.hi>=1.15},
+  {id:'perfect',     when:R=>R.grade&&R.grade.g==='S'},
+  {id:'streakBreak', when:R=>R.prevStreak>=3&&R.profit<=0},
+  {id:'streakOn',    when:R=>R.streak>=3&&R.profit>0},
+  {id:'buffFail',    when:R=>(R.buffs||[]).length>0&&R.profit<0},
+  {id:'buffWin',     when:R=>(R.buffs||[]).length>0&&R.profit>R.bet*0.5},
+  {id:'bigLev',      when:R=>R.lev>=5&&R.profit>R.bet},
+  {id:'dday',        when:R=>R.daysLeft<=2&&R.profit>0},
+  {id:'ddayFail',    when:R=>R.daysLeft<=2&&R.profit<0},
 ];
-const LEV_REACTIONS={
-  win:['레버리지 배짱 좋네요','풀레버로 이걸 성공한다고?'],
-  loss:['레버리지가 사람 잡네','그러니까 배율을 좀...'],
-};
+function evLines(id,R){
+  const f=(CH().ev||{})[id]||CHAT.ko.ev[id];
+  try{ return f?f(R):[]; }catch(e){ return []; }
+}
+function reactPool(tier){return (CH().react||{})[tier]||CHAT.ko.react[tier];}
 function buildReactions(R){
   const bet=R.bet, r=bet>0?R.profit/bet:0;
   let tier;
@@ -1783,14 +1833,15 @@ function buildReactions(R){
   const out=[];
   /* 이번 판에 해당하는 사건이 있으면 그중 하나를 먼저 — 이게 "나를 보고 하는 말"이 된다 */
   const hits=EVENT_LINES.filter(e=>{try{return e.when(R);}catch(x){return false;}});
-  if(hits.length)out.push(pick(pick(hits).t(R)));
+  if(hits.length){ const lines=evLines(pick(hits).id,R); if(lines.length)out.push(pick(lines)); }
   /* 그다음 일반 반응 하나 */
-  const pool=[...REACTIONS[tier]];
-  if(R.lev>1){const ex=LEV_REACTIONS[r>=0.15?'win':r<=-0.15?'loss':null]; if(ex)pool.push(...ex);}
+  const pool=[...reactPool(tier)];
+  if(R.lev>1){const ex=(CH().lev||{})[r>=0.15?'win':r<=-0.15?'loss':null]; if(ex)pool.push(...ex);}
   out.push(pick(pool));
   const mult=1+(R.lev>1?R.lev*0.35:0);
-  return {tier, list:out.slice(0,2).map(t=>({
-    name:nameFor(Math.random()*100000), text:t,
+  /* map 인자를 txt로 둔다 — t는 번역 함수라 여기서 가리면 안 된다 */
+  return {tier, list:out.slice(0,2).map(txt=>({
+    name:nameFor(Math.random()*100000), text:txt,
     likes:Math.max(0,Math.round(likeBase*mult*(0.5+Math.random())))}))};
 }
 function resultModalHTML(R){

@@ -732,7 +732,9 @@ const L={
     /* ⑤ 날짜 — 요일·월 이름은 목록이라 한 칸에 쉼표로 넣고 split해서 쓴다 */
     dateWd:'일,월,화,수,목,금,토',
     dateMon:'1,2,3,4,5,6,7,8,9,10,11,12',
-    dateFmt:'{mon}월 {d}일 ({w})'
+    dateFmt:'{mon}월 {d}일 ({w})',
+    /* 제목·로고 */
+    docTitle:'머니로드 · 단타 게임', brandA:'머니', brandB:'로드'
   },
   en:{
     tabTrade:'🎯 Trade', tabShop:'🛒 Shop', tabUnlock:'🔓 Unlock',
@@ -867,7 +869,9 @@ const L={
     inGo:'Start',
     dateWd:'Sun,Mon,Tue,Wed,Thu,Fri,Sat',
     dateMon:'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec',
-    dateFmt:'{mon} {d} ({w})'
+    dateFmt:'{mon} {d} ({w})',
+    /* 로고 두 조각 사이는 &nbsp;로 띄운다 — 한국어 '머니로드'는 붙여 쓰고 영어는 띄운다 */
+    docTitle:'Money Road · Day Trading Game', brandA:'MONEY&nbsp;', brandB:'ROAD'
   }
 };
 /* 브라우저 설정으로 첫 언어를 정한다. 고른 뒤에는 저장값이 이긴다. */
@@ -2689,6 +2693,11 @@ function applyStaticLabels(){
   const sm='font-weight:600;color:var(--gray3)';
   set('shopTitle',`${t('shopTitle')} <small style="${sm}">${t('shopNote')}</small>`);
   set('unlockTitle',`${t('unlockTitle')} <small style="${sm}">${t('unlockNote')}</small>`);
+  /* 로고와 탭 제목도 언어를 따라간다. 이름은 바꾸지 않고 표기만 옮긴다 —
+     '머니로드'와 'MONEY ROAD'는 같은 이름이다. 로고는 뒷글자만 색이 달라서
+     두 조각으로 넣는다. */
+  set('brandTap',`${t('brandA')}<span>${t('brandB')}</span>`);
+  try{ document.title=t('docTitle'); }catch(e){}
 }
 function render(){
   applyStaticLabels();

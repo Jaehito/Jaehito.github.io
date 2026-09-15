@@ -49,13 +49,15 @@ const { launch, GAME: url } = require('../lib/browser');
  }));
  L('', ko);
  want('기본 언어', ko.lang, 'ko');
- want('단타 탭', ko.탭[0], '🎯 단타');
- want('상점 탭', ko.탭[1], '🛒 상점');
- want('해금 탭', ko.탭[2], '🔓 해금');
+ /* 98 전환에서 이모지가 전부 직접 그린 아이콘(SVG)으로 바뀌었다.
+    아이콘은 마크업이라 textContent에는 낱말만 남는다. */
+ want('단타 탭', ko.탭[0], '단타');
+ want('상점 탭', ko.탭[1], '상점');
+ want('해금 탭', ko.탭[2], '해금');
  want('퀵 최대', ko.퀵최대, '최대');
  want('레버리지 3배', ko.레버리지, '3배 청산 0.67x');
- want('연승 없음', ko.스트립, '🔥 연승 없음');
- want('목표 칩', ko.목표칩, '🔗 50만원·D-13');   // 한국어 표기는 만/억으로 끊는다
+ want('연승 없음', ko.스트립, '연승 없음');
+ want('목표 칩', ko.목표칩, '50만원·D-13');   // 한국어 표기는 만/억으로 끊는다
  if(!/로 시작$/.test(ko.시작버튼)) fail.push('시작 버튼: '+ko.시작버튼);
 
  /* ── 2. 첫 실행 감지 ── */
@@ -64,7 +66,7 @@ const { launch, GAME: url } = require('../lib/browser');
  const enDetect=await en1.evaluate(()=>({lang:LANG, 탭:$('mtTrade').textContent, 퀵:[...document.querySelectorAll('.bet-quicks button')].pop().textContent}));
  L('en-US', enDetect);
  want('en 로케일 감지', enDetect.lang, 'en');
- want('영어 탭', enDetect.탭, '🎯 Trade');
+ want('영어 탭', enDetect.탭, 'Trade');
  want('영어 퀵', enDetect.퀵, 'Max');
  const ja=await fresh({locale:'ja-JP'}); await dismiss(ja);
  want('ko가 아니면 en', await ja.evaluate(()=>LANG), 'en');
@@ -78,7 +80,7 @@ const { launch, GAME: url } = require('../lib/browser');
  L('', {저장값:saved, 새로고침후:after});
  want('저장값', saved, 'en');
  want('새로고침 후 유지', after.lang, 'en');
- want('새로고침 후 화면', after.탭, '🎯 Trade');
+ want('새로고침 후 화면', after.탭, 'Trade');
 
  /* ── 4. 전환이 화면을 다시 그리는가 ── */
  console.log('\n=== 4. 전환 ===');
@@ -90,8 +92,8 @@ const { launch, GAME: url } = require('../lib/browser');
    return {before, mid, after:$('mtTrade').textContent};
  });
  L('', swap);
- want('en→ko 즉시 반영', swap.mid, '🎯 단타');
- want('ko→en 즉시 반영', swap.after, '🎯 Trade');
+ want('en→ko 즉시 반영', swap.mid, '단타');
+ want('ko→en 즉시 반영', swap.after, 'Trade');
  want('잘못된 값은 무시', await p.evaluate(()=>{setLang('zz');return LANG;}), 'en');
 
  /* ── 5. 폴백 — 영어에 없으면 한국어로 ── */

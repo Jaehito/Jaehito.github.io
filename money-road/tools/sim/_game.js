@@ -51,7 +51,12 @@ const G = {};
   // eslint-disable-next-line no-eval
   eval(parts.join('\n') + '\nG.randn=randn; G.ROUND_TICKS=ROUND_TICKS; G.noiseScale=noiseScale;' +
     'G.dev=dev; G.buildMultiPhase=buildMultiPhase; G.buildFlat=buildFlat; G.midHead=midHead;' +
-    'G.PATTERNS=PATTERNS; G.PATTERN_TIER=PATTERN_TIER;');
+    'G.PATTERNS=PATTERNS; G.PATTERN_TIER=PATTERN_TIER;' +
+    /* DIP/MID_DIP은 게임 쪽에서 let이라 런타임에 밀 수 있다. 시뮬에서도
+       같은 손잡이를 돌려야 "패턴을 바꿀 것인가 머리 깊이를 바꿀 것인가"를
+       한 표에서 비교할 수 있다. */
+    'G.setDIP=v=>{DIP=v}; G.getDIP=()=>DIP;' +
+    'G.setMidDip=v=>{MID_DIP=v}; G.getMidDip=()=>MID_DIP;');
 })();
 
 /* 종목 — index.html의 TRADE_STOCKS에서 생성기가 실제로 읽는 필드만 옮긴다.

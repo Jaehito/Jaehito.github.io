@@ -60,14 +60,38 @@ const mk = (mv, cr, nb) => ({
      · 난이도 하락가중 down(전체 난이도를 되돌리는 쪽)
    정답을 없앤 만큼 난이도를 돌려주지 않으면 "고쳤더니 아무도 못 깬다"가 된다.
    목표는 최고 전략 20~27% · 격차 8%p 이내다. */
-const BASE = {
-  'C0 옮김.03 나락.02 반등실패.20': mk(0.03,0.02,0.20),
-  'C1 옮김.05 나락.04 반등실패.35': mk(0.05,0.04,0.35),
-};
-const VARIANTS = {'지금 (down .04)': {__down:0.04}};
+/* 2차 스윕(N=300):
+     지금 down.04        최고 46% 격차 24%p 전액손실 6.4%
+     C0 down.04/.02/.00  최고 16/21/31%     격차 7/11/14%p
+     C1 down.04/.02/.00  최고 6/7/9%        (게임이 죽는다)
+
+   여기서 한 가지가 분명해졌다. 트레일12(시초부터 트레일링)는 어느 안에서도
+   1~2%인데 버티35는 16~46%다. 같은 전략인데 시초 구간을 버리느냐만 다르다.
+   즉 격차의 정체는 "워밍업이 공짜"가 아니라 **DIP가 일찍 반응한 사람을 죽이는 것**이다.
+   시초 눌림이 0.84까지 파이므로 12% 트레일링은 매 판 거기서 털린다.
+
+   그래서 3차는 DIP를 같이 돌린다. 얕게 파면(0.88~0.90) 즉시 트레일링이 살아나고
+   버티기의 값어치가 같이 내려간다 — README의 "올리면 트레일링이 다시 살아난다"가
+   바로 이 손잡이다. 쫄보·홀드는 어느 안에서도 0%다(지금도 그렇다). 이건 이번
+   변경이 만든 일이 아니라 이미 그런 상태였다 — 되살리는 건 다음 일이다. */
+/* 3차 스윕이 답을 냈다 — 격차의 정체는 DIP였다.
+     지금패턴 DIP 0.84  트레일12 4% · 버티35 38%   격차 18%p
+     지금패턴 DIP 0.88  트레일12 51% · 버티35 50%  격차  2%p  (대신 전체가 50%로 쉬워짐)
+     C0      DIP 0.88  트레일12 29% · 버티35 23%  격차  0%p  최고 29%
+   시초 눌림을 0.84까지 파면 12% 트레일링이 매 판 거기서 털린다. 그래서
+   "버티는 것"이 공짜가 아니라 **유일하게 살아남는 법**이었다. 0.88로 얕게 파면
+   일찍 반응해도 살고, 버티기의 값어치가 같이 사라진다.
+
+   4차는 착지점만 찾는다 — C0 고정, DIP 0.86~0.88 × down 0.04~0.06.
+   목표 최고 24~27%. 쫄보·홀드가 0%인 것은 이번 변경이 만든 일이 아니라 지금도
+   그렇다(다른 숙제다). */
+const BASE = {'C0': mk(0.03,0.02,0.20)};
+const VARIANTS = {'지금 (DIP .84 · down .04)': {__dip:0.84, __down:0.04}};
 for(const [n,spec] of Object.entries(BASE))
-  for(const d of [0.04,0.02,0.00])
-    VARIANTS[n+' · down '+d.toFixed(2)] = Object.assign({__down:d}, spec);
+  for(const dip of [0.86,0.87,0.88])
+    for(const d of [0.04,0.05,0.06])
+      VARIANTS[`${n} · DIP ${dip} · down ${d.toFixed(2)}`] =
+        Object.assign({__down:d, __dip:dip}, spec);
 
 function build(spec){
   /* {...p}로 베끼면 안 된다 — PATTERNS의 name은 t()를 부르는 getter라 노드에서 터진다 */
@@ -145,25 +169,27 @@ function runOne(pick, mode){
 
 const ALL=[...Object.keys(MODES),'신호'];
 console.log('■ 클리어율 (103거래일 · 3단계 · 사성전자 · 신호 55% · 반응 0.5초)\n');
-console.log('  안                                   '+ALL.map(m=>m.padStart(7)).join('')+'   최고  격차');
+console.log('  안                                         '+ALL.map(m=>m.padStart(7)).join('')+'   최고  격차');
 const NN=300;
 const keep={};
 for(const [name,spec] of Object.entries(VARIANTS)){
+  G.setDIP(spec.__dip!==undefined?spec.__dip:0.84);
   const b=build(spec); const dn=spec.__down!==undefined?spec.__down:0.04;
-  const [pick,mix]=picker(b.pats,b.tier,dn); keep[name]={b,mix,dn};
+  const [pick,mix]=picker(b.pats,b.tier,dn); keep[name]={b,mix,dn,dip:spec.__dip};
   const vals=ALL.map(m=>{ let c=0; for(let k=0;k<NN;k++) if(runOne(pick,m)==='클리어')c++; return c/NN*100; });
   const sorted=vals.slice().sort((a,b)=>b-a);
-  console.log('  '+name.padEnd(36)+vals.map(v=>(v.toFixed(0)+'%').padStart(7)).join('')+
+  console.log('  '+name.padEnd(42)+vals.map(v=>(v.toFixed(0)+'%').padStart(7)).join('')+
     '  '+(sorted[0].toFixed(0)+'%').padStart(5)+(sorted[0]-sorted[1]).toFixed(0).padStart(5)+'%p');
 }
 
 console.log('\n■ 전액손실률 (판당 · 버티35 기준) · 등급 분포\n');
-console.log('  안                                   전액손실   강세  보통  약세');
+console.log('  안                                         전액손실   강세  보통  약세');
 for(const [name,spec] of Object.entries(VARIANTS)){
+  G.setDIP(keep[name].dip!==undefined?keep[name].dip:0.84);
   const {b,mix,dn}=keep[name]; const [pick]=picker(b.pats,b.tier,dn);
   let wipe=0; const N=20000;
   for(let k=0;k<N;k++){ if(warmTrail(pick().p.gen(ST,T),Math.floor(T*0.35),0.08)===0)wipe++; }
-  console.log('  '+name.padEnd(36)+((wipe/N*100).toFixed(1)+'%').padStart(8)+
+  console.log('  '+name.padEnd(42)+((wipe/N*100).toFixed(1)+'%').padStart(8)+
     ('  '+(mix.strong*100).toFixed(0)+'%').padStart(7)+((mix.mid*100).toFixed(0)+'%').padStart(6)+
     ((mix.weak*100).toFixed(0)+'%').padStart(6));
 }

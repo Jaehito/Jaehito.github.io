@@ -41,8 +41,10 @@ else:
 
 s = io.open(HTML, encoding='utf-8').read()
 # fmtWon()이 만들어내는 억/만/원, 등급 문구 등 런타임 조합 문자를 여유로 넣는다
-EXTRA = ('0123456789.,+-%()×·… xX억만원초배최고청산잔진입손실전액시간료회수저점~중지'
-         '완벽한타이밍잘팔았어요나쁘지않조금아쉬너무늦었')
+# 런타임에 조합돼서 소스 리터럴로는 안 보이는 글자만 둔다.
+# (매도 등급 문구는 사전에 리터럴로 있으므로 여기 적을 필요가 없다 — 적어두면
+#  문구를 고쳐도 옛 글자가 계속 딸려 들어온다.)
+EXTRA = '0123456789.,+-%()×·… xX억만원초배최고청산잔진입손실전액시간료회수저점~중지'
 chars = {c for c in set(s) | set(EXTRA) if ord(c) >= 0x20}
 
 with tempfile.TemporaryDirectory() as tmp:
@@ -59,8 +61,22 @@ with tempfile.TemporaryDirectory() as tmp:
         b64[key] = base64.b64encode(open(out, 'rb').read()).decode()
         print('%s  %s → %d bytes' % (key, os.path.basename(src), os.path.getsize(out)))
 
+# 채우는 법 둘. 처음 박을 때는 __NAME__ 자리를, 이미 박힌 것을 다시 박을 때는
+# /*@font:NAME*/ 이름표 뒤의 base64를 갈아끼운다.
+#
+# 왜 이름표가 필요한가 — 문자열을 하나라도 고치면 서브셋을 다시 돌려야 하는데,
+# 자리는 첫 실행에 사라진다. 그래서 그동안은 돌릴 때마다 base64를 손으로 지워
+# 자리를 되살려 놓고 실행했다. 잊으면 조용히 옛 글리프로 남는다(check.sh가 잡긴 한다).
+import re as _re
 for key, val in b64.items():
-    s = s.replace(key, val)
+    name = key.strip('_')
+    if key in s:
+        s = s.replace(key, val); continue
+    pat = _re.compile(r'(/\*@font:' + _re.escape(name) + r'\*/src:url\(data:font/woff2;base64,)[A-Za-z0-9+/=]*')
+    s, n = pat.subn(lambda m: m.group(1) + val, s, count=1)
+    if not n:
+        raise SystemExit('자리도 이름표도 못 찾음: %s (__%s__ 이나 /*@font:%s*/ 가 있어야 한다)'
+                         % (name, name, name))
 if '__FONT_' in s:
     print('경고: 채우지 못한 자리가 남았다', file=sys.stderr)
 io.open(HTML, 'w', encoding='utf-8').write(s)

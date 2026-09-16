@@ -24,11 +24,16 @@ const earlypop = (st,Tt) => { const pf=R(0.08,0.14);
 const crash = (st,Tt) => mp([[R(0.04,0.05), dev(R(0.94,0.04), st.pMult)],
   [R(0.26,0.18), dev(R(0.42,0.16), st.pMult)],
   [1,            dev(R(0.36,0.20), st.pMult)]], 0.011*ns(Tt)*st.noiseMult, Tt);
-const downNoBounce = p => (st,Tt) => { const dip=R(0.18,0.10), lo=dev(R(0.82,0.06), st.pMult);
+/* 시초 눌림 깊이는 반드시 DIP에서 끌어와야 한다. 여기에 0.82를 박아두면
+   DIP를 올렸을 때 강세만 얕아지고 약세는 그대로라, 전반부 저점만 보고
+   등급이 읽히게 된다 — 8a0acc7이 고쳐둔 것을 되돌리는 것이다. 실제로 당했다:
+   첫 점검에서 강세 0.89/0.91/0.93 대 약세 0.82/0.86/0.98로 갈렸다. */
+const downNoBounce = p => (st,Tt) => { const dip=R(0.18,0.10),
+  lo=dev(R(G.getDIP()-0.02,0.06), st.pMult);
   if(Math.random()<p) return mp([[dip,lo],[R(0.55,0.15), dev(R(0.70,0.10), st.pMult)],
     [1, dev(R(0.45,0.15), st.pMult)]], 0.013*ns(Tt)*st.noiseMult, Tt);
-  return mp([[dip,lo],[R(0.42,0.10), dev(R(1.00,0.10), st.pMult)],
-    [R(0.65,0.08), dev(R(0.84,0.06), st.pMult)],
+  return mp([[dip,lo],[R(0.42,0.10), dev(R(G.getDIP()+0.16,0.10), st.pMult)],
+    [R(0.65,0.08), dev(R(G.getDIP(),0.06), st.pMult)],
     [1, dev(R(0.45,0.15), st.pMult)]], 0.013*ns(Tt)*st.noiseMult, Tt); };
 
 const SPEC = { spike:{weight:0.07}, down:{weight:0.22, gen:downNoBounce(0.20)},
@@ -158,11 +163,19 @@ for(const [nm,c] of Object.entries(CONF)){
   for(let k=0;k<n;k++){
     let r=Math.random()*tot,a=0,pk=sub[0];
     for(const p of sub){ a+=p.weight; if(r<=a){pk=p;break;} }
-    const arr=pk.gen(G.STOCKS.stable,T); let hi=1, li=-1;
-    for(let i=1;i<=T;i++){ if(arr[i]<=LIQ){li=i;break;} if(arr[i]>hi)hi=arr[i]; }
+    /* 탈출 창 = "한 번 빠진 뒤에 다시 −3% 위로 올라온 적이 있나".
+       hi를 1에서 시작하면 경로가 1에서 출발하므로 언제나 0.97을 넘어 있고,
+       이 값은 영영 0%가 된다 — 첫 점검에서 그렇게 나왔다. 처음 0.90 아래로
+       빠진 뒤부터 다시 재야 한다. */
+    const arr=pk.gen(G.STOCKS.stable,T); let li=-1, dipAt=-1, hiAfter=0;
+    for(let i=1;i<=T;i++){
+      if(arr[i]<=LIQ){li=i;break;}
+      if(dipAt<0){ if(arr[i]<0.90)dipAt=i; }
+      else if(arr[i]>hiAfter)hiAfter=arr[i];
+    }
     if(li<0)continue;
     died++; secs.push(li*0.05); if(li*0.05<=3)fast++;
-    if(hi<0.97)nob++;            // 죽기 전에 −3% 위로 못 올라왔다 = 탈출 창이 없었다
+    if(dipAt<0 || hiAfter<0.97)nob++;   // 빠진 뒤 되돌아온 적이 없다 = 탈출 창이 없었다
   }
   secs.sort((x,y)=>x-y);
   console.log('  '+nm.padEnd(34)+((died/n*100).toFixed(0)+'%').padStart(6)+

@@ -305,6 +305,11 @@
   .trm .ko,.trm .repay-sub,.trm .round-timer .rt-l{
     font-family:'Pretendard',system-ui,sans-serif; -webkit-font-smoothing:antialiased;
     font-size:12.5px; letter-spacing:-.02em;}
+  /* 차트 안에 박히는 라벨도 같은 이유로 아웃라인이다. 9~10px짜리라 11px 격자에
+     아예 못 올라가는데다 "청산까지"처럼 한글이 들어오는 자리다. 크기는 SVG의
+     font-size 속성이 쥐고 있으니 여기서 font-size를 건드리면 라벨이 커진다. */
+  .trm .rv-txt{font-family:'Pretendard',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased; letter-spacing:-.02em;}
   .trm .repay-sub{color:#1f8f47; margin-top:5px;}
   .trm .repay-sub b{color:#33ff77;}
   .trm .dday{font-size:11px; color:#ffb000;}

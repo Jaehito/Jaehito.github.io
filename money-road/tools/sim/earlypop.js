@@ -88,15 +88,21 @@ const mk = (mv, cr, nb) => ({
    4차는 착지점만 찾는다 — C0 고정, DIP 0.86~0.88 × down 0.04~0.06.
    목표 최고 24~27%. 쫄보·홀드가 0%인 것은 이번 변경이 만든 일이 아니라 지금도
    그렇다(다른 숙제다). */
-/* 5차 — down을 DIP에 묶고 나서 다시 착지점을 잡는다. 묶으면서 하락의 반등
-   목표도 DIP+0.16으로 같이 올라가 판이 조금 후해졌다(최고 25% → 33%).
-   난이도만 되돌리면 된다. */
-const BASE = {'C0': mk(0.03,0.02,0.20)};
+/* 5차: DIP 0.88에서 down 0.05~0.08 → 최고 34/31/23/22%. 0.07이 착지점이다.
+   그런데 down은 난이도 단계표(TIERS)의 값이고 3단계가 0.04다. 0.07로 올리면
+   4단계(0.04+기한−2) · 5단계(0.06)와 뒤섞이고, 화면에 뜨는 "하락 패턴 +N%p"
+   문구도 다섯 줄이 전부 바뀐다 — 밸런스 한 줄 고치자고 UI를 건드리게 된다.
+
+   6차는 단계표를 그대로 두고(down 0.04 고정) 난이도를 ③ 장치 자체로 만든다.
+   나락 비중과 하락 반등실패율은 어차피 이번에 넣는 것이고, 그게 곧 난이도다 —
+   "파산이 가능해진 만큼 어려워졌다"가 따로 조율한 상수보다 정직하다. */
+const BASE = {};
+for(const cr of [0.02,0.03,0.04])
+  for(const nb of [0.20,0.30,0.40])
+    BASE[`나락 ${cr.toFixed(2)} · 반등실패 ${nb.toFixed(2)}`] = mk(0.03,cr,nb);
 const VARIANTS = {'지금 (DIP .84 · down .04)': {__dip:0.84, __down:0.04}};
 for(const [n,spec] of Object.entries(BASE))
-  for(const d of [0.05,0.06,0.07,0.08])
-    VARIANTS[`${n} · DIP 0.88 · down ${d.toFixed(2)}`] =
-      Object.assign({__down:d, __dip:0.88}, spec);
+  VARIANTS[n] = Object.assign({__down:0.04, __dip:0.88}, spec);
 
 function build(spec){
   /* {...p}로 베끼면 안 된다 — PATTERNS의 name은 t()를 부르는 getter라 노드에서 터진다 */

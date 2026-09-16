@@ -13,7 +13,8 @@
      1) 서체가 실제로 로드됐는가 (CDN 없이 파일에 박혀 있다)
      2) 화면에 이모지가 한 글자도 안 남았는가
      3) 아이콘이 SVG로 그려지는가 — 태그가 글자로 새면 안 된다
-     4) 글자 크기가 정해둔 체계 안에 있는가
+     4) 글자 크기가 정해둔 체계 안에 있는가 (터미널 안은 11의 배수)
+     9) 터미널 패널 — 숫자는 도트, 한글 문장은 아웃라인
      5) 대화상자가 뜨면 부모 창 제목표가 회색이 되는가
      6) 메뉴바의 언어 전환이 도는가
      7) 진행바가 칸으로 끊어 차는가
@@ -103,28 +104,35 @@ const { launch, GAME: url } = require('../lib/browser');
  }));
  L('', icons);
  if(icons.개수<6) fail.push('아이콘이 너무 적다: '+icons.개수);
- want('탭 아이콘', icons.탭에아이콘, true);
+ /* 탭에는 일부러 아이콘을 안 붙인다 — 98의 탭 컨트롤에 원래 없었고,
+    길안내는 소품으로 그릴 수 있는 자리가 아니다. */
+ want('탭에는 아이콘 없음', icons.탭에아이콘, false);
  want('종목 아이콘', icons.종목에아이콘, true);
  want('태그가 글자로 새지 않음', icons.태그가글자로, false);
  if(icons.격자.some(v=>v!=='0 0 16 16')) fail.push('16×16 격자가 아니다: '+icons.격자);
 
  /* ── 4. 글자 크기 체계 ──
-    도트 시절의 "11의 배수" 규칙은 사라졌지만, 크기를 아무렇게나 쓰면 다시
-    중간 크기가 번져서 같은 문제가 온다. 쓰기로 한 일곱 개만 허용한다:
-      12 창틀 · 12.5 설명문 · 15 본문 · 17 기본 버튼 · 19 강조 · 26 손익 · 40 배율 */
+    회색 창은 아웃라인 서체라 일곱 개 체계를 쓰고, 터미널 안은 도트라
+    11의 배수만 쓴다(Galmuri11이 11px 격자로 그려졌다). 두 규칙이 한 화면에
+    같이 있으므로 영역을 갈라서 본다. */
  console.log('\n=== 4. 글자 크기 ===');
  const SCALE=[12,12.5,15,17,19,26,40];
  const sizes=await p.evaluate(ok=>{
-   const bad={};
+   const out={창:{},터미널:{}};
    document.querySelectorAll('#app *').forEach(el=>{
      if(!el.offsetParent||!el.textContent.trim())return;
      const fs=parseFloat(getComputedStyle(el).fontSize);
-     if(!ok.some(v=>Math.abs(v-fs)<0.01)) bad[fs]=(bad[fs]||0)+1;
+     const inTrm=!!el.closest('.trm');
+     /* 터미널 안의 한글 문장은 아웃라인으로 되돌려 뒀다 — 거긴 창 체계를 쓴다 */
+     const outline=!/Galmuri/.test(getComputedStyle(el).fontFamily);
+     if(inTrm&&!outline){ if(Math.abs(fs%11)>0.01) out.터미널[fs]=(out.터미널[fs]||0)+1; }
+     else if(!ok.some(v=>Math.abs(v-fs)<0.01)) out.창[fs]=(out.창[fs]||0)+1;
    });
-   return bad;
+   return out;
  },SCALE);
  L('체계 밖 크기', sizes);
- if(Object.keys(sizes).length) fail.push('크기 체계 밖: '+JSON.stringify(sizes)+' (허용 '+SCALE.join('/')+')');
+ if(Object.keys(sizes.창).length) fail.push('창 체계 밖: '+JSON.stringify(sizes.창)+' (허용 '+SCALE.join('/')+')');
+ if(Object.keys(sizes.터미널).length) fail.push('터미널이 11의 배수가 아니다: '+JSON.stringify(sizes.터미널));
 
  /* ── 5. 대화상자가 뜨면 부모 제목표가 죽는가 ──
     98이 초점을 옮기는 방식이고, 98을 써 본 사람이 가장 먼저 알아보는 자리다. */
@@ -208,6 +216,36 @@ const { launch, GAME: url } = require('../lib/browser');
  L('', fit);
  want('가로 스크롤 없음', fit.문서폭<=390, true);
  if(fit.잘림수) fail.push('잘리는 곳 '+fit.잘림수+'개: '+JSON.stringify(fit.잘림));
+
+ /* ── 9. 터미널 패널 ──
+    이번 전환의 규칙이 여기 들어 있다. 숫자는 도트로 돌아왔지만 한글 문장은
+    아웃라인이다 — 도트가 무너지는 건 낱말이 아니라 문장이기 때문이다.
+    이 둘이 섞이면 다시 "안 읽힌다"가 된다. */
+ console.log('\n=== 9. 터미널 ===');
+ await p.evaluate(()=>{ $('modal').classList.remove('on'); S.cash=3000000; setBet(1000000); startRound(1); });
+ await p.waitForTimeout(700);
+ const trm=await p.evaluate(()=>{
+   const dot=el=>/Galmuri/.test(getComputedStyle(el).fontFamily);
+   const panels=[...document.querySelectorAll('.trm')];
+   const nums=[$('rvMult'),$('rvPnl'),$('cashView')].filter(Boolean);
+   /* 터미널 안에서 한글 문장이 도트로 그려지고 있으면 잡는다 */
+   const prose=[];
+   panels.forEach(pn=>pn.querySelectorAll('*').forEach(el=>{
+     const own=[...el.childNodes].filter(n=>n.nodeType===3).map(n=>n.nodeValue).join('');
+     if(/[가-힣]{4,}/.test(own)&&dot(el)) prose.push(own.trim().slice(0,24));
+   }));
+   const bg=getComputedStyle(panels[0]).backgroundColor;
+   return {패널수:panels.length, 어두운가:bg,
+     숫자가도트:nums.map(dot), 문장이도트로:prose.slice(0,4),
+     배율색:getComputedStyle($('rvMult')).color};
+ });
+ L('', trm);
+ if(trm.패널수<2) fail.push('터미널 패널이 모자라다: '+trm.패널수);
+ want('터미널 바탕이 어둡다', trm.어두운가, 'rgb(5, 8, 10)');
+ if(trm.숫자가도트.some(v=>!v)) fail.push('터미널 숫자가 도트가 아니다: '+JSON.stringify(trm.숫자가도트));
+ if(trm.문장이도트로.length) fail.push('터미널 안 한글 문장이 도트로 그려진다: '+JSON.stringify(trm.문장이도트로));
+ /* 검은 화면에서 남색(#000080)은 안 보인다 — 한 번 당한 자리다 */
+ if(/rgb\(0, 0, 128\)/.test(trm.배율색)) fail.push('배율이 남색이라 검은 화면에서 안 보인다');
 
  /* ── 결과 ── */
  console.log('\n=== 결과 ===');

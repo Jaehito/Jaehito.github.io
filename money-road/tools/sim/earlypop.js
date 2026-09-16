@@ -38,11 +38,14 @@ const crash = (st,Tt) => mp([[R(0.04,0.05), dev(R(0.94,0.04), st.pMult)],
   [R(0.26,0.18), dev(R(0.42,0.16), st.pMult)],
   [1,            dev(R(0.36,0.20), st.pMult)]], 0.011*ns(Tt)*st.noiseMult, Tt);
 /* 하락 — p 확률로 반등 없이 머리에서 그대로 미끄러진다 */
-const downNoBounce = p => (st,Tt) => { const dip=R(0.18,0.10), lo=dev(R(0.82,0.06), st.pMult);
+/* 눌림 깊이는 DIP에서 끌어온다. 0.82처럼 박아두면 DIP를 올렸을 때 강세만
+   얕아지고 약세는 그대로라 전반부 저점으로 등급이 읽힌다(confirm.js에서 당했다). */
+const downNoBounce = p => (st,Tt) => { const D=G.getDIP();
+  const dip=R(0.18,0.10), lo=dev(R(D-0.02,0.06), st.pMult);
   if(Math.random()<p) return mp([[dip,lo],[R(0.55,0.15), dev(R(0.70,0.10), st.pMult)],
     [1, dev(R(0.45,0.15), st.pMult)]], 0.013*ns(Tt)*st.noiseMult, Tt);
-  return mp([[dip,lo],[R(0.42,0.10), dev(R(1.00,0.10), st.pMult)],
-    [R(0.65,0.08), dev(R(0.84,0.06), st.pMult)],
+  return mp([[dip,lo],[R(0.42,0.10), dev(R(D+0.16,0.10), st.pMult)],
+    [R(0.65,0.08), dev(R(D,0.06), st.pMult)],
     [1, dev(R(0.45,0.15), st.pMult)]], 0.013*ns(Tt)*st.noiseMult, Tt); };
 
 /* spike 지분을 earlypop으로 얼마나 옮기나(mv), 나락 비중(cr), 하락 반등실패율(nb) */
@@ -85,13 +88,15 @@ const mk = (mv, cr, nb) => ({
    4차는 착지점만 찾는다 — C0 고정, DIP 0.86~0.88 × down 0.04~0.06.
    목표 최고 24~27%. 쫄보·홀드가 0%인 것은 이번 변경이 만든 일이 아니라 지금도
    그렇다(다른 숙제다). */
+/* 5차 — down을 DIP에 묶고 나서 다시 착지점을 잡는다. 묶으면서 하락의 반등
+   목표도 DIP+0.16으로 같이 올라가 판이 조금 후해졌다(최고 25% → 33%).
+   난이도만 되돌리면 된다. */
 const BASE = {'C0': mk(0.03,0.02,0.20)};
 const VARIANTS = {'지금 (DIP .84 · down .04)': {__dip:0.84, __down:0.04}};
 for(const [n,spec] of Object.entries(BASE))
-  for(const dip of [0.86,0.87,0.88])
-    for(const d of [0.04,0.05,0.06])
-      VARIANTS[`${n} · DIP ${dip} · down ${d.toFixed(2)}`] =
-        Object.assign({__down:d, __dip:dip}, spec);
+  for(const d of [0.05,0.06,0.07,0.08])
+    VARIANTS[`${n} · DIP 0.88 · down ${d.toFixed(2)}`] =
+      Object.assign({__down:d, __dip:0.88}, spec);
 
 function build(spec){
   /* {...p}로 베끼면 안 된다 — PATTERNS의 name은 t()를 부르는 getter라 노드에서 터진다 */
@@ -170,7 +175,7 @@ function runOne(pick, mode){
 const ALL=[...Object.keys(MODES),'신호'];
 console.log('■ 클리어율 (103거래일 · 3단계 · 사성전자 · 신호 55% · 반응 0.5초)\n');
 console.log('  안                                         '+ALL.map(m=>m.padStart(7)).join('')+'   최고  격차');
-const NN=300;
+const NN=400;
 const keep={};
 for(const [name,spec] of Object.entries(VARIANTS)){
   G.setDIP(spec.__dip!==undefined?spec.__dip:0.84);

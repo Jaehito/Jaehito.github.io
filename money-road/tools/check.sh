@@ -26,7 +26,8 @@ try:
 except ImportError:
     print('폰트 검사 건너뜀 (fonttools 없음)'); raise SystemExit(0)
 s = io.open(sys.argv[1], encoding='utf-8').read()
-m = re.search(r"font-family:'Galmuri11'.*?base64,([A-Za-z0-9+/=]+)\)", s, re.S)
+# 서체 이름에 매이지 않게 — 첫 @font-face의 base64를 본다(도트→아웃라인으로 한 번 갈았다)
+m = re.search(r"@font-face\{[^}]*?base64,([A-Za-z0-9+/=]+)\)", s, re.S)
 if not m:
     raise SystemExit('서브셋 폰트를 못 찾음 — subset-font.py를 돌렸나?')
 cmap = TTFont(io.BytesIO(base64.b64decode(m.group(1)))).getBestCmap()

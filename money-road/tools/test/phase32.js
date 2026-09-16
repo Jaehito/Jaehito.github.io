@@ -1,15 +1,19 @@
 /* phase32 — 윈도우 98 전환
 
    이 단계에서 깨질 수 있는 것은 "안 보이는 것"들이다. 웹폰트가 조용히 떨어지면
-   픽셀이 아닌 고딕으로 그려지는데 오류는 안 난다. 아이콘은 SVG 문자열이라
+   기본 고딕으로 그려지는데 오류는 안 난다. 아이콘은 SVG 문자열이라
    textContent에 넣으면 태그가 글자로 찍히는데 그것도 오류가 아니다.
    둘 다 실제로 당했다. 그래서 눈으로 확인하던 것을 여기 옮긴다.
 
+   서체는 도트(Galmuri11)로 갔다가 아웃라인(Pretendard)으로 되돌아왔다.
+   창틀·베벨·아이콘은 그대로 1998년이고 글자만 바뀌었다 — 그래서 아이콘 검사와
+   이모지 검사는 그대로 살아 있고, 크기 검사만 새 체계로 갈았다.
+
    확인하는 것:
-     1) 픽셀 서체가 실제로 로드됐는가 (CDN 없이 파일에 박혀 있다)
+     1) 서체가 실제로 로드됐는가 (CDN 없이 파일에 박혀 있다)
      2) 화면에 이모지가 한 글자도 안 남았는가
      3) 아이콘이 SVG로 그려지는가 — 태그가 글자로 새면 안 된다
-     4) 글자 크기가 11의 배수인가
+     4) 글자 크기가 정해둔 체계 안에 있는가
      5) 대화상자가 뜨면 부모 창 제목표가 회색이 되는가
      6) 메뉴바의 언어 전환이 도는가
      7) 진행바가 칸으로 끊어 차는가
@@ -29,18 +33,18 @@ const { launch, GAME: url } = require('../lib/browser');
  const want=(name,got,exp)=>{ if(got!==exp)fail.push(`${name}: ${JSON.stringify(got)} ≠ ${JSON.stringify(exp)}`); };
  const dismiss=()=>p.evaluate(()=>{ if($('modal').classList.contains('on')&&$('mOk'))$('mOk').click(); });
 
- /* ── 1. 픽셀 서체 ── */
+ /* ── 1. 서체 ── */
  console.log('=== 1. 서체 ===');
  const font=await p.evaluate(()=>({
-   로드됨:document.fonts.check('22px Galmuri11'),
+   로드됨:document.fonts.check('15px Pretendard'),
    본문서체:getComputedStyle(document.body).fontFamily,
-   안티앨리어싱끔:getComputedStyle(document.body).webkitFontSmoothing,
+   안티앨리어싱:getComputedStyle(document.body).webkitFontSmoothing,
    CDN링크:[...document.querySelectorAll('link[rel="stylesheet"]')].map(l=>l.href),
  }));
  L('', font);
  want('서체 로드', font.로드됨, true);
- if(!/Galmuri11/.test(font.본문서체)) fail.push('본문 서체: '+font.본문서체);
- want('안티앨리어싱 끔', font.안티앨리어싱끔, 'none');
+ if(!/Pretendard/.test(font.본문서체)) fail.push('본문 서체: '+font.본문서체);
+ want('안티앨리어싱 켬', font.안티앨리어싱, 'antialiased');
  if(font.CDN링크.length) fail.push('웹폰트 CDN이 남았다: '+font.CDN링크.join(','));
 
  /* ── 2. 이모지가 화면에 남았는가 ──
@@ -48,7 +52,9 @@ const { launch, GAME: url } = require('../lib/browser');
  console.log('\n=== 2. 이모지 ===');
  await dismiss(); await p.waitForTimeout(200);
  const emoScan=async()=>p.evaluate(()=>{
-   const re=/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/u;
+   /* ✓(U+2713)는 뺀다 — 이모지가 아니라 조판 기호고, 아웃라인 서체로 돌아오면서
+      제대로 그려진다(도트 시절엔 글리프가 없어서 지웠던 것을 되돌렸다). */
+   const re=/[\u{1F000}-\u{1FAFF}\u{2600}-\u{2712}\u{2714}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/u;
    const hit=[];
    const walk=root=>{
      const it=document.createNodeIterator(root,NodeFilter.SHOW_TEXT);
@@ -102,20 +108,23 @@ const { launch, GAME: url } = require('../lib/browser');
  want('태그가 글자로 새지 않음', icons.태그가글자로, false);
  if(icons.격자.some(v=>v!=='0 0 16 16')) fail.push('16×16 격자가 아니다: '+icons.격자);
 
- /* ── 4. 글자 크기는 11의 배수 ──
-    Galmuri11은 11px 격자로 그려져서 배수가 아니면 글자가 뭉갠다. */
+ /* ── 4. 글자 크기 체계 ──
+    도트 시절의 "11의 배수" 규칙은 사라졌지만, 크기를 아무렇게나 쓰면 다시
+    중간 크기가 번져서 같은 문제가 온다. 쓰기로 한 일곱 개만 허용한다:
+      12 창틀 · 12.5 설명문 · 15 본문 · 17 기본 버튼 · 19 강조 · 26 손익 · 40 배율 */
  console.log('\n=== 4. 글자 크기 ===');
- const sizes=await p.evaluate(()=>{
+ const SCALE=[12,12.5,15,17,19,26,40];
+ const sizes=await p.evaluate(ok=>{
    const bad={};
    document.querySelectorAll('#app *').forEach(el=>{
      if(!el.offsetParent||!el.textContent.trim())return;
      const fs=parseFloat(getComputedStyle(el).fontSize);
-     if(Math.abs(fs%11)>0.01) bad[fs]=(bad[fs]||0)+1;
+     if(!ok.some(v=>Math.abs(v-fs)<0.01)) bad[fs]=(bad[fs]||0)+1;
    });
    return bad;
- });
- L('11의 배수가 아닌 크기', sizes);
- if(Object.keys(sizes).length) fail.push('11의 배수가 아닌 글자 크기: '+JSON.stringify(sizes));
+ },SCALE);
+ L('체계 밖 크기', sizes);
+ if(Object.keys(sizes).length) fail.push('크기 체계 밖: '+JSON.stringify(sizes)+' (허용 '+SCALE.join('/')+')');
 
  /* ── 5. 대화상자가 뜨면 부모 제목표가 죽는가 ──
     98이 초점을 옮기는 방식이고, 98을 써 본 사람이 가장 먼저 알아보는 자리다. */
@@ -161,7 +170,8 @@ const { launch, GAME: url } = require('../lib/browser');
  want('메뉴 열림', menu.열림, true);
  want('항목 3개', menu.항목수, 3);
  want('현재 언어에 표시', menu.현재표시.join(','), 'ko');
- want('여는 버튼 48px', menu.높이, 48);
+ /* 규칙은 "48px 이상"이다 — 딱 48이어야 하는 게 아니다 */
+ if(menu.높이<48) fail.push('여는 버튼이 48px보다 작다: '+menu.높이);
  want('전환됨', menu.누른뒤, 'en');
  want('화면도 바뀜', menu.화면, 'Trade');
  want('고르면 닫힘', menu.닫힘, true);

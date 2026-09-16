@@ -3895,10 +3895,11 @@ if(!$('modal').classList.contains('on') && META.introV!==INTRO_V && !gateDone() 
     $('mCash').textContent=$('cashView').textContent;
     const chip=($('repayChip').textContent||'').trim();      /* "50만원·D-13" */
     const bits=chip.split('\u00b7');
-    const need=(document.querySelector('.repay-sub b')||{}).textContent||'';
+    /* 판당 필요 수익률은 안 넣는다 — 한 줄로 접는 자리라 셋이면 충분하고,
+       그 값은 아래 ACCOUNT 패널과 페이스 경고 줄이 이미 두 번 말한다. */
     const warn=(S.daysLeft<=3)?' class="warn"':'';
     $('mSub').innerHTML=($('trmPhase').textContent||'')+' '+(bits[0]||'')+
-      ' \u00b7 <b'+warn+'>'+(bits[1]||'')+'</b>'+(need?' \u00b7 \ud310\ub2f9 '+need:'');
+      ' \u00b7 <b'+warn+'>'+(bits[1]||'')+'</b>';
   }
   bodyEl.addEventListener('scroll',()=>{
     const on=bodyEl.scrollTop>40;

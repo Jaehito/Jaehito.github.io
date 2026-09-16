@@ -15,16 +15,29 @@ Google Fonts의 픽셀 폰트(Press Start 2P 등)에는 한글 글리프가 없�
 
 사용:
   python3 tools/subset-font.py <대상.html> <Regular.woff2> [Bold.woff2]
+  python3 tools/subset-font.py <대상.html> NAME=<폰트파일> [NAME2=<폰트파일> ...]
 
-대상 HTML 안의 __FONT_R__ / __FONT_B__ 자리에 base64를 채워 넣는다.
+앞 꼴은 __FONT_R__ / __FONT_B__ 두 자리를 채운다(게임 index.html이 쓴다).
+뒤 꼴은 자리 이름을 직접 준다 — 서체를 여러 개 나란히 비교하는 문서용이다.
+  예: subset-font.py demo/fonts.html G11R=Galmuri11.woff2 PR=Pretendard-Regular.otf
+      → __G11R__ / __PR__ 자리에 채운다.
+
 서브셋 글자는 그 HTML에 실제로 등장하는 문자 전부 + 런타임 조합용 여분.
 """
 import io, os, sys, base64, subprocess, tempfile
 
 if len(sys.argv) < 3:
     raise SystemExit(__doc__)
-HTML, REG = sys.argv[1], sys.argv[2]
-BOLD = sys.argv[3] if len(sys.argv) > 3 else None
+HTML = sys.argv[1]
+args = sys.argv[2:]
+if any('=' in a for a in args):
+    if not all('=' in a for a in args):
+        raise SystemExit('이름을 줄 거면 전부 NAME=파일 꼴로 주세요')
+    JOBS = [('__%s__' % a.split('=', 1)[0], a.split('=', 1)[1]) for a in args]
+else:
+    JOBS = [('__FONT_R__', args[0])]
+    if len(args) > 1:
+        JOBS.append(('__FONT_B__', args[1]))
 
 s = io.open(HTML, encoding='utf-8').read()
 # fmtWon()이 만들어내는 억/만/원, 등급 문구 등 런타임 조합 문자를 여유로 넣는다
@@ -36,7 +49,7 @@ with tempfile.TemporaryDirectory() as tmp:
     txt = os.path.join(tmp, 'chars.txt')
     io.open(txt, 'w', encoding='utf-8').write(''.join(sorted(chars)))
     b64 = {}
-    for key, src in (('__FONT_R__', REG), ('__FONT_B__', BOLD)):
+    for key, src in JOBS:
         if not src:
             continue
         out = os.path.join(tmp, key + '.woff2')

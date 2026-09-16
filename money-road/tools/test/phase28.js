@@ -12,6 +12,7 @@ const { launch, GAME: url } = require('../lib/browser');
 (async()=>{
  const b = await launch();
  const errs=[];
+ const fail=[];
  async function fresh(seed){const p=await b.newPage({viewport:{width:390,height:740}});
    p.on('pageerror',e=>errs.push('EXC: '+e.message));
    p.on('console',m=>{if(m.type()==='error'&&!m.text().includes('TUNNEL'))errs.push('CON: '+m.text());});
@@ -63,25 +64,42 @@ const { launch, GAME: url } = require('../lib/browser');
      줄바꿈없음:c.getBoundingClientRect().height<30};}));
  await p.close();
 
- console.log('\n=== 3. 스크롤해도 칩이 남는가 ===');
+ /* 이 절의 목적은 "마감이 늘 보이는가"다. 방법이 두 번 바뀌었다 —
+    탑바 sticky → ACCOUNT 패널 → 지금은 창틀 자체가 고정이고 본문만 구른다.
+    그래서 문서를 굴리면 안 되고(문서는 이제 안 구른다) .body를 굴려야 한다.
+    이 절이 문서 스크롤을 보던 동안은 아무것도 재지 않고 통과하고 있었다. */
+ console.log('\n=== 3. 내려도 마감이 남는가 — 창틀 고정 + 접힌 계좌줄 ===');
  p=await fresh(); await dismiss(p);
  const geom=()=>p.evaluate(()=>{
-   const c=$('repayChip').getBoundingClientRect();
-   const s=$('repayStrip').getBoundingClientRect();
-   /* "보이냐"만 물으면 1px만 걸쳐도 true가 된다. 몇 px이 남았는지를 같이 본다. */
    const vis=r=>Math.max(0,Math.round(Math.min(r.bottom,innerHeight)-Math.max(r.top,0)));
-   return {스크롤:Math.round(scrollY),
-     '칩 y':Math.round(c.top), '칩 보이는높이':vis(c)+'/'+Math.round(c.height),
-     '스트립 y':Math.round(s.top), '스트립 보이는높이':vis(s)+'/'+Math.round(s.height)};});
+   const box=el=>{const r=el.getBoundingClientRect();
+     return vis(r)+'/'+Math.round(r.height);};
+   const bd=$('appBody'), mini=$('acctMini');
+   return {'본문 스크롤':Math.round(bd.scrollTop),
+     '문서 스크롤':Math.round(scrollY),
+     '제목표':box(document.querySelector('.topbar')),
+     '상태표시줄':box(document.querySelector('.strip')),
+     '계좌줄 떴나':!mini.hidden,
+     '계좌줄':mini.hidden?'-':mini.textContent.replace(/\s+/g,' ').trim(),
+     /* 패널은 .body가 자기 위 모서리에서 잘라내므로 뷰포트 기준으로 재면
+        거짓말을 한다. 통 기준 위치로 적는다 — 음수면 위로 밀려난 것이다. */
+     'ACCOUNT 패널 위치':Math.round($('repayGrp').getBoundingClientRect().top
+       - bd.getBoundingClientRect().top)};});
  L('맨 위', await geom());
- await p.evaluate(()=>window.scrollTo(0,document.body.scrollHeight));
- await p.waitForTimeout(200);
- L('끝까지 내림', await geom());
+ await p.evaluate(()=>{const bd=$('appBody');
+   bd.scrollTop=bd.scrollHeight; bd.dispatchEvent(new Event('scroll'));});
+ await p.waitForTimeout(250);
+ const low=await geom();
+ L('끝까지 내림', low);
+ if(!low['계좌줄 떴나']) fail.push('내렸는데 접힌 계좌줄이 안 뜬다');
+ if(!/D-|마지막/.test(low['계좌줄'])) fail.push('접힌 계좌줄에 마감이 없다: '+low['계좌줄']);
+ if(parseInt(low['제목표'],10)<20) fail.push('제목표가 스크롤에 밀렸다: '+low['제목표']);
+ if(parseInt(low['상태표시줄'],10)<20) fail.push('상태표시줄이 스크롤에 밀렸다: '+low['상태표시줄']);
  L('화면 높이', await p.evaluate(()=>({
-   문서:document.body.scrollHeight, 뷰포트:innerHeight,
-   스크롤여지:document.body.scrollHeight-innerHeight,
-   탑바:Math.round(document.querySelector('.topbar').getBoundingClientRect().height),
-   스트립:Math.round($('repayStrip').getBoundingClientRect().height)})));
+   본문:$('appBody').scrollHeight, 뷰포트:innerHeight,
+   '문서가 안 구른다':document.documentElement.scrollHeight<=innerHeight+2,
+   고정영역:['.topbar','.menubar','.acct-mini','.strip'].reduce((a,s)=>{
+     const e=document.querySelector(s); return a+(e&&!e.hidden?Math.round(e.getBoundingClientRect().height):0);},0)})));
  await p.close();
 
  console.log('\n=== 4. 스트립과 중복되지 않는다 ===');
@@ -140,5 +158,10 @@ const { launch, GAME: url } = require('../lib/browser');
  await p.close();
 
  console.log('\n=== 오류 ==='); console.log(errs.length?errs.join('\n'):'없음');
+ /* 3번 절이 실제로 재는 절이 된 이상 결과도 내야 한다 — 이 파일은 그동안
+    구경만 하고 언제나 0으로 끝났다. */
+ if(fail.length){ console.log('\n실패:'); fail.forEach(f=>console.log('  ✗ '+f)); }
+ else console.log('\n  ✓ 전부 통과');
  await b.close();
+ if(fail.length||errs.length) process.exit(1);
 })();

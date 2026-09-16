@@ -70,8 +70,14 @@
     background:var(--bg); color:var(--ink); line-height:1.45; letter-spacing:-.02em;
     overflow-x:hidden; overscroll-behavior-y:contain; font-size:15px;
     -webkit-font-smoothing:antialiased;}
-  /* 창 — 앱 전체가 창 하나다. 좁은 화면에서는 화면을 꽉 채운다. */
-  #app{max-width:460px; margin:0 auto; min-height:100vh; position:relative;
+  /* 창 — 앱 전체가 창 하나다. 좁은 화면에서는 화면을 꽉 채운다.
+
+     높이를 화면에 고정하고 안쪽 .body만 구르게 한다. 98 창이 원래 그렇게 생겼다 —
+     제목표·메뉴바·상태표시줄은 창의 틀이고 구르는 것은 클라이언트 영역뿐이다.
+     모바일에서 "상단 바 고정"은 새 장치를 다는 일이 아니라 창을 창으로 만드는 일이다.
+     dvh를 쓰는 이유는 주소창이 접히고 펴지는 만큼 100vh가 거짓말을 하기 때문이다. */
+  #app{max-width:460px; margin:0 auto; height:100vh; height:100dvh; overflow:hidden;
+    position:relative;
     background:var(--face); display:flex; flex-direction:column;
     border:2px solid; border-color:var(--lt) var(--dk) var(--dk) var(--lt);
     box-shadow:inset 1px 1px 0 var(--hi), inset -1px -1px 0 var(--sh);
@@ -117,7 +123,27 @@
   .menu hr{border:0; border-top:1px solid var(--sh); border-bottom:1px solid var(--hi); margin:3px 2px;}
 
   /* ── 본문 ── 창 안쪽. 그룹박스들이 세로로 쌓인다. */
-  .body{flex:1; padding:9px; display:flex; flex-direction:column; gap:10px; min-width:0;}
+  .body{flex:1 1 auto; padding:9px; display:flex; flex-direction:column; gap:10px;
+    min-width:0; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;}
+  /* 본문이 스크롤 통이 된 이상 자식은 줄어들면 안 된다. ACCOUNT 패널은 .trm이라
+     overflow:hidden이 걸려 있어서, 안 막으면 높이 0으로 접힌다 — 목업에서 당했다. */
+  .body > *{flex-shrink:0;}
+
+  /* ── 접힌 계좌줄 ── 내려가면 메뉴바 아래에 한 줄로 남는다. 마감이 걸린 게임에서
+     마감은 늘 보여야 한다. 잔고·목표·D-day 셋만 둔다 — 판당 필요 수익률은
+     아래 ACCOUNT 패널과 시작 버튼 위 페이스 경고가 이미 두 번 말한다. */
+  .acct-mini{display:flex; align-items:center; gap:8px; flex-shrink:0;
+    background:#05080a; color:#33ff77; padding:5px 9px;
+    border-top:1px solid #16351f; border-bottom:2px solid #000;}
+  .acct-mini[hidden]{display:none;}
+  .acct-mini .m-k{font-size:11px; color:#1f8f47; flex-shrink:0;}
+  .acct-mini .m-cash{font-family:'Galmuri11',monospace; font-size:15px;
+    -webkit-font-smoothing:none; font-smooth:never; letter-spacing:0; white-space:nowrap;}
+  .acct-mini .m-r{margin-left:auto; font-size:11.5px; color:#1f8f47;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
+  .acct-mini .m-r b{color:#ffb000; font-weight:400;}
+  .acct-mini .m-r b.warn{color:#ff5a5a;}
   /* 그룹박스 — 98의 정체성. 제목이 테두리를 끊고 앉는다. */
   .grp{position:relative; border:2px groove var(--lt); padding:17px 8px 9px;}
   .grp > .lg{position:absolute; top:-9px; left:8px; background:var(--face); padding:0 5px;
@@ -695,7 +721,13 @@
     <button id="mnHelp" data-menu="help"></button>
   </div>
 
-  <div class="body">
+  <!-- 접힌 계좌줄 — 창틀에 붙어 있어서 sticky가 필요 없다. 본문이 구를 때만 뜬다. -->
+  <div class="acct-mini" id="acctMini" hidden>
+    <span class="m-k" id="mCashLab"></span><span class="m-cash" id="mCash"></span>
+    <span class="m-r" id="mGoal"></span>
+  </div>
+
+  <div class="body" id="appBody">
     <!-- 잔고는 여기 산다. 예전에는 제목표(탑바)에 있었는데, 98의 제목표는
          창 이름을 쓰는 자리지 값을 띄우는 자리가 아니다. 목표 바로 아래로
          옮기니 "얼마 있고 얼마 만들어야 하나"가 두 줄로 읽힌다. -->
@@ -1778,15 +1810,27 @@ const EARLY_XP_BASE=EARLY_XP_PER_DAY;
 let TIER_XP_MULT=1.0;       // 난이도 배수 전체에 곱한다(1단계 기준)
 const TIER_XP_BASE=TIER_XP_MULT;
 
+/* 순서의 원칙 — 먼저 오는 해금은 "지금 하는 일을 더 깊게" 만들고,
+   새 축을 여는 것은 읽는 법을 배운 뒤에 온다.
+
+   공매도가 첫 칸(40 XP ≈ 두 판)에 있었다. 값어치가 약세 등급을 읽는 데서 나오는
+   기능인데, 패턴 도감보다 여섯 칸 먼저 열려서 읽는 법을 배우기 전에 방향 선택지만
+   두 배가 됐다. 네 번째(400 XP)로 옮긴다.
+
+   대신 분할 매도가 첫 칸으로 온다 — 매도 타이밍이 이 게임의 전부인데, 그걸
+   반으로 쪼갤 수 있게 해주는 것이 새 축을 여는 것보다 첫 보상으로 맞다.
+
+   문턱 값은 그대로 둔다. 옮기는 것은 순서지 속도가 아니다 — 문턱까지 같이
+   만지면 무엇이 난이도를 바꿨는지 알 수 없게 된다. */
 const META_UNLOCKS=[
-  {lv:2, need:40,  id:'short',  get emo(){return ic('sigdn');},
-   get name(){return t('unShortN');}, get ds(){return t('unShortD');}},
-  {lv:3, need:140, id:'split',  get emo(){return ic('split');},
+  {lv:2, need:40,  id:'split',  get emo(){return ic('split');},
    get name(){return t('unSplitN');}, get ds(){return t('unSplitD');}},
-  {lv:4, need:260, id:'water',  get emo(){return ic('money');},
+  {lv:3, need:140, id:'water',  get emo(){return ic('money');},
    get name(){return t('unWaterN');}, get ds(){return t('unWaterD');}},
-  {lv:5, need:400, id:'etf',    get emo(){return ic('etf');},
+  {lv:4, need:260, id:'etf',    get emo(){return ic('etf');},
    get name(){return t('unEtfN');}, get ds(){return t('unEtfD');}},
+  {lv:5, need:400, id:'short',  get emo(){return ic('sigdn');},
+   get name(){return t('unShortN');}, get ds(){return t('unShortD');}},
   {lv:6, need:560, id:'penny',  get emo(){return ic('penny');},
    get name(){return t('unPennyN');}, get ds(){return t('unPennyD');}},
   {lv:7, need:740, id:'dex',    get emo(){return ic('binder');},
@@ -2433,9 +2477,10 @@ function renderLevel(){
   const cells=Math.max(0,Math.min(BAR_CELLS,d));
   const r=riskAt(S.cash,d);
   const canExtend=S.cash*(1-EXTEND_COST_FRAC)>=MIN_BET;
-  /* 상환금과 D-day는 탑바 칩이 들고 있다. 탑바는 sticky라 스크롤해도 남는다 —
-     마감이 걸린 게임에서 마감은 늘 보여야 한다. 그래서 스트립에서는 같은 줄을
-     빼고 진행바와 설명줄만 남긴다(관문 이름은 설명줄 앞으로 옮겼다). */
+  /* 상환금과 D-day는 이 칩이 들고 있고, 화면에서 밀려나면 접힌 계좌줄
+     (.acct-mini)이 같은 값을 창틀에 붙여 대신 말한다 — 마감이 걸린 게임에서
+     마감은 늘 보여야 한다. 그래서 스트립에서는 같은 줄을 빼고 진행바와
+     설명줄만 남긴다(관문 이름은 설명줄 앞으로 옮겼다). */
   chip.className=`repay-chip ${r.cls}${r.last?' last':''}`;
   chip.innerHTML=`<span class="goal">${fmtMoney(g.goal)}</span><span class="sep">·</span>` +
     `<span class="dd">${r.last?t('lastDay'):t('dday',{n:d})}</span>`;
@@ -2511,6 +2556,19 @@ function switchMainTab(tab){
     el.classList.toggle('locked', !!S.activeRound && el.dataset.tab!=='trade'));
 }
 document.querySelectorAll('.main-tab').forEach(el=>el.onclick=()=>{sfx.tap();switchMainTab(el.dataset.tab);});
+
+/* 본문을 내리면 계좌줄이 뜨고 올리면 사라진다. 40px은 "실수로 한 번 스친 것"과
+   "읽으려고 내린 것"을 가르는 선이다 — 0으로 두면 고무줄 스크롤에서 깜빡인다.
+   (주석의 한글도 서브셋 검사 대상이다. 쓰는 낱말이 곧 폰트 용량이다.) */
+(function wireAcctMini(){
+  const bd=$('appBody'), mini=$('acctMini');
+  if(!bd||!mini)return;
+  bd.addEventListener('scroll',()=>{
+    const on=bd.scrollTop>40;
+    if(on!==!mini.hidden){ mini.hidden=!on; }
+    if(on)renderAcctMini();
+  },{passive:true});
+})();
 
 /* ===== 단타 라운드 ===== */
 function currentTickIdx(){
@@ -3095,7 +3153,21 @@ function nextStreakTxt(st){
 }
 
 /* ===== 히어로 ===== */
-function renderHero(){$('cashView').textContent=fmtMoney(S.cash);}
+function renderHero(){$('cashView').textContent=fmtMoney(S.cash);renderAcctMini();}
+
+/* 접힌 계좌줄. ACCOUNT 패널이 화면에서 밀려난 동안 같은 값을 한 줄로 대신 말한다.
+   패널의 DOM을 긁지 않고 상태에서 직접 읽는다 — 긁으면 렌더 순서에 묶여서
+   조용히 한 프레임 늦은 값을 보여주게 된다. */
+function renderAcctMini(){
+  const cash=$('mCash'); if(!cash)return;
+  $('mCashLab').textContent=t('kCash');
+  cash.textContent=fmtMoney(S.cash);
+  const goal=$('mGoal');
+  if(gateDone()){ goal.innerHTML=t('gateDoneChip'); return; }
+  const g=gateOf(), r=riskAt(S.cash,S.daysLeft), urgent=S.daysLeft<=3;
+  goal.innerHTML=`${g.n} ${fmtMoney(g.goal)} · `+
+    `<b class="${urgent?'warn':''}">${r.last?t('lastDay'):t('dday',{n:S.daysLeft})}</b>`;
+}
 
 /* 정적 HTML로 박혀 있는 라벨은 render에서 채운다 — 언어를 바꾸면 여기도 같이 돈다 */
 function applyStaticLabels(){

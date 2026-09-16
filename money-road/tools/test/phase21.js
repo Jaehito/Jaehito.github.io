@@ -7,6 +7,9 @@
      4) 매도 등급 반전 (숏은 낮게 덮을수록 잘한 것)
      6) 청산 경고 영역이 청산선 바깥쪽만 칠하는가 (화면 밖으로 나가도) */
 const { launch, GAME: url } = require('../lib/browser');
+/* 공매도 문턱. 사다리에서 자리를 옮기면 여기 한 줄만 고친다 — 다섯 군데에
+   숫자가 흩어져 있으면 다음에 옮길 때 또 하나를 빠뜨린다. */
+const SHORT_XP = 400;
 (async()=>{
  const b = await launch();
  const errs=[];
@@ -37,7 +40,7 @@ const { launch, GAME: url } = require('../lib/browser');
  await p.close();
 
  console.log('\n=== 1-b. 해금하면 방향 토글이 생긴다 (버튼은 하나 그대로) ===');
- p=await fresh(200);
+ p=await fresh(SHORT_XP);
  L('', await p.evaluate(()=>({
    metaHas:metaHas('short'),
    토글:$('dirToggle').textContent.replace(/\s+/g,' ').trim(),
@@ -48,7 +51,7 @@ const { launch, GAME: url } = require('../lib/browser');
  await p.close();
 
  console.log('\n=== 2. 손익 부호 대칭 ===');
- p=await fresh(200);
+ p=await fresh(SHORT_XP);
  await p.evaluate(play);
  L('', await p.evaluate(async()=>{
    const out=[];
@@ -66,14 +69,14 @@ const { launch, GAME: url } = require('../lib/browser');
  await p.close();
 
  console.log('\n=== 3. 청산선 ===');
- p=await fresh(200);
+ p=await fresh(SHORT_XP);
  L('', await p.evaluate(()=>[1,2,3,5,10].map(L2=>({
    배율:L2+'배', 롱:liqMultOf(L2,1).toFixed(3), 숏:liqMultOf(L2,-1).toFixed(3),
    '숏은 1배에도 청산':liqMultOf(1,-1)===2}))));
  await p.close();
 
  console.log('\n=== 4. 매도 등급은 방향에 따라 뒤집힌다 ===');
- p=await fresh(200);
+ p=await fresh(SHORT_XP);
  L('저점 0.70 · 고점 1.30인 판에서', await p.evaluate(()=>
    [0.75,1.00,1.25].map(m=>({
      매도배율:m,
@@ -82,7 +85,7 @@ const { launch, GAME: url } = require('../lib/browser');
  await p.close();
 
  console.log('\n=== 6. 청산 경고 영역은 청산선 바깥쪽만 칠한다 ===');
- p=await fresh(200);
+ p=await fresh(SHORT_XP);
  await p.evaluate(play);
  L('', await p.evaluate(()=>{
    const out=[];

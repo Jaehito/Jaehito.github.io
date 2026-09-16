@@ -56,7 +56,8 @@ const { launch, GAME: url } = require('../lib/browser');
    return {자동익절:!!$('autoToggle'), 방향토글:!!$('dirToggle'),
      옵션줄:!!document.querySelector('.opt-row'),
      시작버튼:$('tradeGo').textContent.trim()};}));
- L('해금하면', await p.evaluate(()=>{ META.xp=200; saveMeta(); renderTrade();
+ /* 400 XP — 공매도가 사다리 네 번째 칸으로 옮겨간 뒤의 문턱이다. */
+ L('해금하면', await p.evaluate(()=>{ META.xp=400; saveMeta(); renderTrade();
    return {방향토글:$('dirToggle').textContent.replace(/\s+/g,' ').trim(),
      시작버튼:$('tradeGo').textContent.trim(), betDir:S.betDir};}));
  L('하락으로 — 버튼은 아이콘·색만으로 갈린다', await p.evaluate(()=>{

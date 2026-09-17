@@ -98,7 +98,14 @@ const { launch, GAME: url } = require('../lib/browser');
  const icons=await p.evaluate(()=>({
    개수:document.querySelectorAll('#app svg.ic').length,
    탭에아이콘:!!$('mtTrade').querySelector('svg.ic'),
-   종목에아이콘:!!document.querySelector('.stock-tab svg.ic'),
+   /* 종목은 이제 16×16 픽셀 비트맵이 아니라 종이에 그은 잉크 선이다.
+      창 안쪽이 서류가 된 뒤로 흰 상자에 검은 외곽선이 종이 위에서 혼자 논다.
+      그래서 여기서는 "픽셀 아이콘이 없고 잉크 선이 있다"를 본다. */
+   종목에잉크선:!!document.querySelector('.stock-tab svg.ink-spark'),
+   종목에픽셀아이콘:!!document.querySelector('.stock-tab svg.ic'),
+   종목범위막대:document.querySelectorAll('.stock-tab .rng .m').length,
+   막대폭0:[...document.querySelectorAll('.stock-tab .rng .m')]
+     .filter(e=>e.getBoundingClientRect().width<1).length,
    태그가글자로:/<svg|class="ic"/.test($('app').textContent),
    격자:[...document.querySelectorAll('#app svg.ic')].slice(0,4).map(s=>s.getAttribute('viewBox')),
  }));
@@ -107,7 +114,12 @@ const { launch, GAME: url } = require('../lib/browser');
  /* 탭에는 일부러 아이콘을 안 붙인다 — 98의 탭 컨트롤에 원래 없었고,
     길안내는 소품으로 그릴 수 있는 자리가 아니다. */
  want('탭에는 아이콘 없음', icons.탭에아이콘, false);
- want('종목 아이콘', icons.종목에아이콘, true);
+ want('종목은 잉크 선', icons.종목에잉크선, true);
+ want('종목에 픽셀 아이콘 없음', icons.종목에픽셀아이콘, false);
+ if(icons.종목범위막대<1) fail.push('종목 범위 막대가 없다');
+ /* span은 기본이 display:inline이고 인라인에는 width가 안 먹는다 — 목업에서
+    두 번 당한 자리라 폭이 0으로 눌리지 않았는지 재서 확인한다. */
+ if(icons.막대폭0) fail.push('범위 막대가 폭 0으로 눌렸다: '+icons.막대폭0+'개');
  want('태그가 글자로 새지 않음', icons.태그가글자로, false);
  if(icons.격자.some(v=>v!=='0 0 16 16')) fail.push('16×16 격자가 아니다: '+icons.격자);
 

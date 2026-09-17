@@ -227,39 +227,44 @@
      절대배치를 풀고 흐름에 두어야 첫 줄을 덮지 않는다(종목 목록이 덮였었다). */
   .trade-panel .grp > .lg{position:static; display:block; margin-bottom:5px;}
   .trade-panel .grp.last{border-bottom:none; padding-bottom:2px;}
-  /* 도장과 안내문 — 서류 맨 아래 결재란 */
-  .stamp-foot{display:flex; align-items:center; gap:11px; margin-top:12px;}
-  .stamp-foot .trade-go{width:auto; min-width:128px; flex:0 0 auto; min-height:62px;}
-  .stamp-foot .note{font-size:12px; color:var(--paper-dim); line-height:1.45;}
+  /* 도장 — 서류 맨 아래 결재란. 폭 전체를 쓴다 */
+  .stamp-foot{margin-top:12px;}
+  .stamp-foot .trade-go{width:100%; min-height:62px;}
+  .foot-note{margin-top:7px; font-size:12px; color:var(--paper-dim); text-align:center;
+    line-height:1.45;}
   .tp-head{display:none;}   /* 목표·D-day는 상환 그룹이 이미 말한다 — 같은 값을 두 번 쓰지 않는다 */
-  /* 종목은 세로 목록이다. 막대가 같은 왼쪽 눈금에서 출발해야 서로 비교가 되고,
-     타일로 흩어 놓으면 그 비교가 흐려진다. 대신 여섯 줄이 자리를 먹는다 —
-     한 칸 48px(터치 규격)을 지켜야 하므로 격자보다 170px쯤 높다.
-     주문표는 스크롤해도 되는 화면이라 그 값을 치를 수 있다(라운드는 안 된다). */
-  .stock-tabs{display:flex; flex-direction:column; gap:3px;}
+  /* 종목은 2열 격자다. 세로 목록(N4)은 여섯 줄에 303px을 먹어서, 종목 맨 위에서
+     베팅금 맨 아래까지가 513px이 됐다 — 쓸 수 있는 자리가 494px이라 19px 차이로
+     둘이 같이 안 보였다. 화면에서 제일 자주 같이 봐야 하는 둘이다.
+
+     세로 목록을 고른 이유는 「여섯 막대가 같은 왼쪽 눈금에서 출발해야 길이 비교가
+     된다」였다. 격자로 가면 그 눈금이 두 줄로 갈린다. 그래서 막대를 버리고
+     작은 그래프를 넣는다 — 선 모양이 성격을, 세로 진폭이 크기를 말하므로
+     한 칸이 둘을 다 말한다. 막대를 넣었던 이유가 그 둘이었다. */
+  .stock-tabs{display:grid; grid-template-columns:1fr 1fr; gap:5px;}
   .stock-tab{background:var(--paper-hi); color:var(--paper-ink); cursor:pointer; min-height:48px;
-    padding:5px 9px; font-size:12.5px; line-height:1.3;
-    display:flex; flex-direction:row; align-items:center; gap:9px;
+    padding:5px 8px 4px; font-size:12.5px; line-height:1.3;
+    display:flex; flex-direction:column; align-items:stretch; gap:2px;
     border:1px solid var(--paper-line); border-radius:3px; box-shadow:none;}
-  /* 고른 종목은 테를 굵게 — 잉크로 채우면 미니 차트가 안 보인다 */
-  .stock-tab.sel{border:2px solid var(--paper-ink); box-shadow:none;}
-  .stock-tab.locked{color:#a2977c; text-shadow:none; cursor:default;}
-  .stock-tab .e{line-height:0; color:var(--paper-dim); width:40px; flex:0 0 auto;}
-  .stock-tab .n{width:74px; flex:0 0 auto;}
-  .stock-tab .v{margin-left:auto; color:var(--paper-dim); font-size:12px;}
-  .stock-tab.sel .e{color:var(--paper-ink);}
-  .stock-tab.locked .e{color:#c4b088;}
+  /* 고른 종목은 테를 굵게 — 잉크로 채우면 그래프가 안 보인다 */
+  .stock-tab.sel{border:2px solid var(--paper-ink); padding:4px 7px 3px;}
+  .stock-tab.locked{color:#a2977c; text-shadow:none; cursor:default;
+    background:none; border-style:dashed;}
+  .stock-tab .hd{display:flex; align-items:baseline; gap:6px;}
+  .stock-tab .n{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .stock-tab.sel .n{font-weight:700;}
+  .stock-tab .v{flex:0 0 auto; color:#a2977c; font-size:12px;}
+  .inst-chart{display:block; width:100%; height:26px; flex:1 1 auto;
+    color:var(--paper-dim); overflow:visible;}
+  .stock-tab.sel .inst-chart{color:var(--paper-ink);}
+  .stock-tab.locked .inst-chart{color:#c4b088;}
+  .inst-chart .ic-base{stroke:var(--paper-line); stroke-width:1; stroke-dasharray:3 3;
+    vector-effect:non-scaling-stroke;}
+  .stock-tab.sel .inst-chart .ic-base{stroke:var(--stamp); opacity:.45;}
   .ink-spark{display:block; margin:0 auto;}
   /* 범위 막대 — span이라 display:block을 꼭 줘야 한다. 인라인에는 width가 안 먹어서
      폭 0으로 눌린다(목업에서 두 번 당했다). */
-  .stock-tab .rng{display:block; position:relative; flex:1; min-width:0; height:10px;}
-  .stock-tab .rng i{position:absolute; top:50%; transform:translateY(-50%); display:block;}
-  .stock-tab .rng .x{height:4px; background:#d8cdb2; border-radius:2px;}
-  .stock-tab .rng .m{height:9px; background:#8a5a00; border-radius:2px;}
-  .stock-tab .rng .e{width:1px; height:14px; background:var(--stamp); transform:translate(-50%,-50%);}
   /* 눈금 설명 — 막대가 무엇인지 한 번은 말해야 한다. 로그 눈금이라 가운데가 1.00x가 아니다. */
-  .stock-scale{display:flex; font-size:12px; color:var(--paper-dim); padding:3px 9px 0; margin-top:2px;}
-  .stock-scale .c{margin:0 auto; color:var(--stamp);}
   .stock-note{display:flex; align-items:center; gap:8px; margin-top:7px; padding:5px 9px;
     background:var(--paper-memo); border-left:3px solid #8a5a00; font-size:12.5px;}
   .stock-note b{font-size:12.5px;} .stock-note span{color:var(--paper-dim);}
@@ -471,11 +476,6 @@
     -webkit-font-smoothing:none; font-smooth:never; letter-spacing:0;}
   .led{width:7px; height:7px; border-radius:50%; margin-left:auto; background:#39ff88;
     box-shadow:0 0 7px #39ff88, inset 0 0 2px rgba(0,0,0,.4);}
-  .led.off{background:#4a5a4a; box-shadow:inset 0 0 2px rgba(0,0,0,.5);}
-  /* 대기 상태 — 44px 한 줄. 꺼진 모니터가 아니라 "다음 판을 기다리는" 모니터다 */
-  .dev.idle .scrn{height:44px; display:grid; place-items:center;}
-  .idlemsg{font-family:'Galmuri11',monospace; font-size:12px; color:#1f8f47;
-    -webkit-font-smoothing:none; font-smooth:never; letter-spacing:0;}
   .round-view .dev{margin-top:0;}
 
   .trm .round-timer{font-size:11px; color:#1f8f47; padding:0 0 5px; margin-bottom:4px;
@@ -950,7 +950,6 @@
             <div class="form-head"><span id="formTitle"></span><span class="no" id="formNo"></span></div>
             <div class="grp" id="stockGrp"><span class="lg" id="stockLg"></span>
               <div class="stock-tabs" id="stockTabs"></div>
-              <div class="stock-scale" id="stockScale"></div>
               <div class="stock-note" id="stockNote"></div>
             </div>
             <div id="tradeBody"></div>
@@ -970,13 +969,8 @@
       </div>
     </div>
 
-    <!-- 모니터 — 책상 위에 늘 놓여 있는 물건이다. 판이 없으면 대기 줄로 눕고,
-         판이 돌면 여기가 아니라 #roundHost 안에서 불이 들어와 화면을 차지한다.
-         판단하는 곳(종이)과 지켜보는 곳(유리)이 다른 물건이라는 것이 이 방향의 뼈대다. -->
-    <div class="dev idle" id="devIdle">
-      <div class="bezel"><div class="scrn"><div class="idlemsg" id="devIdleMsg"></div></div></div>
-      <div class="chin"><span class="plate" id="devPlate1"></span><i class="led off"></i></div>
-    </div>
+    <!-- 모니터는 판이 돌 때만 나온다. 예전에는 판이 없을 때도 「다음 판 대기」
+         줄이 아래에 누워 있었는데, 82px을 먹으면서 아무 값도 주지 않았다. -->
     <div id="roundHost" hidden></div>
   </div>
 
@@ -1032,7 +1026,6 @@ const L={
     paceLast:'마지막 거래일', paceNeed:'판당 <b>{p}</b> 필요',
     tradeNote:'끝까지 들고만 있으면 손해입니다 — 패턴을 보고 반응하십시오',
     goNoFunds:'베팅금이 부족합니다', amtLev:'{v} × {n}배',
-    devIdle:'다음 판 대기',
     sigAcc:'이 신호가 맞을 확률 {p}%', sigSure:'이번 판은 이 신호가 반드시 맞습니다',
     /* 신호 등급 */
     sigStrongN:'강세', sigStrongD:'큰 고점이 나올 만한 장',
@@ -1052,7 +1045,7 @@ const L={
     instEtfN:'코스피ETF',   instEtfD:'급변 없음',
     instPennyN:'동전주',    instPennyD:'급등 아니면 급락',
     instCoinN:'코인',       instCoinD:'20초 · 변동 극단',
-    instLockLv:'Lv.{n}', instLockMeta:'해금',
+    instLockLv:'Lv.{n}', instLockMeta:'등급 Lv.{n}',
     /* 관문 */
     gate1:'1차', gate2:'2차', gate3:'3차', gate4:'4차', gate5:'5차', gate6:'6차', gateFinal:'최종',
     /* 난이도 */
@@ -1186,10 +1179,10 @@ const L={
     docTitle:'머니로드 · 단타 게임', brandA:'머니', brandB:'로드',
     /* 98 창 — 제목표는 "문서 — 프로그램"이다. 한 판이 곧 문서 하나다. */
     winTitle:'평가계좌_01.trd — {n}', gGoal:'목표', trmAcct:'ACCOUNT', gStock:'종목', gSig:'장세 소견', gBet:'베팅금', kCash:'잔고',
-    gCond:'조건', gForm:'주 문 표', stampGo:'승 인',
+    gCond:'조건', gForm:'주 문 표', stampGo:'매 수',
     docResult:'체 결 통 지', docSeize:'계 좌 회 수',
     stampFill:'체결', stampSeize:'회수', stampNext:'다 음 판',
-    stampNote:'기한 안에 목표를 못 채우면<br>계좌를 회수합니다.',
+    stampNote:'기한 안에 목표를 못 채우면 계좌를 회수합니다.',
     mnLang:'언어(<u>L</u>)', mnHelp:'도움말(<u>H</u>)',
     mnKo:'한국어', mnEn:'English', mnAuto:'브라우저 설정 따르기',
     mnAbout:'이 게임에 대하여', mnIntro:'규칙 다시 보기'
@@ -1212,7 +1205,6 @@ const L={
     paceLast:'Last session', paceNeed:'need <b>{p}</b> per session',
     tradeNote:'Holding to the end loses — read the pattern and react!',
     goNoFunds:'Not enough to stake', amtLev:'{v} × {n}',
-    devIdle:'STANDBY',
     sigAcc:'This signal is right {p}% of the time',
     sigSure:'This signal is guaranteed this session',
     sigStrongN:'Bullish', sigStrongD:'a session that can print a high',
@@ -1229,7 +1221,7 @@ const L={
     instEtfN:'INDEX',     instEtfD:'no spikes',
     instPennyN:'PENNY',   instPennyD:'pump or dump',
     instCoinN:'CRYPTO',   instCoinD:'20s · extreme',
-    instLockLv:'Lv.{n}', instLockMeta:'Locked',
+    instLockLv:'Lv.{n}', instLockMeta:'Rank {n}',
     gate1:'Phase 1', gate2:'Phase 2', gate3:'Phase 3', gate4:'Phase 4',
     gate5:'Phase 5', gate6:'Phase 6', gateFinal:'Final',
     tier1:'Ant', tier2:'Desk', tier3:'Bear', tier4:'Tight', tier5:'Ledge',
@@ -1345,10 +1337,10 @@ const L={
     /* 로고 두 조각 사이는 &nbsp;로 띄운다 — 한국어 '머니로드'는 붙여 쓰고 영어는 띄운다 */
     docTitle:'Money Road · Day Trading Game', brandA:'MONEY&nbsp;', brandB:'ROAD',
     winTitle:'eval_account_01.trd — {n}', gGoal:'TARGET', trmAcct:'ACCOUNT', gStock:'INSTRUMENT', gSig:'DESK READ', gBet:'STAKE', kCash:'Balance',
-    gCond:'TERMS', gForm:'ORDER  SLIP', stampGo:'APPROVE',
+    gCond:'TERMS', gForm:'ORDER  SLIP', stampGo:'BUY',
     docResult:'FILL  NOTICE', docSeize:'ACCOUNT  CLOSED',
     stampFill:'FILLED', stampSeize:'CLOSED', stampNext:'NEXT ROUND',
-    stampNote:'Miss the window and the firm<br>closes the account.',
+    stampNote:'Miss the window and the firm closes the account.',
     mnLang:'<u>L</u>anguage', mnHelp:'<u>H</u>elp',
     mnKo:'한국어', mnEn:'English', mnAuto:'Follow browser',
     mnAbout:'About this game', mnIntro:'Show the rules again'
@@ -1644,7 +1636,7 @@ const TRADE_STOCKS=[
      진폭이 작아서 먹을 게 적다 — 상환이 급할 때는 못 쓰는 종목이다. */
   {id:'etf',    get emo(){return ic('etf');}, get name(){return t('instEtfN');}, get ds(){return t('instEtfD');},
    pMult:0.75, noiseMult:0.7, rng:[0.70,1.57,0.64,1.67],
-   open:()=>metaHas('etf'),   get lock(){return t('instLockMeta');},
+   open:()=>metaHas('etf'),   get lock(){return t('instLockMeta',{n:4});},
    /* 나락과 초반 급등급락도 막는다 — 이 종목의 설명이 "급변 없음"이다.
       막지 않으면 지수를 따라가는 종목에서 되돌림 없는 폭락이 나온다.
 
@@ -1662,7 +1654,7 @@ const TRADE_STOCKS=[
      (delaydown)이다. 완만하게 흘러가는 판이 거의 없어서 손이 쉴 틈이 없다. */
   {id:'penny',  get emo(){return ic('penny');}, get name(){return t('instPennyN');}, get ds(){return t('instPennyD');},
    pMult:1.5, noiseMult:1.7, rng:[0.30,2.29,0.20,2.83],
-   open:()=>metaHas('penny'), get lock(){return t('instLockMeta');},
+   open:()=>metaHas('penny'), get lock(){return t('instLockMeta',{n:6});},
    /* patW는 등급 안에서 어떤 패턴이 나올지를 종목이 정하는 손잡이다. 예전에는
       up/down이 완만한 축이라 0.4~0.6으로 눌러뒀는데, 이제 그 둘이 급락으로 시작하는
       가장 격한 패턴이 됐다. 그대로 두면 동전주가 개편을 통째로 피해 간다(클리어 92%).
@@ -1677,7 +1669,7 @@ const TRADE_STOCKS=[
      대신 진폭이 가장 크다. 실제 시간을 더 쓰고 게임 안의 진도를 더 빼는 맞교환이다. */
   {id:'coin',   get emo(){return ic('coin');}, get name(){return t('instCoinN');}, get ds(){return t('instCoinD');},
    pMult:2.6, noiseMult:3.0, rng:[0.05,2.98,0.05,3.43],
-   ticks:400, open:()=>metaHas('coin'), get lock(){return t('instLockMeta');}},
+   ticks:400, open:()=>metaHas('coin'), get lock(){return t('instLockMeta',{n:8});}},
 ];
 function stockOpen(st){return !st.open||st.open();}
 
@@ -1701,21 +1693,30 @@ function inkSpark(id){
     `<path d="${d}" fill="none" stroke="currentColor" stroke-width="1.6"`+
     ` stroke-linejoin="round" stroke-linecap="round"/></svg>`;
 }
-/* 눈금은 로그다. 0.05x와 3.5x를 한 줄에 놓으려면 선형으로는 안 된다 —
-   ETF(0.81~1.26)가 점 하나로 뭉개진다. */
+/* 범위 눈금 — 로그다. 선형으로 하면 ETF(0.7~1.57)가 점 하나로 뭉개진다.
+   지금은 종목 칸 그래프의 세로 진폭을 정하는 데 쓴다(instAmp). */
 const RNG_LO=0.05, RNG_HI=3.5;
-const fmtMult=v=>v.toFixed(2).replace(/0$/,'')+'x';
 function rngPos(v){
   const l=Math.log(RNG_LO), h=Math.log(RNG_HI);
   return Math.max(0,Math.min(100,(Math.log(v)-l)/(h-l)*100));
 }
-function rangeBar(st){
-  if(!st.rng)return '';
-  const [lo,hi,xlo,xhi]=st.rng;
-  const seg=(a,b,cls)=>`<i class="${cls}" style="left:${rngPos(a).toFixed(1)}%;`+
-    `width:${(rngPos(b)-rngPos(a)).toFixed(1)}%"></i>`;
-  return `<span class="rng">${seg(xlo,xhi,'x')}${seg(lo,hi,'m')}`+
-    `<i class="e" style="left:${rngPos(1).toFixed(1)}%"></i></span>`;
+/* 종목 칸의 작은 그래프. 선 모양이 성격(ETF는 완만한 한 줄, 코인은 톱니)을,
+   세로 진폭이 크기를 말한다 — 격자로 가면서 선과 막대로 나눠 그리던 둘을
+   한 칸에 합쳤다. 진폭은 손으로 정한 값이 아니라 실측 범위(rng)에서 나온다.
+   가운데 점선이 진입가(1.00x)라, 칸마다 같은 기준선을 갖는다. */
+function instAmp(st){
+  if(!st.rng)return 0.5;
+  return Math.max(0.18, Math.min(1,(rngPos(st.rng[3])-rngPos(st.rng[2]))/100));
+}
+function instChart(st){
+  const d=INK_SPARK[st.id]; if(!d)return '';
+  /* preserveAspectRatio=none으로 가로를 칸에 맞춰 늘린다. 선 두께가 같이
+     늘어나면 안 되므로 non-scaling-stroke를 건다. */
+  return `<svg class="inst-chart" viewBox="0 0 46 22" preserveAspectRatio="none" aria-hidden="true">`+
+    `<line class="ic-base" x1="0" y1="11" x2="46" y2="11"/>`+
+    `<g transform="translate(0 11) scale(1 ${instAmp(st).toFixed(2)}) translate(0 -10)">`+
+    `<path d="${d}" fill="none" stroke="currentColor" stroke-width="1.6"`+
+    ` vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/></g></svg>`;
 }
 /* 라운드 길이는 종목마다 다를 수 있다. ROUND_TICKS는 기본값(15초)이고, 종목이 ticks로
    덮어쓴다 — 코인만 20초다. 틱 간격(50ms)은 어느 종목이나 같다. */
@@ -3116,17 +3117,18 @@ function smoothPathD(pts){
   return d;
 }
 function renderTradeTabs(){
-  /* 종목이 넷 이상이면 한 줄에 다 못 넣는다. 가로 스크롤은 안 쓴다 —
-     ETF·동전주가 들어오면 신호를 보고 종목을 고르게 되어 매 판 바꾸는 값이 되는데,
-     그걸 매번 옆으로 굴려 찾게 할 수는 없다. 줄을 나눠서 전부 보이게 한다. */
+  /* 가로 스크롤은 안 쓴다 — ETF·동전주가 들어오면 신호를 보고 종목을 고르게 되어
+     매 판 바꾸는 값이 되는데, 그걸 매번 옆으로 굴려 찾게 할 수는 없다. 여섯을
+     2열 격자로 다 보인다. */
   /* 타일에서 설명을 빼고 아래 한 줄로 내린다 — 여섯 개를 다 읽게 하면 아무것도
-     안 읽힌다. 고른 것 하나만 말하면 되고, 나머지는 선과 막대가 대신한다. */
+     안 읽힌다. 고른 것 하나만 말하면 되고, 나머지는 그래프가 대신한다. */
   $('stockTabs').innerHTML=TRADE_STOCKS.map(s=>{
-    if(!stockOpen(s))return `<div class="stock-tab locked"><div class="e">${inkSpark(s.id)}</div>
-      <div class="n">${s.name}</div><div class="v">${s.lock}</div></div>`;
-    return `<div class="stock-tab ${s.id===S.selectedStock?'sel':''}" data-stock="${s.id}">
-      <div class="e">${inkSpark(s.id)}</div><div class="n">${s.name}</div>
-      ${rangeBar(s)}</div>`;
+    const open=stockOpen(s);
+    const hd=`<div class="hd"><span class="n">${s.name}</span>`+
+      (open?'':`<span class="v">${s.lock}</span>`)+`</div>`;
+    const cls=open?(s.id===S.selectedStock?'stock-tab sel':'stock-tab'):'stock-tab locked';
+    /* 잠긴 칸도 그래프를 그린다 — 무엇인지 보여야 갖고 싶어진다 */
+    return `<div class="${cls}"${open?` data-stock="${s.id}"`:''}>${hd}${instChart(s)}</div>`;
   }).join('');
   $('stockTabs').querySelectorAll('.stock-tab').forEach(el=>{
     if(el.classList.contains('locked'))return;
@@ -3140,9 +3142,9 @@ function renderTradeTabs(){
    여섯 중 다섯이 15초라 정보가 아니고(코인만 20초인데 그건 ds가 말한다),
    범위 숫자는 막대가 이미 말한다. 같은 것을 두 번 쓰지 않는다. */
 function renderStockNote(){
-  const sc=$('stockScale');
-  if(sc)sc.innerHTML=`<span>${fmtMult(RNG_LO)}</span><span class="c">${t('rEntry')}</span>`+
-    `<span>${fmtMult(RNG_HI)}</span>`;
+  /* 눈금 줄(0.05x — 1.00x 진입 — 3.5x)은 가로 막대를 설명하던 것이다.
+     막대가 그래프로 바뀌면서 가로가 시간축이 됐으므로 그 줄은 거짓말이 된다.
+     기준선은 이제 칸마다 그려진 가운데 점선(진입가)이 대신한다. */
   const el=$('stockNote'); if(!el)return;
   /* 고른 종목을 꺼내는 이름난 함수가 없다 — 세 군데가 각자 find로 꺼내 쓴다.
      여기서 네 번째를 만들지 않고 같은 꼴을 쓴다. */
@@ -3155,7 +3157,7 @@ function renderTrade(){
      그 위에 주문표 머리와 종목 여섯 줄이 그대로 남아 차트를 접힘선 아래로
      밀어냈다. 스크롤이 절대 안 되는 화면은 라운드뿐이라 그 자리부터 비운다. */
   const live=!!S.activeRound;
-  $('tabsWrap').hidden=live; $('devIdle').hidden=live; $('roundHost').hidden=!live;
+  $('tabsWrap').hidden=live; $('roundHost').hidden=!live;
   if(!live)$('roundHost').innerHTML='';
   /* ACCOUNT 패널(156px)도 접어서 창틀의 계좌줄(44px)로 내린다. 목표와 D-day는
      15초 동안에도 "언제 팔까"를 고르는 값이라 지워선 안 되지만, 큰 판때기로
@@ -3241,9 +3243,9 @@ function renderTrade(){
     <div class="grp last"><span class="lg">${t('gSig')}</span>${signalRow}</div>
     ${buffLine}
     ${paceLine}
-    <div class="stamp-foot">${goRowHTML(canGo,canShort,curLev,pr)}
-      <div class="note">${t('stampNote')}</div></div>
-    ${(S.today.rounds<3)?`<div class="trade-note">${t('tradeNote')}</div>`:''}`;
+    <div class="stamp-foot">${goRowHTML(canGo,canShort,curLev,pr)}</div>
+    ${(S.today.rounds<3)?`<div class="foot-note">${t('stampNote')}</div>
+    <div class="trade-note">${t('tradeNote')}</div>`:''}`;
   const step=Math.max(MIN_BET,Math.round(S.cash*0.05));
   $('betMinus').onclick=()=>{sfx.tap();setBet(S.betAmount-step);};
   $('betPlus').onclick=()=>{sfx.tap();setBet(S.betAmount+step);};
@@ -3259,9 +3261,15 @@ function renderTrade(){
 /* 도장은 "승인"이고, 무엇을 승인하는지는 작은 줄로 받친다.
    예전에는 버튼 한 줄에 "5만원 × 3배로 시작"이 전부였는데, 도장이 된 뒤로는
    찍는 행위(승인)와 내용(5만원 × 3배)이 다른 크기로 갈리는 게 맞다. */
+/* 도장은 폭 전체를 쓴다. 예전에는 128px짜리 도장 옆에 「기한 안에 목표를 못
+   채우면…」이 두 줄로 붙어 있었는데, 그 문구는 매 판 똑같고 상단 D-day가 이미
+   같은 말을 한다 — 읽히지도 않으면서 화면에서 제일 중요한 버튼을 반으로 줄이고
+   있었다. 작은 줄에는 고른 종목 이름을 같이 적는다: 목록을 다시 안 봐도
+   무엇을 사는지 보인다. */
 function goRowHTML(canGo,canShort,lev,pr){
   if(!canGo)return `<button class="trade-go" id="tradeGo" disabled>${t('goNoFunds')}</button>`;
-  const amt=t('amtLev',{v:fmtMoney(S.betAmount),n:lev});
+  const st=TRADE_STOCKS.find(x=>x.id===S.selectedStock)||TRADE_STOCKS[0];
+  const amt=t('amtLev',{v:fmtMoney(S.betAmount),n:lev})+' · '+st.name;
   const cls=canShort?(S.betDir===-1?'go-short':'go-long'):(pr&&pr.cls==='p-bad'?'danger':'');
   return `<button class="trade-go ${cls}" id="tradeGo">${t('stampGo')}<small>${amt}</small></button>`;
 }
@@ -3617,8 +3625,6 @@ function applyStaticLabels(){
   set('cashLab',t('kCash'));
   set('stockLg',t('gStock'));
   set('formTitle',t('gForm'));
-  set('devIdleMsg',t('devIdle'));
-  set('devPlate1',DEV_PLATE);
   set('mnLang',t('mnLang'));
   set('mnHelp',t('mnHelp'));
   try{ document.title=t('docTitle'); }catch(e){}

@@ -559,27 +559,46 @@
   /* ── 상점 · 해금 ── 98 리스트박스. 고른 줄은 남색 반전. */
   .section-title{font-size:12.5px; color:var(--paper-dim); margin-bottom:8px;}
   .section-title small{color:var(--paper-dim) !important;}
-  .biz{display:flex; align-items:center; gap:8px; padding:9px; min-height:62px;
-    font-size:12.5px; border-bottom:1px solid var(--lt); background:var(--field);}
+  /* 상점과 권한은 탭이 아니라 서류 두 장이다 — 비품 신청서와 권한 대장.
+     흰 리스트박스에 픽셀 아이콘을 얹어 두니 종이 위에서 혼자 놀았다(종목
+     타일에서 이미 겪은 자리다). 장부 행으로 바꾼다: 값과 상태가 같은
+     세로줄에 서야 위에서 아래로 훑어 읽힌다. */
+  #shopList,#unlockList{background:none; border:0; box-shadow:none;}
+  .biz{display:flex; align-items:center; gap:10px; padding:10px 0; min-height:62px;
+    font-size:12.5px; background:none; border-bottom:1px dashed var(--paper-line);}
   .biz:last-child{border-bottom:0;}
-  .biz .logo{width:32px; height:32px; display:grid; place-items:center; flex-shrink:0;}
+  .biz .logo{display:none;}
   .biz .mid{flex:1; min-width:0;}
-  .biz .nm{font-size:19px; font-weight:700; display:flex; align-items:baseline; gap:6px;}
-  .biz .cnt{font-size:12.5px; font-weight:400; color:var(--gray2);}
-  .biz .ds{font-size:12.5px; color:var(--gray2); margin-top:2px;}
-  .biz-buy{flex-shrink:0; min-width:92px; min-height:48px; padding:7px 10px; font-size:12.5px;
-    cursor:pointer; text-align:center; background:var(--face); color:var(--ink);
-    border:2px solid; border-color:var(--lt) var(--dk) var(--dk) var(--lt);
-    box-shadow:inset 1px 1px 0 var(--hi), inset -1px -1px 0 var(--sh);}
-  .biz-buy.cant{color:var(--gray3); text-shadow:1px 1px 0 var(--hi); cursor:default;}
+  .biz .nm{font-size:17px; font-weight:700; color:var(--paper-ink);
+    display:flex; align-items:baseline; gap:6px;}
+  .biz .cnt{font-size:12.5px; font-weight:400; color:var(--paper-dim);}
+  .biz .ds{font-size:12.5px; color:var(--paper-dim); margin-top:3px;}
+  /* 신청 칸은 작은 도장이다 — 주문표의 승인 도장과 같은 물건이라야 누를 것으로 읽힌다 */
+  .biz-buy{flex-shrink:0; min-width:96px; min-height:48px; padding:6px 9px; font-size:12.5px;
+    cursor:pointer; text-align:center; letter-spacing:.04em; outline:0;
+    background:rgba(179,38,30,.05); color:var(--stamp);
+    border:2px double var(--stamp); border-radius:3px;
+    box-shadow:0 2px 0 rgba(110,24,18,.28);
+    transition:transform .07s ease-out, box-shadow .07s ease-out;}
+  .biz-buy:active{transform:translateY(2px); box-shadow:0 0 0 rgba(0,0,0,0);}
+  .biz-buy.cant{color:#a2977c; background:none; text-shadow:none; cursor:default;
+    border:1px solid var(--paper-line); box-shadow:none;}
   .biz-buy .p{display:block; font-weight:700;}
   .biz-buy .l{display:block; margin-top:2px;}
-  .unlock-tag{flex-shrink:0; min-width:92px; padding:8px 10px; font-size:12.5px; text-align:center;}
-  .unlock-tag.open{color:var(--green);}
-  .unlock-tag.closed{color:var(--gray3); text-shadow:1px 1px 0 var(--hi);}
-  #shopList,#unlockList{background:var(--field);
-    border:2px solid; border-color:var(--sh) var(--hi) var(--hi) var(--sh);
-    box-shadow:inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--lt);}
+  /* 승인란은 장부의 마지막 칸 — 괘선 하나로 갈라서 오른쪽에 세운다 */
+  .unlock-tag{flex-shrink:0; min-width:78px; padding:6px 0 6px 11px; font-size:12.5px;
+    text-align:right; color:var(--paper-dim); border-left:1px solid var(--paper-line);}
+  .unlock-tag b{display:block; font-weight:700; font-size:12.5px; margin-bottom:2px;
+    color:var(--paper-ink);}
+  .unlock-tag.open{color:#1f7a3a;}
+  .unlock-tag.closed{color:#a2977c; text-shadow:none;}
+  .unlock-tag.closed b{color:#a2977c;}
+  /* 서류 머리 — 주문표와 같은 꼴이라야 세 탭이 같은 서류철로 읽힌다 */
+  .doc-head{font-size:15px; font-weight:800; letter-spacing:.22em; color:var(--paper-ink);
+    border-bottom:2px solid var(--paper-ink); padding-bottom:5px; margin-bottom:2px;
+    display:flex; align-items:baseline;}
+  .doc-head small{margin-left:auto; font-size:12px; font-weight:400; letter-spacing:0;
+    color:var(--paper-dim);}
 
   /* ── 대화상자 ── 98은 배경을 어둡게 덮지 않는다. 부모 제목표가 회색이 되는 것으로
      초점을 옮긴다(showModal이 .topbar에 .off를 건다). */
@@ -623,6 +642,48 @@
   .diff-xp{margin-left:auto; flex-shrink:0;}
   .diff-de{margin-top:4px; color:var(--gray2);}
   .diff-de.none{color:var(--gray3);}
+
+  /* ── 서류로 오는 대화상자 ── 체결 통지 · 계좌 회수.
+     창틀은 98 회색 그대로 둔다(회사가 띄운 창이니까) — 바뀌는 것은 그 안에
+     든 종이뿐이다. 승인·체결·회수가 같은 양식이라야 실패가 특별한 사건이
+     아니라 절차로 읽힌다. 그게 이 게임의 주제다. */
+  .modal .dlg.doc{background:var(--paper); color:var(--paper-ink);
+    background-image:repeating-linear-gradient(0deg,rgba(120,100,60,.045) 0 1px,transparent 1px 4px);}
+  .dlg.doc .box{padding:11px; position:relative;}
+  .dlg.doc .rs-sub,.dlg.doc .rs-like,.dlg.doc .dc{color:var(--paper-dim);}
+  .dlg.doc .rs-badge,.dlg.doc .rs-chip{background:var(--paper-memo); color:var(--paper-dim);
+    border:1px solid var(--paper-line); border-radius:3px; box-shadow:none;}
+  .dlg.doc .cm-feed,.dlg.doc .rs-close,.dlg.doc .stat-grid,.dlg.doc .lv-gain{clear:both;}
+  .dlg.doc .cm-feed,.dlg.doc .rs-close,.dlg.doc .stat-grid .s,.dlg.doc .lv-gain{
+    background:var(--paper-memo); border:1px solid var(--paper-line); border-radius:3px;
+    box-shadow:none;}
+  .dlg.doc .stat-grid .s .k,.dlg.doc .rs-wallet{color:var(--paper-dim);}
+  .dlg.doc .rm{clear:both;}
+  .dlg.doc .rm .who{color:var(--paper-dim);}
+  .dlg.doc .rm .msg{background:var(--paper-memo); color:var(--paper-ink);
+    border:1px solid var(--paper-line); border-left:3px solid var(--paper-dim);
+    border-radius:3px; box-shadow:none;}
+  /* 한국어는 낱말 안에서 끊으면 안 된다 — 「등급이 없 / 습니다」가 났다 */
+  .dlg.doc .rs-sub,.dlg.doc .dc{word-break:keep-all;}
+  .dlg.doc .rs-wallet{border-top:1px dashed var(--paper-line);}
+  .dlg.doc .rs-wallet b,.dlg.doc .stat-grid .s .v{color:var(--paper-ink);}
+  /* 도장은 종이에 비스듬히 찍힌다 — 서류 머리 오른쪽, 금액을 가리지 않는 자리 */
+  /* 도장은 띄워(float) 찍는다. 절대배치로 얹었더니 문서마다 줄 높이가 달라서
+     어떤 화면에서는 금액 옆 빈자리에, 어떤 화면에서는 글자 위에 앉았다.
+     띄우면 뒤따르는 줄들이 알아서 도장을 피해 흐른다 — 종이에 찍힌 것처럼. */
+  .doc-stamp{float:right; margin:2px 3px 6px 12px; pointer-events:none;
+    font-size:17px; font-weight:800; letter-spacing:.2em; opacity:.82;
+    color:var(--stamp); border:3px double var(--stamp); border-radius:4px;
+    padding:4px 10px; transform:rotate(-13deg);}
+  .doc-stamp.bad{color:var(--paper-dim); border-color:var(--paper-dim);}
+  /* 결재란 — 주문표의 승인 도장과 같은 물건이다 */
+  .modal .ok.stamp{background:rgba(179,38,30,.05); color:var(--stamp);
+    border:3px double var(--stamp); border-radius:4px; letter-spacing:.06em;
+    box-shadow:0 3px 0 rgba(110,24,18,.3); outline:0; text-shadow:none;
+    transition:transform .07s ease-out, box-shadow .07s ease-out;}
+  .modal .ok.stamp:active{transform:translateY(3px); box-shadow:0 0 0 rgba(0,0,0,0);}
+  .modal .ok.stamp.bad{color:var(--paper-dim); border-color:var(--paper-dim);
+    background:rgba(107,92,56,.05); box-shadow:0 3px 0 rgba(107,92,56,.28);}
 
   /* ── 거래 결과 ── */
   .rs-box{text-align:left;}
@@ -825,8 +886,8 @@
 
   /* 리스크 관리팀 — 98의 인셋 필드. 회사가 보낸 메모처럼 읽힌다. */
   .modal .rm{margin:13px 0 2px; text-align:left;}
-  .modal .rm .who{font-size:11.5px; color:var(--gray2); margin-bottom:4px;}
-  .modal .rm .msg{background:var(--field); padding:8px 9px; font-size:13px; line-height:1.5;
+  .modal .rm .who{font-size:12px; color:var(--gray2); margin-bottom:4px;}
+  .modal .rm .msg{background:var(--field); padding:8px 9px; font-size:12.5px; line-height:1.5;
     border:2px solid; border-color:var(--sh) var(--hi) var(--hi) var(--sh);
     box-shadow:inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--lt);}
 </style>
@@ -886,7 +947,7 @@
         <div id="panelTrade">
           <div class="trade-panel">
             <div class="tp-head"><span class="tp-goal" id="tpGoal"></span></div>
-            <div class="form-head"><span id="formTitle"></span><span class="no">No. 0142</span></div>
+            <div class="form-head"><span id="formTitle"></span><span class="no" id="formNo"></span></div>
             <div class="grp" id="stockGrp"><span class="lg" id="stockLg"></span>
               <div class="stock-tabs" id="stockTabs"></div>
               <div class="stock-scale" id="stockScale"></div>
@@ -897,12 +958,12 @@
         </div>
 
         <div id="panelShop" class="hide">
-          <div class="section-title" id="shopTitle"></div>
+          <div class="doc-head" id="shopTitle"></div>
           <div id="shopList"></div>
         </div>
 
         <div id="panelUnlock" class="hide">
-          <div class="section-title" id="unlockTitle"></div>
+          <div class="doc-head" id="unlockTitle"></div>
           <div id="unlockList"></div>
           <div id="retireBox"></div>
         </div>
@@ -953,8 +1014,9 @@ const L={
   ko:{
     /* 메인 탭 · 섹션 */
     tabTrade:'단타', tabShop:'상점', tabUnlock:'권한',
-    shopTitle:'상점', shopNote:'· 현금으로 투자합니다',
-    unlockTitle:'권한', unlockNote:'· 등급이 오르면 승인됩니다',
+    shopTitle:'상점', shopNote:'현금 결제',
+    unlockTitle:'권한', unlockNote:'등급이 오르면 승인됩니다',
+    docShop:'비 품 신 청 서', docUnlock:'권 한 대 장',
     /* 오늘 기록 스트립 */
     stRounds:'오늘 판수', stBestMult:'최고 배율', stBestProfit:'최대 수익',
     stBestStreak:'최다 연승', stSCount:'S등급 매도', stNextTicket:'다음 티켓까지',
@@ -1027,7 +1089,7 @@ const L={
     rSellAll:'전량 매도', rSellRest:'남은 {v} 매도', rSellNow:'지금 매도',
     rDirShort:' · 숏', rLevLiq:' · {n}배 · 청산 {v}x', rLev:' · {n}배',
     /* 상점 · 해금 · 스트립 */
-    shopDone:'완료', unOpen:'승인됨', unClosed:'Lv.{n} 승인',
+    shopDone:'완료', unOpen:'승인', unClosed:'대기',
     retireBtn:'평가를 마치고 정산 — 기록 {v}',
     retireLocked:'정산은 Lv.{n} 부터 가능합니다 · 등급 Lv.{lv}',
     nextUnlock:' · {n} 승인까지 {xp} XP',
@@ -1059,7 +1121,7 @@ const L={
     shStopCur:'현재 {p}% 환급 · ', shStopNxt:'다음 {p}% 환급',
     shInfoN:'정보력', shInfoMax:'장세 신호 적중률 최대치입니다',
     shInfoNxt:'장세 신호 적중률 {a}% → {b}% (레버리지 판단 근거가 정확해집니다)',
-    shUpgrade:'강화', shBought:'{n} 구매!',
+    shUpgrade:'신 청', shBought:'{n} 구매!',
     /* 경험치 정산 */
     seTitle:'트레이딩 이력', sePeak:'최고 기록 {v}', seEarly:'목표를 일찍 채워서',
     seTier:'{e} {n}단계 · {name}', sePen:'계좌가 회수되어 {p}%를 차감했습니다',
@@ -1125,6 +1187,8 @@ const L={
     /* 98 창 — 제목표는 "문서 — 프로그램"이다. 한 판이 곧 문서 하나다. */
     winTitle:'평가계좌_01.trd — {n}', gGoal:'목표', trmAcct:'ACCOUNT', gStock:'종목', gSig:'장세 소견', gBet:'베팅금', kCash:'잔고',
     gCond:'조건', gForm:'주 문 표', stampGo:'승 인',
+    docResult:'체 결 통 지', docSeize:'계 좌 회 수',
+    stampFill:'체결', stampSeize:'회수', stampNext:'다 음 판',
     stampNote:'기한 안에 목표를 못 채우면<br>계좌를 회수합니다.',
     mnLang:'언어(<u>L</u>)', mnHelp:'도움말(<u>H</u>)',
     mnKo:'한국어', mnEn:'English', mnAuto:'브라우저 설정 따르기',
@@ -1132,8 +1196,9 @@ const L={
   },
   en:{
     tabTrade:'Trade', tabShop:'Shop', tabUnlock:'Unlock',
-    shopTitle:'Shop', shopNote:'· spend cash',
-    unlockTitle:'Unlock', unlockNote:'· opens free as you level up',
+    shopTitle:'Shop', shopNote:'paid in cash',
+    unlockTitle:'Unlock', unlockNote:'approved as you rank up',
+    docShop:'SUPPLY  REQUEST', docUnlock:'PERMISSIONS',
     stRounds:'Sessions today', stBestMult:'Best mult', stBestProfit:'Best profit',
     stBestStreak:'Best streak', stSCount:'S-grade sells', stNextTicket:'Next ticket',
     stWinRate:'win {p}%', stStreakN:'{n} in a row', stStreakNone:'no streak',
@@ -1197,7 +1262,7 @@ const L={
     rWaterBelow:'only below average', rWaterAbove:'only above average',
     rSellAll:'Sell all', rSellRest:'Sell remaining {v}', rSellNow:'Sell now',
     rDirShort:' · Short', rLevLiq:' · {n}× · liq {v}x', rLev:' · {n}×',
-    shopDone:'Owned', unOpen:'✓ Unlocked', unClosed:'at Lv.{n}',
+    shopDone:'Owned', unOpen:'approved', unClosed:'pending',
     retireBtn:'Take the payout — {v} XP',
     retireLocked:'Payout opens at Lv.{n} · Trader Lv.{lv}',
     nextUnlock:' · {xp} XP to {n}',
@@ -1224,7 +1289,7 @@ const L={
     shStopCur:'now {p}% back · ', shStopNxt:'next {p}% back',
     shInfoN:'Research', shInfoMax:'Signal accuracy is maxed',
     shInfoNxt:'Signal accuracy {a}% → {b}% (firmer ground for sizing up)',
-    shUpgrade:'Upgrade', shBought:'{n} bought!',
+    shUpgrade:'REQUEST', shBought:'{n} bought!',
     seTitle:'Trader XP', sePeak:'Peak {v}', seEarly:'Target hit early',
     seTier:'{e} Tier {n} · {name}', sePen:'Account was liquidated — {p}% cut',
     seSum:'Total', seCum:'· {v} XP overall', seToNext:'{v} to {n}',
@@ -1281,6 +1346,8 @@ const L={
     docTitle:'Money Road · Day Trading Game', brandA:'MONEY&nbsp;', brandB:'ROAD',
     winTitle:'eval_account_01.trd — {n}', gGoal:'TARGET', trmAcct:'ACCOUNT', gStock:'INSTRUMENT', gSig:'DESK READ', gBet:'STAKE', kCash:'Balance',
     gCond:'TERMS', gForm:'ORDER  SLIP', stampGo:'APPROVE',
+    docResult:'FILL  NOTICE', docSeize:'ACCOUNT  CLOSED',
+    stampFill:'FILLED', stampSeize:'CLOSED', stampNext:'NEXT ROUND',
     stampNote:'Miss the window and the firm<br>closes the account.',
     mnLang:'<u>L</u>anguage', mnHelp:'<u>H</u>elp',
     mnKo:'한국어', mnEn:'English', mnAuto:'Follow browser',
@@ -2321,10 +2388,21 @@ function showDexModal(){
     <div class="dex-note">${t('dexNote',{e:st.emo,n:st.name})}</div>
     <div class="scroller">${SIGNAL_TIERS.map(sec).join('')}</div>
     <button class="ok" id="mOk">${t('btnClose')}</button>`;
-  $('modal').classList.add('on');
+  openModal();
   $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
 }
-function showTierModal(){ tierPick=maxTierIdx(); renderTierModal(); $('modal').classList.add('on'); }
+/* 대화상자 하나가 두 얼굴로 뜬다 — 회색 창(회사가 띄우는 안내)과 종이(회사가
+   내미는 서류). .dlg에 클래스가 남으면 다음 대화상자가 그 얼굴을 물려받으므로
+   열 때마다 정해 준다. */
+function openModal(kind){
+  const d=document.querySelector('.modal .dlg');
+  if(d)d.classList.toggle('doc',kind==='doc');
+  $('modal').classList.add('on');
+}
+/* 서류 번호 — 고정값을 박아 두면 판을 스무 번 돌려도 0142라서 금방 들킨다.
+   거래일마다 한 장씩 올라간다. */
+function docNo(){ return 'No. '+String(142+(S.dayCount||0)).padStart(4,'0'); }
+function showTierModal(){ tierPick=maxTierIdx(); renderTierModal(); openModal(); }
 function renderTierModal(){
   const maxI=maxTierIdx();
   /* TIERS.map의 인자 이름을 ti로 바꿨다 — t는 번역 함수라 가리면 안 된다 */
@@ -2393,7 +2471,7 @@ function renderShop(){
     const btn=info.maxed
       ? `<button class="biz-buy cant" disabled><span class="p">${t('shopDone')}</span></button>`
       : `<button class="biz-buy ${can?'can':'cant'}" data-id="${id}"><span class="p">${fmtMoney(info.cost)}</span><span class="l">${info.buyLabel}</span></button>`;
-    return `<div class="biz"><div class="logo">${info.emo}</div>
+    return `<div class="biz">
       <div class="mid"><div class="nm">${info.name}${info.cnt?`<span class="cnt">${info.cnt}</span>`:''}</div>
       <div class="ds">${info.ds}</div></div>
       ${btn}</div>`;
@@ -2429,7 +2507,7 @@ function showSettleModal(st){
     ${opened.map(u=>`<div class="unlock-pop"><span class="e">${u.emo}</span>
       <span><span class="t">${t('seNewUnlock',{n:u.name})}</span><span class="d">${u.ds}</span></span></div>`).join('')}
     <button class="ok" id="mOk">${t('seStart')}</button>`;
-  $('modal').classList.add('on');
+  openModal();
   if(opened.length)sfx.win();
   $('mOk').onclick=()=>{
     sfx.tap(); META.pendingSettle=null; saveMeta();
@@ -2449,11 +2527,11 @@ function renderGrowth(){
 function renderUnlock(){
   $('unlockList').innerHTML=LEVELS.filter(l=>l.reward).map(l=>{
     const open=S.level>=l.lv, r=l.reward;
-    const tag=open
-      ? `<span class="unlock-tag open">${ic('stamp',1)} ${t('unOpen')}</span>`
-      : `<span class="unlock-tag closed">${t('unClosed',{n:l.lv})}</span>`;
-    return `<div class="biz"><div class="logo">${open?r.emo:ic('stampOff')}</div>
-      <div class="mid"><div class="nm">${r.t}<span class="cnt">Lv.${l.lv}</span></div>
+    /* 예전에는 이름 옆에도 Lv.N, 오른쪽 칸에도 「Lv.N 승인」이 있었다 —
+       같은 값을 두 번 적은 셈이다. 등급은 승인란이 갖고, 이름은 이름만 쓴다. */
+    const tag=`<span class="unlock-tag ${open?'open':'closed'}"><b>Lv.${l.lv}</b>`+
+      `${open?t('unOpen'):t('unClosed')}</span>`;
+    return `<div class="biz"><div class="mid"><div class="nm">${r.t}</div>
       <div class="ds">${l.tag||r.bonusTxt||r.d}</div></div>
       ${tag}</div>`;
   }).join('');
@@ -2605,7 +2683,11 @@ function resultModalHTML(R){
   const sub=g?where:t('rsNoGrade',{where:where});
   const msgs=R.list.map(m=>`<div class="cm-msg"><span><b>${m.name}</b> ${m.text}
     <span class="rs-like">${t('likes',{n:m.likes.toLocaleString()})}</span></span></div>`).join('');
-  return `<div class="cm-head"><span class="cm-title">${t('rsTitle')}</span>${badge}</div>
+  /* 같은 종이가 통지서로 돌아온다 — 주문표에 도장을 찍었더니 체결 통지가 왔다.
+     머리 모양이 주문표와 같아야 「내가 낸 그 서류」로 읽힌다. */
+  return `<div class="doc-head">${t('docResult')}<small>${docNo()}</small></div>
+    ${badge?`<div class="rs-chips" style="margin:8px 0 0">${badge}</div>`:''}
+    <div class="doc-stamp">${t('stampFill')}</div>
     <div class="rs-money ${up?'up':'down'}">${up?'+':''}${fmtMoney(R.profit)}</div>
     <div class="rs-sub">${sub}</div>
     <div class="rs-chips">${chips.join('')}</div>
@@ -2634,8 +2716,8 @@ function showResultModal(R,after){
   /* 버튼 색으로 손익을 또 말하지 않는다 — 금액이 이미 빨강/파랑으로 크게 서 있고,
      98의 버튼은 언제나 회색이다. 색을 넣으면 그 순간 98이 아니게 된다. */
   $('modalBox').innerHTML=`<div class="rs-box">${resultModalHTML(R)}</div>
-    <button class="ok" id="mOk">${t('btnOk')}</button>`;
-  $('modal').classList.add('on');
+    <button class="ok stamp" id="mOk">${t('stampNext')}</button>`;
+  openModal('doc');
   $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');after&&after();};
 }
 
@@ -2698,7 +2780,7 @@ function showRepayModal(g,nl,early,bonus){
       <div class="s"><div class="k">${t('kXp')}</div><div class="v" style="color:var(--gold)">+${st.total} XP</div></div></div>`:''}
     ${rmLine(done?'rmFinal':('rm'+Math.min(6,S.gate)))}
     <button class="ok" id="mOk">${done?t('rpSettle'):t('rpNext')}</button>`;
-  $('modal').classList.add('on');
+  openModal();
   sfx.win();
   $('mOk').onclick=done
     ? ()=>{sfx.tap();finishRun(st);}
@@ -2708,14 +2790,17 @@ function showRepayModal(g,nl,early,bonus){
 function showDefaultModal(){
   const g=gateOf();
   const st=settleOf(BANKRUPT_PENALTY);
-  $('modalBox').innerHTML=`<div class="emo">${ic('warn',3)}</div><div class="tt">${t('dfTitle')}</div>
+  /* 승인·체결과 같은 양식에 도장만 다르게 찍힌다. 회사는 화내지 않는다 —
+     실패가 특별한 사건이 아니라 절차로 읽혀야 한다. 경고 아이콘을 뺀 이유다. */
+  $('modalBox').innerHTML=`<div class="doc-head">${t('docSeize')}<small>${docNo()}</small></div>
+    <div class="doc-stamp bad">${t('stampSeize')}</div>
     <div class="dc">${t('dfDesc',{n:g.n,v:fmtMoney(g.goal)})}</div>
     <div class="stat-grid">
       <div class="s"><div class="k">${t('kRunPeak')}</div><div class="v">${fmtMoney(S.peakCash)}</div></div>
       <div class="s"><div class="k">${t('kXp')}</div><div class="v" style="color:var(--gold)">+${st.total} XP</div></div></div>
     ${rmLine('rmBack')}
-    <button class="ok bankrupt" id="mOk">${t('rpSettle')}</button>`;
-  $('modal').classList.add('on');
+    <button class="ok stamp bad" id="mOk">${t('rpSettle')}</button>`;
+  openModal('doc');
   sfx.bankrupt();
   $('mOk').onclick=()=>{sfx.tap();finishRun(st);};
 }
@@ -2787,15 +2872,16 @@ let BANKRUPT_PENALTY=0.30;   /* 🛠 도구가 민다 */
 const BANKRUPT_BASE=BANKRUPT_PENALTY;
 function showBankruptModal(){
   const st=settleOf(BANKRUPT_PENALTY);
-  $('modalBox').innerHTML=`<div class="emo">${ic('warn',3)}</div>
+  $('modalBox').innerHTML=`<div class="doc-head">${t('docSeize')}<small>${docNo()}</small></div>
+    <div class="doc-stamp bad">${t('stampSeize')}</div>
     <div class="tt">${t('bkTitle')}</div>
     <div class="dc">${t('bkDesc',{v:fmtMoney(MIN_BET)})}</div>
     <div class="stat-grid">
       <div class="s"><div class="k">${t('kRunPeak')}</div><div class="v">${fmtMoney(S.peakCash)}</div></div>
       <div class="s"><div class="k">${t('kXp')}</div><div class="v" style="color:var(--gold)">+${st.total} XP</div></div></div>
     ${rmLine('rmBack')}
-    <button class="ok bankrupt" id="mOk">${t('rpSettle')}</button>`;
-  $('modal').classList.add('on');
+    <button class="ok stamp bad" id="mOk">${t('rpSettle')}</button>`;
+  openModal('doc');
   sfx.bankrupt();
   $('mOk').onclick=()=>{sfx.tap();finishRun(st);};
 }
@@ -2811,7 +2897,7 @@ function showRetireModal(){
       <div class="s"><div class="k">${t('rtXpK')}</div><div class="v" style="color:var(--gold)">+${st.total} XP</div></div></div>
     <button class="ok" id="mOk">${t('rtGo')}</button>
     <button class="ok" id="mNo" style="margin-top:8px;background:var(--field);color:var(--gray2)">${t('rtNo')}</button>`;
-  $('modal').classList.add('on');
+  openModal();
   $('mOk').onclick=()=>{sfx.tap();sfx.win();finishRun(st);};
   $('mNo').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
 }
@@ -3068,6 +3154,7 @@ function renderTrade(){
   /* 예전에는 여기 "빚 때문에 최소 3배"가 있었다. 고를 배율이 하나뿐이면 아무 선택도
      안 바꾸는 문장이다(설명은 인트로에 남아 있다). 베팅금을 고르는 자리에 필요한 건
      "얼마를 언제까지"다 — 탑바 칩과 같은 3단계 색을 쓴다. */
+  { const fn=$('formNo'); if(fn)fn.textContent=docNo(); }
   const gc=$('tpGoal');
   if(gateDone()){
     gc.className='tp-goal';
@@ -3502,8 +3589,10 @@ function applyStaticLabels(){
   /* 탭에는 아이콘을 안 붙인다. 98의 탭 컨트롤에 원래 없었고, 길안내는
      소품으로 그릴 수 있는 자리가 아니다 — 억지로 붙이면 다시 표지판이 된다. */
   set('mtTrade',t('tabTrade')); set('mtShop',t('tabShop')); set('mtUnlock',t('tabUnlock'));
-  set('shopTitle',`${t('shopTitle')} <small>${t('shopNote')}</small>`);
-  set('unlockTitle',`${t('unlockTitle')} <small>${t('unlockNote')}</small>`);
+  /* 탭에는 짧은 이름(상점·권한)이 앉고, 펼친 서류에는 그 서류의 이름이 적힌다 —
+     단타 탭이 「주 문 표」를 머리에 이고 있는 것과 같은 꼴이다. */
+  set('shopTitle',`${t('docShop')} <small>${t('shopNote')}</small>`);
+  set('unlockTitle',`${t('docUnlock')} <small>${t('unlockNote')}</small>`);
   /* 제목표는 98 관용구대로 "문서 — 프로그램"이다. 한 판이 곧 문서 하나라는 뜻이고,
      '머니로드'와 'MONEY ROAD'는 같은 이름이다 — 표기만 옮긴다. */
   set('appIcon',ic('app',1));
@@ -3541,7 +3630,7 @@ function showAwayModal(report){
     ${bits.join('')}
     <div class="stat-grid" style="margin-top:14px"><div class="s"><div class="k">${t('kBalance')}</div><div class="v">${fmtMoney(S.cash)}</div></div></div>
     <button class="ok" id="mOk">${t('btnOk')}</button>`;
-  $('modal').classList.add('on');
+  openModal();
   $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
 }
 /* 규칙을 모른 채 맞는 마감이 제일 억울하다 — 첫 판 시작 전에 한 번 알려준다.
@@ -3561,7 +3650,7 @@ function showIntroModal(){
     <div class="intro-li"><span class="e">${ic('warn')}</span><span>${t('in2')}</span></div>
     <div class="intro-li"><span class="e">${ic('money')}</span><span>${t('in3',{p:Math.round(EARLY_BONUS_RATE*100)})}</span></div>
     <button class="ok" id="mOk">${t('inGo')}</button>`;
-  $('modal').classList.add('on');
+  openModal();
   META.introV=INTRO_V; saveMeta();
   $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
 }
@@ -3993,7 +4082,7 @@ function showDevModal(){
     <div class="dv-scroll">${body}</div>
     ${foot}
     <button class="ok dark" id="mOk">닫기</button>`;
-  $('modal').classList.add('on');
+  openModal();
   bindDevModal();
 }
 

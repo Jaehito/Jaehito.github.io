@@ -56,6 +56,13 @@
     /* 베벨 네 색 — 98의 입체는 테두리 색 넷과 안쪽 그림자 둘로만 만들어진다 */
     --face:#c0c0c0; --hi:#ffffff; --lt:#dfdfdf; --sh:#808080; --dk:#000000;
     --safe-b:env(safe-area-inset-bottom,0px);
+    /* ── 책상 ── 창틀(제목표·메뉴바·상태표시줄·대화상자)은 98 회색 그대로 두고,
+       창 안쪽만 책상 위 서류로 바꾼다. 98 회색은 물러나라고 만든 언어라
+       버튼도 글자도 전부 같은 값이 되고, 그래서 무엇을 먼저 볼지가 안 나왔다.
+       종이는 반대다 — 검정 잉크 대 밝은 바탕이라 위계가 저절로 생긴다. */
+    --desk:#4a4234; --paper:#f4ecd8; --paper-hi:#fffdf3; --paper-line:#c4b088;
+    --paper-ink:#2b2113; --paper-dim:#6b5c38; --paper-memo:#ece1c6;
+    --tab:#c4b088; --stamp:#b3261e;
   }
   /* 돌출(버튼)과 침강(입력·목록·차트) — 화면의 모든 입체가 이 둘 중 하나다 */
   .out{border:2px solid; border-color:var(--lt) var(--dk) var(--dk) var(--lt);
@@ -125,7 +132,9 @@
   /* ── 본문 ── 창 안쪽. 그룹박스들이 세로로 쌓인다. */
   .body{flex:1 1 auto; padding:9px; display:flex; flex-direction:column; gap:10px;
     min-width:0; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
-    overscroll-behavior:contain;}
+    overscroll-behavior:contain;
+    background:var(--desk);
+    background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.05) 0 2px,transparent 2px 7px);}
   /* 본문이 스크롤 통이 된 이상 자식은 줄어들면 안 된다. ACCOUNT 패널은 .trm이라
      overflow:hidden이 걸려 있어서, 안 막으면 높이 0으로 접힌다 — 목업에서 당했다. */
   .body > *{flex-shrink:0;}
@@ -145,9 +154,17 @@
   .acct-mini .m-r b{color:#ffb000; font-weight:400;}
   .acct-mini .m-r b.warn{color:#ff5a5a;}
   /* 그룹박스 — 98의 정체성. 제목이 테두리를 끊고 앉는다. */
-  .grp{position:relative; border:2px groove var(--lt); padding:17px 8px 9px;}
-  .grp > .lg{position:absolute; top:-9px; left:8px; background:var(--face); padding:0 5px;
-    font-size:12px; line-height:1.5; white-space:nowrap;}
+  /* 그룹 상자가 종이 한 장이 된다. 98의 groove 테두리는 회색 위에서만 입체로
+     읽히므로 종이에서는 걷어내고, 대신 책상에 놓인 그림자를 준다. */
+  .grp{position:relative; padding:15px 10px 11px; color:var(--paper-ink);
+    background:var(--paper); border:1px solid #6e5c3a;
+    background-image:repeating-linear-gradient(0deg,rgba(120,100,60,.045) 0 1px,transparent 1px 4px);
+    box-shadow:0 2px 0 rgba(0,0,0,.25);}
+  /* 크기는 창 체계(12/12.5/15/17/19/26/40)를 벗어나지 않는다 — phase32가 본다.
+     11.5px를 들여왔다가 바로 잡혔다. 서류 라벨은 창틀 글자와 같은 12px다. */
+  .grp > .lg{position:absolute; top:-1px; left:10px; padding:2px 0 0;
+    font-size:12px; line-height:1.5; white-space:nowrap; color:var(--paper-dim);
+    letter-spacing:.06em;}
 
   /* ── 상환 그룹 ── 예전 탑바 칩 둘 + 진행바가 여기로 모였다 */
   .level-strip{}
@@ -182,88 +199,110 @@
     box-shadow:inset 1px 1px 0 var(--hi), inset -1px -1px 0 var(--sh);}
 
   /* ── 탭 컨트롤 ── 알약 셋을 98의 폴더 탭으로 */
-  .main-tabs{display:flex; gap:2px; margin-bottom:-2px; position:relative; z-index:1;}
-  .main-tab{flex:1; height:48px; font-size:12.5px; background:var(--face); color:var(--ink);
+  /* 탭은 서류철 탭이다 — 세 가지 서류를 꺼내 보는 것이지 화면을 바꾸는 게 아니다 */
+  .main-tabs{display:flex; gap:3px; margin-bottom:-1px; position:relative; z-index:1;}
+  .main-tab{flex:1; height:44px; font-size:12.5px; background:var(--tab); color:#5a4a28;
     cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
-    border:2px solid; border-color:var(--lt) var(--sh) var(--face) var(--lt);
-    box-shadow:inset 1px 1px 0 var(--hi);}
-  .main-tab.on{font-weight:700; margin-top:-3px; height:51px; border-bottom-color:var(--face);}
-  .main-tab.locked{color:var(--gray3); text-shadow:1px 1px 0 var(--hi);}
-  .tabpane{border:2px groove var(--lt); padding:11px 8px 9px;}
+    border:1px solid #6e5c3a; border-bottom:none; border-radius:4px 4px 0 0; box-shadow:none;}
+  .main-tab.on{font-weight:700; margin-top:0; height:44px; background:var(--paper); color:var(--paper-ink);}
+  .main-tab.locked{color:#8a7853; text-shadow:none;}
+  .tabpane{padding:11px 10px 11px; color:var(--paper-ink);
+    background:var(--paper); border:1px solid #6e5c3a;
+    background-image:repeating-linear-gradient(0deg,rgba(120,100,60,.045) 0 1px,transparent 1px 4px);
+    box-shadow:0 2px 0 rgba(0,0,0,.25);}
 
   /* ── 단타 패널 ── */
   .trade-panel{display:flex; flex-direction:column; gap:12px;}
   .tp-head{display:none;}   /* 목표·D-day는 상환 그룹이 이미 말한다 — 같은 값을 두 번 쓰지 않는다 */
   .stock-tabs{display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;}
-  .stock-tab{background:var(--face); color:var(--ink); cursor:pointer; min-height:74px;
+  .stock-tab{background:var(--paper-hi); color:var(--paper-ink); cursor:pointer; min-height:74px;
     padding:6px 2px; font-size:12.5px; line-height:14px;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
-    border:2px solid; border-color:var(--lt) var(--dk) var(--dk) var(--lt);
-    box-shadow:inset 1px 1px 0 var(--hi), inset -1px -1px 0 var(--sh);}
-  .stock-tab.sel{border-color:var(--sh) var(--hi) var(--hi) var(--sh);
-    box-shadow:inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--lt);}
-  .stock-tab.locked{color:var(--gray3); text-shadow:1px 1px 0 var(--hi); cursor:default;}
+    border:1px solid var(--paper-line); border-radius:3px; box-shadow:none;}
+  /* 고른 종목은 테를 굵게 — 잉크로 채우면 미니 차트가 안 보인다 */
+  .stock-tab.sel{border:2px solid var(--paper-ink); box-shadow:none;}
+  .stock-tab.locked{color:#a2977c; text-shadow:none; cursor:default;}
   .stock-tab .e{line-height:0;}
   .stock-tab .n{font-weight:700;}
-  .stock-tab .v{color:var(--gray2);}
-  .stock-tab.locked .n,.stock-tab.locked .v{color:var(--gray3);}
+  .stock-tab .v{color:var(--paper-dim);}
+  .stock-tab.locked .n,.stock-tab.locked .v{color:#a2977c;}
 
   /* ── 베팅 ── 금액 필드는 침강, ± 는 큰 버튼 */
   .bet-row{display:flex; align-items:stretch; gap:6px;}
-  .bet-row button{width:56px; min-height:48px; background:var(--face); color:var(--ink);
+  .bet-row button{width:56px; min-height:48px; background:var(--paper-hi); color:var(--paper-ink);
     font-size:26px; line-height:1; cursor:pointer; padding:0;
-    border:2px solid; border-color:var(--lt) var(--dk) var(--dk) var(--lt);
-    box-shadow:inset 1px 1px 0 var(--hi), inset -1px -1px 0 var(--sh);}
+    border:1px solid var(--paper-line); border-radius:3px; box-shadow:none;}
+  /* 금액은 서류의 기입란이다 — 파인 입력창이 아니라 밑줄 그은 빈칸 */
   .bet-row .amt{flex:1; display:flex; align-items:center; justify-content:center;
-    font-size:19px; font-weight:700; background:var(--field);
-    border:2px solid; border-color:var(--sh) var(--hi) var(--hi) var(--sh);
-    box-shadow:inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--lt);}
+    font-size:19px; font-weight:700; background:transparent; color:var(--paper-ink);
+    border:none; border-bottom:2px solid var(--paper-ink); box-shadow:none;}
   .bet-quicks{display:flex; gap:6px;}
   .bet-quicks button,.btn-row button,.dir-toggle button{flex:1; min-height:48px; font-size:12.5px;
-    background:var(--face); color:var(--ink); cursor:pointer; padding:6px 4px;
-    border:2px solid; border-color:var(--lt) var(--dk) var(--dk) var(--lt);
-    box-shadow:inset 1px 1px 0 var(--hi), inset -1px -1px 0 var(--sh);}
+    background:var(--paper-hi); color:var(--paper-dim); cursor:pointer; padding:6px 4px;
+    border:1px solid var(--paper-line); border-radius:3px; box-shadow:none;}
   .btn-row{display:flex; gap:6px;}
+  /* 고른 칸은 잉크로 채운다 — 체크 표시가 아니라 "여기에 적혔다" */
   .btn-row button.sel,.dir-toggle button.sel,.bet-quicks button:active{
-    border-color:var(--sh) var(--hi) var(--hi) var(--sh);
-    box-shadow:inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--lt); font-weight:700;}
-  .lev-row button small{display:block; font-size:12.5px; color:var(--gray2); margin-top:2px;}
-  .lev-row button.sel small{color:var(--ink);}
+    background:var(--paper-ink); color:var(--paper); border-color:var(--paper-ink);
+    box-shadow:none; font-weight:700;}
+  .lev-row button small{display:block; font-size:12.5px; color:var(--paper-dim); margin-top:2px;}
+  .lev-row button.sel small{color:var(--paper-line);}
   .dir-toggle{flex:1; display:flex; gap:6px;}
-  .dir-toggle button.sel{color:var(--red);} .dir-toggle button.sel.short{color:var(--blue);}
+  .dir-toggle button.sel{background:var(--stamp); border-color:var(--stamp); color:#fff2ef;}
+  .dir-toggle button.sel.short{background:#1c5d99; border-color:#1c5d99; color:#eef6ff;}
   .opt-row{display:flex; gap:6px;}
-  .opt{flex:1; min-height:48px; background:var(--face); color:var(--ink); cursor:pointer;
+  .opt{flex:1; min-height:48px; background:var(--paper-hi); color:var(--paper-ink); cursor:pointer;
     font-size:12.5px; padding:6px 9px; display:flex; align-items:center; gap:5px; text-align:left;
-    border:2px solid; border-color:var(--lt) var(--dk) var(--dk) var(--lt);
-    box-shadow:inset 1px 1px 0 var(--hi), inset -1px -1px 0 var(--sh);}
+    border:1px solid var(--paper-line); border-radius:3px; box-shadow:none;}
   .opt b{margin-left:auto; font-weight:700;}
-  .opt.open{border-color:var(--sh) var(--hi) var(--hi) var(--sh);
-    box-shadow:inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--lt);}
+  .opt.open{border-color:var(--paper-ink); box-shadow:none;}
   .opt.room{flex:0 0 auto; cursor:default;}
 
-  /* ── 기본 버튼 ── 98은 기본 버튼에 검은 테를 하나 더 두른다 */
-  .trade-go,.sell-btn,.retire-btn,.modal .ok{
+  /* ── 기본 버튼 ── 대화상자 확인은 98 그대로다. 회사가 띄우는 창이니까. */
+  .modal .ok{
     width:100%; min-height:62px; font-size:17px; font-weight:800; cursor:pointer;
     background:var(--face); color:var(--ink); padding:8px 10px;
     border:2px solid; border-color:var(--lt) var(--dk) var(--dk) var(--lt);
     box-shadow:inset 1px 1px 0 var(--hi), inset -1px -1px 0 var(--sh);
     outline:1px solid var(--dk); outline-offset:1px;}
-  .trade-go:disabled{color:var(--gray3); text-shadow:1px 1px 0 var(--hi); cursor:default; outline:0;}
+  /* 시작은 도장이다 — 서류에 결재를 찍는 것이지 버튼을 누르는 게 아니다.
+     이중 테두리는 고무 도장의 테고, 눌리면 종이에 닿듯 내려앉는다. */
+  .trade-go,.retire-btn{
+    width:100%; min-height:62px; font-size:17px; font-weight:800; cursor:pointer;
+    background:rgba(179,38,30,.05); color:var(--stamp); padding:8px 10px;
+    border:3px double var(--stamp); border-radius:4px; letter-spacing:.06em;
+    box-shadow:0 3px 0 rgba(110,24,18,.3); outline:0;
+    transition:transform .07s ease-out, box-shadow .07s ease-out;}
+  .trade-go:active,.retire-btn:active{transform:translateY(3px); box-shadow:0 0 0 rgba(0,0,0,0);}
+  .trade-go:disabled{color:#a2977c; border-color:var(--paper-line); background:transparent;
+    text-shadow:none; cursor:default; box-shadow:none;}
+  /* 매도는 책상 위 물리 버튼이다. 15초 동안 손이 가는 유일한 자리라
+     종이 위 도장과 다른 물건이어야 한다. */
+  .sell-btn{
+    width:100%; min-height:62px; font-size:17px; font-weight:800; cursor:pointer;
+    background:linear-gradient(#e0473c,#b3261e); color:#fff2ef; padding:8px 10px;
+    border:none; border-radius:5px; outline:0;
+    box-shadow:0 4px 0 #6e1712, inset 0 1px 0 rgba(255,255,255,.3);
+    transition:transform .07s ease-out, box-shadow .07s ease-out;}
+  .sell-btn:active{transform:translateY(4px);
+    box-shadow:0 0 0 #6e1712, inset 0 1px 0 rgba(255,255,255,.3);}
   .trade-go small,.sell-btn small{display:block; font-size:12.5px; font-weight:400; margin-top:3px;}
-  .trade-go.go-long{color:var(--red);} .trade-go.go-short{color:var(--blue);}
-  .trade-go.danger{color:var(--red);}
+  .trade-go.go-long,.trade-go.go-short,.trade-go.danger{color:var(--stamp);}
   .split-row,.sell-row{display:flex; gap:7px;}
   .split-row .trade-go,.sell-row .sell-btn{flex:1;}
-  .sell-btn.sell-half{flex:.8; outline:0; font-weight:400;}
+  .sell-btn.sell-half{flex:.8; outline:0; font-weight:700; font-size:14px;
+    background:var(--paper-hi); color:var(--paper-ink); box-shadow:0 3px 0 #9a8f74;}
+  .sell-btn.sell-half:active{transform:translateY(3px); box-shadow:0 0 0 #9a8f74;}
   .retire-btn{margin-top:10px;}
   .trade-note{font-size:12.5px; color:var(--gray2); text-align:center; line-height:1.5; margin-top:4px;}
   .pace-line{font-size:12.5px; text-align:center; padding:8px; margin-bottom:0;
-    border:2px solid; border-color:var(--sh) var(--hi) var(--hi) var(--sh); background:var(--field);}
+    border:1px dashed var(--paper-line); background:transparent; color:var(--paper-dim);}
   .pace-line.p-warn{color:var(--gold);} .pace-line.p-bad{color:var(--red);}
 
   /* ── 장세 신호 ── 색만으로 구분하지 않는다. 화살표 아이콘이 같이 말한다. */
-  .signal{display:flex; align-items:center; gap:9px; padding:8px 9px;
-    border:2px solid; border-color:var(--sh) var(--hi) var(--hi) var(--sh); background:var(--field);}
+  /* 장세는 담당자 소견 메모다 — 왼쪽에 굵은 괘선 하나가 그 문법이다 */
+  .signal{display:flex; align-items:center; gap:9px; padding:8px 10px;
+    border:none; border-left:3px solid #8a5a00; background:var(--paper-memo);}
   .signal .sg-left{display:flex; align-items:center; gap:6px; flex-shrink:0;}
   .signal .sg-emo{line-height:0;}
   .signal .sg-name{font-size:19px; font-weight:700;}
@@ -272,12 +311,11 @@
   .signal.weak .sg-name{color:var(--blue);}
   .signal .sg-mid{min-width:0; flex:1;}
   .signal .sg-ds{font-size:12.5px;}
-  .signal .sg-acc{font-size:12.5px; color:var(--gray2); margin-top:2px;}
+  .signal .sg-acc{font-size:12.5px; color:var(--paper-dim); margin-top:2px;}
   .dex-btn{margin-left:auto; flex-shrink:0; width:38px; height:38px; cursor:pointer; padding:0;
-    background:var(--face); display:grid; place-items:center;
-    border:2px solid; border-color:var(--lt) var(--dk) var(--dk) var(--lt);
-    box-shadow:inset 1px 1px 0 var(--hi), inset -1px -1px 0 var(--sh);}
-  .liq-note,.min-note,.debt-note,.buff-line{font-size:12.5px; padding:7px 9px; background:var(--field);
+    background:var(--paper-hi); display:grid; place-items:center;
+    border:1px solid var(--paper-line); border-radius:3px; box-shadow:none;}
+  .liq-note,.min-note,.debt-note,.buff-line{font-size:12.5px; padding:7px 9px; background:var(--paper-memo);
     border:2px solid; border-color:var(--sh) var(--hi) var(--hi) var(--sh);}
   .liq-note b{color:var(--red); font-weight:700;}
   .debt-note,.buff-line{color:var(--gray2);}
@@ -430,8 +468,8 @@
   .strip-buff .d{font-size:12.5px; color:var(--gray2); margin-top:2px;}
 
   /* ── 상점 · 해금 ── 98 리스트박스. 고른 줄은 남색 반전. */
-  .section-title{font-size:12.5px; color:var(--gray2); margin-bottom:8px;}
-  .section-title small{color:var(--gray2) !important;}
+  .section-title{font-size:12.5px; color:var(--paper-dim); margin-bottom:8px;}
+  .section-title small{color:var(--paper-dim) !important;}
   .biz{display:flex; align-items:center; gap:8px; padding:9px; min-height:62px;
     font-size:12.5px; border-bottom:1px solid var(--lt); background:var(--field);}
   .biz:last-child{border-bottom:0;}

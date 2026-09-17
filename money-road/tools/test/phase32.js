@@ -73,13 +73,14 @@ const { launch, GAME: url } = require('../lib/browser');
    return out;
  });
  let emo=await emoScan();
- for(const tab of ['shop','unlock','trade']){
-   await p.evaluate(t=>switchMainTab(t),tab); await p.waitForTimeout(120);
-   emo=emo.concat(await emoScan());
- }
+ /* 탭이 사라져서 훑을 화면이 하나다. 배정표는 대화상자로 옮겨갔으므로
+    아래 모달 목록이 그쪽을 본다. */
+ await p.evaluate(()=>showRecordModal()); await p.waitForTimeout(120);
+ emo=emo.concat(await emoScan());
+ await p.evaluate(()=>$('modal').classList.remove('on'));
  /* 모달도 하나씩 열어서 훑는다 */
  const modals=['showIntroModal()','showTierModal()','showDexModal()','showRetireModal()',
-               'showDefaultModal()','showBankruptModal()','showSettleModal(settleOf(0))',
+               'showDefaultModal()','showBankruptModal()','showSettleModal(settleOf(0))','showRecordModal()',
                'showAwayModal({awaySec:5400,roundRefunded:{bet:200000}})'];
  for(const m of modals){
    await p.evaluate(e=>{ $('modal').classList.remove('on'); META.xp=2000; grantByXp(); eval(e); },m);
@@ -93,11 +94,12 @@ const { launch, GAME: url } = require('../lib/browser');
  /* ── 3. 아이콘이 그림으로 나오는가 ──
     SVG 문자열을 textContent에 넣으면 "<svg class=..."가 글자로 찍힌다. 실제로 당했다. */
  console.log('\n=== 3. 아이콘 ===');
- await p.evaluate(()=>{switchMainTab('trade');render();});
+ await p.evaluate(()=>render());
  await p.waitForTimeout(150);
  const icons=await p.evaluate(()=>({
    개수:document.querySelectorAll('#app svg.ic').length,
-   탭에아이콘:!!$('mtTrade').querySelector('svg.ic'),
+   /* 탭 컨트롤이 사라졌다 — 「탭에 아이콘을 안 붙인다」는 규칙도 같이 없어진다 */
+   탭없음:!document.querySelector('.main-tab'),
    /* 종목은 이제 16×16 픽셀 비트맵이 아니라 종이에 그은 작은 그래프다.
       창 안쪽이 서류가 된 뒤로 흰 상자에 검은 외곽선이 종이 위에서 혼자 논다.
       2열 격자로 가면서 선(성격)과 막대(크기)를 한 그래프로 합쳤다 —
@@ -116,9 +118,7 @@ const { launch, GAME: url } = require('../lib/browser');
  }));
  L('', icons);
  if(icons.개수<6) fail.push('아이콘이 너무 적다: '+icons.개수);
- /* 탭에는 일부러 아이콘을 안 붙인다 — 98의 탭 컨트롤에 원래 없었고,
-    길안내는 소품으로 그릴 수 있는 자리가 아니다. */
- want('탭에는 아이콘 없음', icons.탭에아이콘, false);
+ want('탭 컨트롤 없음', icons.탭없음, true);
  want('종목 여섯 칸에 그래프', icons.종목에그래프, 6);
  want('종목에 픽셀 아이콘 없음', icons.종목에픽셀아이콘, false);
  want('칸마다 진입선', icons.기준선, 6);
@@ -190,7 +190,7 @@ const { launch, GAME: url } = require('../lib/browser');
  await p.evaluate(()=>document.querySelector('.menu [data-set="en"]').click());
  await p.waitForTimeout(250);
  menu.누른뒤=await p.evaluate(()=>LANG);
- menu.화면=await p.evaluate(()=>$('mtTrade').textContent.trim());
+ menu.화면=await p.evaluate(()=>$('formTitle').textContent.trim());
  menu.닫힘=await p.evaluate(()=>!document.querySelector('.menu'));
  L('', menu);
  want('메뉴 열림', menu.열림, true);
@@ -199,7 +199,7 @@ const { launch, GAME: url } = require('../lib/browser');
  /* 규칙은 "48px 이상"이다 — 딱 48이어야 하는 게 아니다 */
  if(menu.높이<48) fail.push('여는 버튼이 48px보다 작다: '+menu.높이);
  want('전환됨', menu.누른뒤, 'en');
- want('화면도 바뀜', menu.화면, 'Trade');
+ want('화면도 바뀜', menu.화면, 'ORDER  SLIP');
  want('고르면 닫힘', menu.닫힘, true);
  await p.evaluate(()=>setLang('ko'));
 

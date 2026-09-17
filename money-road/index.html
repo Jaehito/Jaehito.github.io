@@ -200,12 +200,6 @@
 
   /* ── 탭 컨트롤 ── 알약 셋을 98의 폴더 탭으로 */
   /* 탭은 서류철 탭이다 — 세 가지 서류를 꺼내 보는 것이지 화면을 바꾸는 게 아니다 */
-  .main-tabs{display:flex; gap:3px; margin-bottom:-1px; position:relative; z-index:1;}
-  .main-tab{flex:1; height:44px; font-size:12.5px; background:var(--tab); color:#5a4a28;
-    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
-    border:1px solid #6e5c3a; border-bottom:none; border-radius:4px 4px 0 0; box-shadow:none;}
-  .main-tab.on{font-weight:700; margin-top:0; height:44px; background:var(--paper); color:var(--paper-ink);}
-  .main-tab.locked{color:#8a7853; text-shadow:none;}
   .tabpane{padding:11px 10px 11px; color:var(--paper-ink);
     background:var(--paper); border:1px solid #6e5c3a;
     background-image:repeating-linear-gradient(0deg,rgba(120,100,60,.045) 0 1px,transparent 1px 4px);
@@ -573,18 +567,6 @@
     display:flex; align-items:baseline; gap:6px;}
   .biz .cnt{font-size:12.5px; font-weight:400; color:var(--paper-dim);}
   .biz .ds{font-size:12.5px; color:var(--paper-dim); margin-top:3px;}
-  /* 신청 칸은 작은 도장이다 — 주문표의 승인 도장과 같은 물건이라야 누를 것으로 읽힌다 */
-  .biz-buy{flex-shrink:0; min-width:96px; min-height:48px; padding:6px 9px; font-size:12.5px;
-    cursor:pointer; text-align:center; letter-spacing:.04em; outline:0;
-    background:rgba(179,38,30,.05); color:var(--stamp);
-    border:2px double var(--stamp); border-radius:3px;
-    box-shadow:0 2px 0 rgba(110,24,18,.28);
-    transition:transform .07s ease-out, box-shadow .07s ease-out;}
-  .biz-buy:active{transform:translateY(2px); box-shadow:0 0 0 rgba(0,0,0,0);}
-  .biz-buy.cant{color:#a2977c; background:none; text-shadow:none; cursor:default;
-    border:1px solid var(--paper-line); box-shadow:none;}
-  .biz-buy .p{display:block; font-weight:700;}
-  .biz-buy .l{display:block; margin-top:2px;}
   /* 승인란은 장부의 마지막 칸 — 괘선 하나로 갈라서 오른쪽에 세운다 */
   .unlock-tag{flex-shrink:0; min-width:78px; padding:6px 0 6px 11px; font-size:12.5px;
     text-align:right; color:var(--paper-dim); border-left:1px solid var(--paper-line);}
@@ -949,35 +931,18 @@
       </div>
     </div>
 
+    <!-- 서류철이 사라졌다. 상점은 차수 배정 카드로 들어갔고(「돈이 모이면 산다」는
+         선택이 아니었다 — 둘뿐이고 사실상 자동이었다), 배정표는 제목표의 직급 칩을
+         눌러 여는 대화상자가 됐다. 책상에 놓이는 것은 지금 결재할 종이 한 장이다. -->
     <div id="tabsWrap">
-      <div class="main-tabs">
-        <button class="main-tab on" data-tab="trade" id="mtTrade">단타</button>
-        <button class="main-tab" data-tab="shop" id="mtShop">상점</button>
-        <button class="main-tab" data-tab="unlock" id="mtUnlock">해금</button>
-      </div>
-      <div class="tabpane">
-        <div id="panelTrade">
-          <div class="trade-panel">
-            <div class="tp-head"><span class="tp-goal" id="tpGoal"></span></div>
-            <div class="form-head"><span id="formTitle"></span><span class="no" id="formNo"></span></div>
-            <div class="grp" id="stockGrp"><span class="lg" id="stockLg"></span>
-              <div class="stock-tabs" id="stockTabs"></div>
-              <div class="stock-note" id="stockNote"></div>
-            </div>
-            <div id="tradeBody"></div>
-          </div>
+      <div class="trade-panel">
+        <div class="tp-head"><span class="tp-goal" id="tpGoal"></span></div>
+        <div class="form-head"><span id="formTitle"></span><span class="no" id="formNo"></span></div>
+        <div class="grp" id="stockGrp"><span class="lg" id="stockLg"></span>
+          <div class="stock-tabs" id="stockTabs"></div>
+          <div class="stock-note" id="stockNote"></div>
         </div>
-
-        <div id="panelShop" class="hide">
-          <div class="doc-head" id="shopTitle"></div>
-          <div id="shopList"></div>
-        </div>
-
-        <div id="panelUnlock" class="hide">
-          <div class="doc-head" id="unlockTitle"></div>
-          <div id="unlockList"></div>
-          <div id="retireBox"></div>
-        </div>
+        <div id="tradeBody"></div>
       </div>
     </div>
 
@@ -1019,8 +984,7 @@ const LANG_KEY='moneyroad2_lang';
 const L={
   ko:{
     /* 메인 탭 · 섹션 */
-    tabTrade:'단타', tabShop:'상점', tabUnlock:'배정',
-    shopTitle:'상점', shopNote:'현금 결제',
+    tabTrade:'단타', tabUnlock:'배정',
     unlockTitle:'배정', unlockNote:'차수를 넘으면 배정됩니다',
     docShop:'비 품 신 청 서', docUnlock:'배 정 표',
     /* 오늘 기록 스트립 */
@@ -1122,11 +1086,6 @@ const L={
     tmCard:'{i} · {n}', tmLockDe:'{n}단계를 통과하면 열립니다',
     tmCleared:'통과', tmNoDe:'디메리트 없음', tmStart:'{n}단계로 시작',
     /* 상점 항목 */
-    shStopN:'손절 보험', shStopMax:'손실 {p}% 환급',
-    shStopCur:'현재 {p}% 환급 · ', shStopNxt:'다음 {p}% 환급',
-    shInfoN:'정보력', shInfoMax:'장세 신호 적중률 최대치입니다',
-    shInfoNxt:'장세 신호 적중률 {a}% → {b}% (레버리지 판단 근거가 정확해집니다)',
-    shUpgrade:'신 청', shBought:'{n} 구매!',
     /* 경험치 정산 */
     seTitle:'트레이딩 이력', sePeak:'최고 기록 {v}', seEarly:'목표를 일찍 채워서',
     seTier:'{e} {n}단계 · {name}', sePen:'계좌가 회수되어 {p}%를 차감했습니다',
@@ -1239,6 +1198,20 @@ const L={
     /* 오른쪽 딱지 — 한 줄에 들어가야 이름을 안 민다 */
     pesplit:'절반 매도', pewater:'평단 조정', peetf:'급변 없는 종목',
     peshort:'방향 선택', pedex:'패턴 도감', pepenny:'진폭 최대', pecoin:'20초 · 진폭 최대',
+    /* ── 차수 배정 ── 예전 LEVELS 보상 일곱이 여기로 들어와 3택이 된다 */
+    docGate:'차 수 통 과', docDone:'평 가 종 료', stampPass:'통과', stampDone:'종료',
+    grantLead:'이 계좌에 <b>하나</b>를 배정해 드립니다.',
+    grantFoot:'배정은 이 계좌에만 남습니다. 회수되면 같이 사라집니다.',
+    gncash:'운용 한도',  gwcash:'현금을 더 주십시오',
+    gntheme:'네코프로 접근', gwtheme:'변동이 큰 쪽을 주십시오', getheme:'종목 해금',
+    gnsurge:'유메이드 접근', gwsurge:'제일 크게 움직이는 쪽으로', gesurge:'종목 해금',
+    gnlev:'레버리지 승인', gwlev:'한도를 올려 주십시오', gvLevTo:'최대 {v}배',
+    gninfo:'리서치 열람', gwinfo:'신호를 더 믿고 싶습니다', gvInfoTo:'적중률 {a}% → {b}%',
+    gnstop:'손절 보험',  gwstop:'잃을 것을 먼저 세겠습니다', gvStopTo:'청산 시 {p}% 환급',
+    grantN:'{n}회', grantFull:'마감', grantCount:'이 계좌에 {n}건 배정',
+    docRank:'인 사 기 록', grantApply:'{n}번째 계좌',
+    rankNext:'다음 승진 <b>{n}</b> — {v} XP 남았습니다', rankTop:'마지막 직급입니다.',
+    gecash:'현금', gelev:'배율 상한', geinfo:'신호 적중률', gestop:'청산 환급',
     /* 체결 통지의 논평 — 매도 등급 하나에 상황 한 줄까지 최대 둘.
        칭찬의 최대치가 「기록해 두겠습니다」다. */
     rmGrS:'고점 부근에서 나오셨습니다.', rmGrA:'잘 나오셨습니다.',
@@ -1265,8 +1238,7 @@ const L={
     mnAbout:'이 게임에 대하여', mnIntro:'규칙 다시 보기'
   },
   en:{
-    tabTrade:'Trade', tabShop:'Shop', tabUnlock:'Grants',
-    shopTitle:'Shop', shopNote:'paid in cash',
+    tabTrade:'Trade', tabUnlock:'Grants',
     unlockTitle:'Grants', unlockNote:'granted as you clear phases',
     docShop:'SUPPLY  REQUEST', docUnlock:'GRANT  SCHEDULE',
     stRounds:'Sessions today', stBestMult:'Best mult', stBestProfit:'Best profit',
@@ -1354,11 +1326,6 @@ const L={
     tmTitle:'Where do you start?', tmDesc:'Higher tiers pay more XP.',
     tmCard:'{i} · {n}', tmLockDe:'opens when you clear tier {n}',
     tmCleared:'✓ Cleared', tmNoDe:'No drawbacks', tmStart:'Start tier {n}',
-    shStopN:'Stop-loss cover', shStopMax:'{p}% of the loss refunded',
-    shStopCur:'now {p}% back · ', shStopNxt:'next {p}% back',
-    shInfoN:'Research', shInfoMax:'Signal accuracy is maxed',
-    shInfoNxt:'Signal accuracy {a}% → {b}% (firmer ground for sizing up)',
-    shUpgrade:'REQUEST', shBought:'{n} bought!',
     seTitle:'Trader XP', sePeak:'Peak {v}', seEarly:'Target hit early',
     seTier:'{e} Tier {n} · {name}', sePen:'Account was liquidated — {p}% cut',
     seSum:'Total', seCum:'· {v} XP overall', seToNext:'{v} to {n}',
@@ -1456,6 +1423,19 @@ const L={
     pwcoin:'I will spend the extra time',
     pesplit:'Sell half', pewater:'Average down', peetf:'No spikes',
     peshort:'Pick a side', pedex:'Pattern index', pepenny:'Max range', pecoin:'20s · max range',
+    docGate:'PHASE  CLEARED', docDone:'EVALUATION  CLOSED', stampPass:'CLEARED', stampDone:'CLOSED',
+    grantLead:'We will assign <b>one</b> of these to this account.',
+    grantFoot:'The assignment stays with this account. It goes when the account goes.',
+    gncash:'Capital line',  gwcash:'Give me more cash',
+    gntheme:'NEKOPRO access', gwtheme:'Give me the one that moves', getheme:'Instrument',
+    gnsurge:'YUMADE access', gwsurge:'Give me the one that moves most', gesurge:'Instrument',
+    gnlev:'Leverage',  gwlev:'Raise my limit', gvLevTo:'up to {v}x',
+    gninfo:'Research',  gwinfo:'I want to trust the read', gvInfoTo:'accuracy {a}% → {b}%',
+    gnstop:'Stop insurance', gwstop:'Let me count the downside first', gvStopTo:'{p}% back on liquidation',
+    grantN:'×{n}', grantFull:'maxed', grantCount:'{n} assigned to this account',
+    docRank:'PERSONNEL  RECORD', grantApply:'account no. {n}',
+    rankNext:'Next promotion <b>{n}</b> — {v} XP to go', rankTop:'This is the top rank.',
+    gecash:'Cash', gelev:'Leverage cap', geinfo:'Signal accuracy', gestop:'Liquidation rebate',
     rmGrS:'You got out near the high.', rmGrA:'A clean exit.',
     rmGrB:'There was more in it.', rmGrC:'You were late.',
     rmGrD:'You sold the bottom.', rmFlat:'The session did not move.',
@@ -2667,43 +2647,6 @@ saveRun();
 /* 상점은 "단타를 더 잘하게" 돕는 것만 판다. 배당주(자동 수입)는 삭제했다 —
    단타를 대체하지 않도록 일부러 미미하게 만든 항목이라, 존재감이 없는 게 설계대로 작동한 결과였다.
    그러면 있을 이유가 없다. 레버리지도 팔지 않는다(빚/레벨 보상으로만 움직인다). */
-const SHOP_IDS=['info','stoploss'];
-function upgradeInfo(id){
-  if(id==='stoploss'){
-    const lv=S.upg.stoplossLv;
-    if(lv>=3)return {emo:ic('slip'),name:t('shStopN'),cnt:'MAX', ds:t('shStopMax',{p:Math.round(STOPLOSS_PCT[3]*100)}), maxed:true};
-    return {emo:ic('slip'),name:t('shStopN'),cnt:lv>0?t('tierChip',{n:lv}):'', ds:`${lv>0?t('shStopCur',{p:Math.round(STOPLOSS_PCT[lv]*100)}):''}${t('shStopNxt',{p:Math.round(STOPLOSS_PCT[lv+1]*100)})}`, cost:STOPLOSS_COSTS[lv], buyLabel:t('shUpgrade')};
-  }
-  if(id==='info'){
-    const lv=S.upg.infoLv||0, cur=Math.round(INFO_ACC[lv]*100);
-    if(lv>=INFO_ACC.length-1)return {emo:ic('phone'),name:t('shInfoN'),cnt:`${cur}%`, ds:t('shInfoMax'), maxed:true};
-    return {emo:ic('phone'),name:t('shInfoN'),cnt:`${cur}%`, ds:t('shInfoNxt',{a:cur,b:Math.round(INFO_ACC[lv+1]*100)}), cost:INFO_COSTS[lv], buyLabel:t('shUpgrade')};
-  }
-}
-function buyUpgrade(id){
-  const info=upgradeInfo(id);
-  if(info.maxed||S.cash<info.cost)return;
-  S.cash-=info.cost;
-  if(id==='leverage')S.upg.leverageLv++;
-  else if(id==='stoploss')S.upg.stoplossLv++;
-  else if(id==='info')S.upg.infoLv++;
-  sfx.buy(); toast(t('shBought',{n:info.name}));
-  saveRun(); render();
-}
-function renderShop(){
-  $('shopList').innerHTML=SHOP_IDS.map(id=>{
-    const info=upgradeInfo(id);
-    const can=!info.maxed && S.cash>=info.cost;
-    const btn=info.maxed
-      ? `<button class="biz-buy cant" disabled><span class="p">${t('shopDone')}</span></button>`
-      : `<button class="biz-buy ${can?'can':'cant'}" data-id="${id}"><span class="p">${fmtMoney(info.cost)}</span><span class="l">${info.buyLabel}</span></button>`;
-    return `<div class="biz">
-      <div class="mid"><div class="nm">${info.name}${info.cnt?`<span class="cnt">${info.cnt}</span>`:''}</div>
-      <div class="ds">${info.ds}</div></div>
-      ${btn}</div>`;
-  }).join('');
-  $('shopList').querySelectorAll('.biz-buy:not([disabled])').forEach(btn=>btn.onclick=()=>buyUpgrade(btn.dataset.id));
-}
 
 /* ===== 해금 탭 = 레벨 보상 로드맵 전체 (무료로 열리는 건 전부 여기 모아둔다) ===== */
 /* 정산 화면은 탭에 깔지 않는다. 파산하거나 은퇴한 "직후"에만 여는 화면이다 —
@@ -2794,26 +2737,49 @@ function showSettleModal(st){
   };
 }
 function renderGrowth(){
+  if(!$('retireBox'))return;
   const nx=nextUnlock();
   $('retireBox').innerHTML=canRetire()
     ? `<button class="retire-btn" id="retireBtn">${t('retireBtn',{v:settleOf(0).total})}</button>`
     : `<div class="trade-note" style="margin:14px 20px 0">${t('retireLocked',{n:RETIRE_LEVEL,lv:rankName()})}${nx?t('nextUnlock',{e:nx.emo,n:nx.name,xp:Math.max(0,nx.need-(META.xp||0))}):''}</div>`;
   if(canRetire())$('retireBtn').onclick=()=>{sfx.tap();showRetireModal();};
 }
+/* 배정표 — 탭에서 빠지고 제목표의 직급 칩을 눌러 여는 대화상자가 됐다.
+   평소 화면에 늘 띄워 둘 값이 아니다: 궁금할 때만 본다. */
+function showRecordModal(){
+  /* 직급 칩을 눌러 여는 서류라 사람의 사다리가 먼저 온다 — 직급과 다음 승진.
+     그 아래가 이 계좌의 배정표다. 한 장에 두 사다리가 같이 있어야
+     「무엇이 남고 무엇이 사라지는지」가 읽힌다. */
+  const nx=nextUnlock();
+  $('modalBox').innerHTML=`<div class="doc-head">${t('docRank')}<small>${t('grantApply',{n:META.apply||1})}</small></div>
+    <div class="rankline"><span class="rk-to">${rankName()}</span></div>
+    <div class="lv-gain">${nx?t('rankNext',{n:rankName(nx.lv),v:Math.max(0,nx.need-(META.xp||0))})
+      :t('rankTop')}</div>
+    <div class="doc-head" id="unlockTitle" style="margin-top:14px"></div>
+    <div id="unlockList"></div><div id="retireBox"></div>
+    <button class="ok" id="mOk">${t('btnClose')}</button>`;
+  renderUnlock(); renderGrowth();
+  openModal('doc');
+  $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');};
+}
 function renderUnlock(){
-  $('unlockList').innerHTML=LEVELS.filter(l=>l.reward).map(l=>{
-    const open=S.level>=l.lv, r=l.reward;
-    /* 예전에는 이름 옆에도 Lv.N, 오른쪽 칸에도 「Lv.N 승인」이 있었다 —
-       같은 값을 두 번 적은 셈이다. 등급은 승인란이 갖고, 이름은 이름만 쓴다. */
-    /* 이 목록은 LEVELS — 「이 계좌가 차수를 넘을 때마다 열리는 것」이다.
-       직급(사람의 사다리)이 아니라 차수(계좌의 사다리)라서 「Lv.4」가 아니라
-       「4차」로 적는다. 직급 이름을 넣었다가 바로 잡았다 — 다른 사다리다. */
-    const tag=`<span class="unlock-tag ${open?'open':'closed'}"><b>${t('instLockLv',{n:l.lv})}</b>`+
-      `${open?t('unOpen'):t('unClosed')}</span>`;
-    return `<div class="biz"><div class="mid"><div class="nm">${r.t}</div>
-      <div class="ds">${l.tag||r.bonusTxt||r.d}</div></div>
-      ${tag}</div>`;
+  if(!$('unlockList'))return;
+  /* 예전에는 LEVELS(차수마다 정해진 보상)를 그대로 늘어놨다. 이제 그 일곱은
+     고르는 것이 됐으므로, 이 서류가 보여줄 것은 「정해진 표」가 아니라
+     **이 계좌가 실제로 배정받은 것**이다. 남은 칸도 같이 적는다 —
+     무엇을 더 받을 수 있는지가 다음 차수의 결정에 쓰인다. */
+  const taken=(S.grants||[]).length;
+  $('unlockList').innerHTML=GRANTS.map(g=>{
+    const n=grantTaken(g.id), full=n>=g.cap||!g.ok()&&n===0;
+    const val=g.amt&&n>0?g.amt():t('ge'+g.id);
+    return `<div class="biz"><div class="mid">
+      <div class="nm">${t('gn'+g.id)}${n>0?`<span class="cnt">${t('grantN',{n})}</span>`:''}</div>
+      <div class="ds">${n>0?val:t('gw'+g.id)}</div></div>
+      <span class="unlock-tag ${n>0?'open':'closed'}"><b>${n} / ${g.cap}</b>${
+        n>0?t('unOpen'):(full?t('grantFull'):t('unClosed'))}</span></div>`;
   }).join('');
+  const sc=$('unlockTitle');
+  if(sc)sc.innerHTML=`${t('docUnlock')} <small>${t('grantCount',{n:taken})}</small>`;
 }
 
 /* ===== 체결 통지의 논평 =====
@@ -2911,6 +2877,46 @@ function endOfDay(){
   if(S.daysLeft<=0){ showDefaultModal(); return true; }
   return false;
 }
+/* ===== 차수 배정 =====
+   예전에는 차수를 넘으면 LEVELS에 적힌 보상이 **자동으로** 떨어졌다 — 일곱 번 모두
+   정해져 있어서 매 런이 똑같이 흘러갔다. 이제 셋 중 하나를 고른다.
+
+   상점(비품 신청서)도 여기로 들어온다. 「돈이 모이면 산다」는 선택이 아니었다 —
+   두 개뿐이고 사실상 자동이었다. 「무엇을 포기할 것인가」로 바꾼다.
+
+   ⚠️ **한 축의 최대치는 예전 도달 가능치를 안 넘긴다.** 레버리지는 예전에도 두 번
+   올랐고 정보력·손절 보험은 상점에서 끝까지 살 수 있었다. 카드로 옮기면서 그 천장을
+   그대로 두면(cap) 이미 실측해 둔 밸런스 봉투 안에 머문다 — 바뀌는 것은 「무엇을
+   몇 번째로 받는가」뿐이다. 종목 접근을 안 고르면 그 계좌는 더 어려워지는데,
+   그건 선택의 값이지 밸런스 구멍이 아니다. */
+const GRANTS=[
+  {id:'cash',  cap:3, ok:()=>true,
+   f:()=>{ const v=Math.max(200000,Math.round(gateOf().goal*0.10)); S.cash+=v; bumpPeak(); },
+   amt:()=>fmtMoney(Math.max(200000,Math.round(gateOf().goal*0.10)))},
+  {id:'theme', cap:1, ok:()=>!S.themeUnlocked, f:()=>{S.themeUnlocked=true;}},
+  {id:'surge', cap:1, ok:()=>!S.upg.surge,     f:()=>{S.upg.surge=true;}},
+  {id:'lev',   cap:2, ok:()=>(S.upg.leverageLv||0)<LEVERAGE_MULTS.length-1,
+   f:()=>{S.upg.leverageLv=Math.min(LEVERAGE_MULTS.length-1,(S.upg.leverageLv||0)+1);},
+   amt:()=>t('gvLevTo',{v:LEVERAGE_MULTS[Math.min(LEVERAGE_MULTS.length-1,(S.upg.leverageLv||0)+1)]})},
+  {id:'info',  cap:3, ok:()=>(S.upg.infoLv||0)<INFO_ACC.length-1,
+   f:()=>{S.upg.infoLv=Math.min(INFO_ACC.length-1,(S.upg.infoLv||0)+1);},
+   amt:()=>t('gvInfoTo',{a:Math.round(INFO_ACC[S.upg.infoLv||0]*100),
+                         b:Math.round(INFO_ACC[Math.min(INFO_ACC.length-1,(S.upg.infoLv||0)+1)]*100)})},
+  {id:'stop',  cap:3, ok:()=>(S.upg.stoplossLv||0)<STOPLOSS_PCT.length-1,
+   f:()=>{S.upg.stoplossLv=Math.min(STOPLOSS_PCT.length-1,(S.upg.stoplossLv||0)+1);},
+   amt:()=>t('gvStopTo',{p:Math.round(STOPLOSS_PCT[Math.min(STOPLOSS_PCT.length-1,(S.upg.stoplossLv||0)+1)]*100)})},
+];
+function grantTaken(id){ return ((S.grants||[]).filter(x=>x===id)).length; }
+/* 이번 차수에 고를 수 있는 것 — 천장에 안 닿았고 조건이 맞는 것 중 셋.
+   현금은 언제나 가능해서 후보가 모자랄 때 자리를 채운다. */
+function grantCandidates(){
+  const pool=GRANTS.filter(g=>g.ok()&&grantTaken(g.id)<g.cap);
+  if(pool.length<=3)return pool;
+  /* 앞에서 셋을 자르면 매 차수 같은 셋이 나온다 — 차수마다 시작점을 옮긴다.
+     무작위가 아니라 차수에서 나오므로 같은 판에서는 늘 같은 셋이다. */
+  const off=(S.gate||0)%pool.length;
+  return [0,1,2].map(i=>pool[(off+i)%pool.length]);
+}
 function checkLevelUp(){
   if(gateDone())return false;
   const g=gateOf();
@@ -2926,9 +2932,9 @@ function checkLevelUp(){
   if(bonus>0){ S.cash+=bonus; bumpPeak(); }
   S.earlyXp=(S.earlyXp||0)+early*EARLY_XP_PER_DAY;   // 판이 끝날 때 정산에 더해진다
   if(!gateDone())S.daysLeft=gateDaysOf(S.gate);
-  if(nl&&nl.reward&&nl.reward.f)nl.reward.f(S);
+  /* LEVELS의 고정 보상은 더 이상 자동으로 안 떨어진다 — 차수 통과 화면에서 고른다 */
   saveRun(); render();
-  showRepayModal(g,(nl&&nl.reward)?nl:null,early,bonus);
+  showRepayModal(g,early,bonus);
   return true;
 }
 /* 완제(마지막 관문 통과)는 그 판의 끝이다. 예전에는 "계속 플레이" 버튼이 팝업만 닫아서,
@@ -2950,31 +2956,52 @@ function rmLine2(lines){
   return `<div class="rm"><div class="who">${t('rmWho')}</div>
     <div class="msg">${lines.map(l=>'&gt; '+l).join('<br>')}</div></div>`;
 }
-function showRepayModal(g,nl,early,bonus){
+/* 차수 통과 — 이제 서류다. 통과 도장이 찍히고, 다음 차수의 사유가 통보되고,
+   이 계좌에 배정할 것 하나를 고른다. 완제(마지막 차수)에는 고를 것이 없다. */
+let grantPick=null;
+function showRepayModal(g,early,bonus){
   const done=gateDone();
-  const r=nl&&nl.reward;
   const next=done?null:GATES[S.gate];
   const st=done?settleOf(0):null;
-  $('modalBox').innerHTML=`<div class="emo">${done?ic('envelope',3):(r?r.emo:ic('money',3))}</div>
-    <div class="tt">${done?t('rpDone'):t('rpGate',{n:g.n})}</div>
-    <div class="dc">${done?t('rpDoneDesc'):t('rpGateDesc',{v:fmtMoney(g.goal)})}</div>
-    ${bonus>0?`<div class="lv-gain early"><b>${t('rpEarly',{n:early})}</b>
-      — <b>${fmtMoney(bonus)}</b> · ${t('kXp')} <b>+${early*EARLY_XP_PER_DAY}</b></div>`:''}
-    ${r?`<div class="lv-gain"><b>${r.t}</b> — ${r.bonusTxt||r.d}</div>`:''}
-    ${next?`<div class="stat-grid">
-      <div class="s"><div class="k">${t('kNextGoal',{n:next.n})}</div><div class="v">${fmtMoney(next.goal)}</div></div>
-      <div class="s"><div class="k">${t('kDeadline')}</div><div class="v">${t('vDays',{n:S.daysLeft})}</div></div></div>
-      <div class="lv-gain"><b>${t('grLab')}: ${reasonN(reasonOf(S.gate))}</b> — ${reasonD(reasonOf(S.gate))}</div>`:''}
-    ${done?`<div class="stat-grid">
-      <div class="s"><div class="k">${t('kRunPeak')}</div><div class="v">${fmtMoney(S.peakCash)}</div></div>
-      <div class="s"><div class="k">${t('kXp')}</div><div class="v" style="color:var(--gold)">+${st.total} XP</div></div></div>`:''}
-    ${rmLine(done?'rmFinal':('rm'+Math.min(6,S.gate)))}
-    <button class="ok" id="mOk">${done?t('rpSettle'):t('rpNext')}</button>`;
-  openModal();
+  const cands=done?[]:grantCandidates();
+  grantPick=cands.length?cands[0].id:null;
+  const draw=()=>{
+    const cards=cands.map(c=>`<div class="pick${c.id===grantPick?' sel':''}" data-g="${c.id}">
+      <div class="pk-hd"><span class="pk-n">${t('gn'+c.id)}</span>
+        <span class="pk-e">${c.amt?c.amt():t('ge'+c.id)}</span></div>
+      <div class="pk-d">&ldquo;${t('gw'+c.id)}&rdquo;</div></div>`).join('');
+    $('modalBox').innerHTML=`<div class="doc-head">${done?t('docDone'):t('docGate')}<small>No. ${docNo()}</small></div>
+      <div class="doc-stamp">${done?t('stampDone'):t('stampPass')}</div>
+      ${done?`<div class="dc">${t('rpDoneDesc')}</div>`:
+        `<div class="rankline"><span class="rk-from">${g.n}</span>
+          <span class="rk-ar">&rarr;</span><span class="rk-to">${next.n}</span></div>`}
+      ${bonus>0?`<div class="lv-gain early"><b>${t('rpEarly',{n:early})}</b>
+        — <b>${fmtMoney(bonus)}</b> · ${t('kXp')} <b>+${early*EARLY_XP_PER_DAY}</b></div>`:''}
+      ${next?`<div class="stat-grid">
+        <div class="s"><div class="k">${t('kNextGoal',{n:next.n})}</div><div class="v">${fmtMoney(next.goal)}</div></div>
+        <div class="s"><div class="k">${t('kDeadline')}</div><div class="v">${t('vDays',{n:S.daysLeft})}</div></div></div>
+        <div class="lv-gain"><b>${t('grLab')}: ${reasonN(reasonOf(S.gate))}</b> — ${reasonD(reasonOf(S.gate))}</div>`:''}
+      ${done?`<div class="stat-grid">
+        <div class="s"><div class="k">${t('kRunPeak')}</div><div class="v">${fmtMoney(S.peakCash)}</div></div>
+        <div class="s"><div class="k">${t('kXp')}</div><div class="v" style="color:var(--gold)">+${st.total} XP</div></div></div>`:''}
+      ${rmLine(done?'rmFinal':('rm'+Math.min(6,S.gate)))}
+      ${cards?`<div class="pk-lead">${t('grantLead')}</div>${cards}
+        <div class="foot-note">${t('grantFoot')}</div>`:''}
+      <button class="ok stamp" id="mOk">${done?t('rpSettle'):t('stampAsk')}</button>`;
+    $('modalBox').querySelectorAll('.pick').forEach(el=>el.onclick=()=>{
+      sfx.tap(); grantPick=el.dataset.g; draw(); });
+    $('mOk').onclick=done
+      ? ()=>{sfx.tap();finishRun(st);}
+      : ()=>{
+          sfx.tap();
+          const c=GRANTS.find(x=>x.id===grantPick);
+          if(c){ c.f(); (S.grants||(S.grants=[])).push(c.id); }
+          $('modal').classList.remove('on'); saveRun(); render(); checkLevelUp();
+        };
+  };
+  draw();
+  openModal('doc');
   sfx.win();
-  $('mOk').onclick=done
-    ? ()=>{sfx.tap();finishRun(st);}
-    : ()=>{sfx.tap();$('modal').classList.remove('on');render();checkLevelUp();};
 }
 /* 기한 내 미상환 — 반대매매로 런 종료 */
 function showDefaultModal(){
@@ -3107,19 +3134,6 @@ function finishRun(st){
 }
 
 /* ===== 메인 탭 ===== */
-function switchMainTab(tab){
-  /* 라운드 중에는 단타 탭을 벗어날 수 없다 — 벗어나도 라운드는 계속 흘러가서
-     15초를 통째로 날리게 되고, "직접 지켜봐야 의미가 있다"는 이 게임의 원칙과도 어긋난다 */
-  if(S.activeRound&&tab!=='trade'){ toast(t('tsRoundLock')); tab='trade'; }
-  S.mainTab=tab; saveRun();
-  document.querySelectorAll('.main-tab').forEach(el=>el.classList.toggle('on',el.dataset.tab===tab));
-  $('panelTrade').classList.toggle('hide',tab!=='trade');
-  $('panelShop').classList.toggle('hide',tab!=='shop');
-  $('panelUnlock').classList.toggle('hide',tab!=='unlock');
-  document.querySelectorAll('.main-tab').forEach(el=>
-    el.classList.toggle('locked', !!S.activeRound && el.dataset.tab!=='trade'));
-}
-document.querySelectorAll('.main-tab').forEach(el=>el.onclick=()=>{sfx.tap();switchMainTab(el.dataset.tab);});
 
 /* 본문을 내리면 계좌줄이 뜨고 올리면 사라진다. 40px은 "실수로 한 번 스친 것"과
    "읽으려고 내린 것"을 가르는 선이다 — 0으로 두면 고무줄 스크롤에서 깜빡인다.
@@ -3789,11 +3803,8 @@ function applyStaticLabels(){
   /* 탭은 아이콘이 앞에 선다 — 98의 탭 컨트롤이 늘 그랬다 */
   /* 탭에는 아이콘을 안 붙인다. 98의 탭 컨트롤에 원래 없었고, 길안내는
      소품으로 그릴 수 있는 자리가 아니다 — 억지로 붙이면 다시 표지판이 된다. */
-  set('mtTrade',t('tabTrade')); set('mtShop',t('tabShop')); set('mtUnlock',t('tabUnlock'));
   /* 탭에는 짧은 이름(상점·권한)이 앉고, 펼친 서류에는 그 서류의 이름이 적힌다 —
      단타 탭이 「주 문 표」를 머리에 이고 있는 것과 같은 꼴이다. */
-  set('shopTitle',`${t('docShop')} <small>${t('shopNote')}</small>`);
-  set('unlockTitle',`${t('docUnlock')} <small>${t('unlockNote')}</small>`);
   /* 제목표는 98 관용구대로 "문서 — 프로그램"이다. 한 판이 곧 문서 하나라는 뜻이고,
      '머니로드'와 'MONEY ROAD'는 같은 이름이다 — 표기만 옮긴다. */
   set('appIcon',ic('app',1));
@@ -3811,9 +3822,8 @@ function applyStaticLabels(){
 function render(){
   applyStaticLabels();
   renderHero();renderLevel();renderStrip();
-  switchMainTab(S.mainTab||'trade');
   renderTradeTabs();renderTrade();
-  renderShop();renderGrowth();renderUnlock();
+
 }
 
 function showAwayModal(report){
@@ -4430,6 +4440,10 @@ function bindDevModal(){
    눌러도 계속 쌓여서 실수로 열릴 수 있다. 연타 전체를 창 안에 가둔다.
    2번은 브라우저 더블탭 확대와 겹치므로 .brand에 touch-action:manipulation을 걸어뒀다. */
 let devTaps=0, devFirst=0;
+$('lvChip').onclick=()=>{
+  if(S.activeRound||$('modal').classList.contains('on'))return;
+  sfx.tap(); showRecordModal();
+};
 $('brandTap').onclick=()=>{
   const now=Date.now();
   if(now-devFirst>1500){ devFirst=now; devTaps=1; } else devTaps++;
@@ -4536,7 +4550,7 @@ setInterval(()=>{
     const idx=currentTickIdx();
     const mult=S.activeRound.path[idx];
     if(idx>=S.activeRound.path.length-1){ sellRound(false); return; }
-    if(S.mainTab==='trade')renderRoundView();
+    renderRoundView();
   }else{
     checkBankrupt();
   }

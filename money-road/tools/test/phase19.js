@@ -86,7 +86,7 @@ const { launch, GAME: url } = require('../lib/browser');
  p=await fresh();
  await p.evaluate(()=>{ S.peakCash=5000000; S.earlyXp=10; S.cash=0; showBankruptModal(); $('mOk').click(); });
  await p.waitForTimeout(150);
- const before=await p.evaluate(()=>({화면:$('modalBox').querySelector('.tt').textContent,
+ const before=await p.evaluate(()=>({화면:(($('modalBox').querySelector('.tt')||$('modalBox').querySelector('.doc-head'))||{}).textContent||'-',
    합계:$('modalBox').querySelector('.xp-tbl .sum').textContent.replace(/\s+/g,' ').trim(),
    xp:META.xp}));
  L('정산 화면', before);

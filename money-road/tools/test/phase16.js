@@ -17,8 +17,13 @@ const { launch, GAME: url } = require('../lib/browser');
 
  console.log('=== 1. 배당주 삭제 ===');
  let p=await fresh();
- L('', await p.evaluate(()=>({SHOP_IDS, 상점:[...document.querySelectorAll('#shopList .nm')].map(e=>e.textContent.replace(/\s+/g,' ').trim()),
+ /* 상점(SHOP_IDS)도 사라졌다 — 정보력·손절 보험이 차수 배정 카드로 들어갔다.
+    「돈이 모이면 산다」는 선택이 아니었다(둘뿐이고 사실상 자동이었다). */
+ L('', await p.evaluate(()=>({
+   'SHOP_IDS 없음':typeof window.SHOP_IDS==='undefined',
+   '상점 목록 없음':!document.getElementById('shopList'),
    배당함수:typeof window.payDividend,
+   차수배정:GRANTS.map(g=>g.id),
    /* 레거시 트리는 C단계에서 삭제됐다(phase19). 메타 해금 목록이 그 자리다. */
    메타해금:META_UNLOCKS.map(x=>x.name)})));
  await p.close();

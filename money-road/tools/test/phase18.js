@@ -53,7 +53,10 @@ const { launch, GAME: url } = require('../lib/browser');
  L('완제 모달', await p.evaluate(()=>{
    checkLevelUp();
    const box=$('modalBox');
-   return {제목:box.querySelector('.tt').textContent,
+   /* 차수 통과·완제가 서류가 되면서 제목이 .tt에서 .doc-head로 옮겨갔다 */
+   const head=el=>{const e=box.querySelector(el)||box.querySelector('.doc-head');
+     return e?e.childNodes[0].textContent.trim():'-';};
+   return {제목:head('.tt'),
      버튼:$('mOk').textContent.trim(),
      본문:box.querySelector('.dc').textContent.replace(/\s+/g,' ').trim(),
      정산표:[...box.querySelectorAll('.stat-grid .s')].map(s=>
@@ -64,7 +67,7 @@ const { launch, GAME: url } = require('../lib/browser');
  await p.evaluate(()=>$('mOk').click());
  await p.waitForTimeout(150);
  L('버튼 누른 뒤', await p.evaluate(()=>({
-   화면:$('modalBox').querySelector('.tt').textContent,
+   화면:(($('modalBox').querySelector('.tt')||$('modalBox').querySelector('.doc-head'))||{}).textContent||'-',
    경험치표:!!document.querySelector('.xp-tbl'),
    xp:META.xp||0,
    pendingSettle:!!META.pendingSettle})));

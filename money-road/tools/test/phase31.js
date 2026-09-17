@@ -39,7 +39,7 @@ const { launch, GAME: url } = require('../lib/browser');
  let p=await fresh({locale:'ko-KR'}); await dismiss(p);
  const ko=await p.evaluate(()=>({
    lang:LANG,
-   탭:[$('mtTrade').textContent,$('mtShop').textContent,$('mtUnlock').textContent],
+   탭없음:!document.querySelector('.main-tab'),
    퀵최대:[...document.querySelectorAll('.bet-quicks button')].pop().textContent,
    레버리지:document.querySelector('.lev-row button').textContent.replace(/\s+/g,' ').trim(),
    방향있음:!!document.querySelector('[data-d="1"]'),
@@ -51,12 +51,9 @@ const { launch, GAME: url } = require('../lib/browser');
  want('기본 언어', ko.lang, 'ko');
  /* 98 전환에서 이모지가 전부 직접 그린 아이콘(SVG)으로 바뀌었다.
     아이콘은 마크업이라 textContent에는 낱말만 남는다. */
- want('단타 탭', ko.탭[0], '단타');
- want('상점 탭', ko.탭[1], '상점');
- /* 해금 → 권한 → 배정. 이 목록은 LEVELS — 「이 계좌가 차수를 넘을 때마다
-    열리는 것」이라 사람의 사다리(직급)가 아니라 계좌의 사다리(차수)다.
-    인사 기록이라고 불렀다가 바로 잡았다 — 다른 사다리다. */
- want('배정 탭', ko.탭[2], '배정');
+ /* 탭 컨트롤이 통째로 사라졌다 — 상점은 차수 배정 카드로, 배정표는 직급 칩을
+    눌러 여는 대화상자로 갔다. 책상에 놓이는 것은 지금 결재할 종이 한 장이다. */
+ want('탭이 없다', ko.탭없음, true);
  want('퀵 최대', ko.퀵최대, '최대');
  want('레버리지 3배', ko.레버리지, '3배 청산 0.67x');
  want('연승 없음', ko.스트립, '연승 없음');
@@ -70,10 +67,13 @@ const { launch, GAME: url } = require('../lib/browser');
  /* ── 2. 첫 실행 감지 ── */
  console.log('\n=== 2. 첫 실행 감지 ===');
  const en1=await fresh({locale:'en-US'}); await dismiss(en1);
- const enDetect=await en1.evaluate(()=>({lang:LANG, 탭:$('mtTrade').textContent, 퀵:[...document.querySelectorAll('.bet-quicks button')].pop().textContent}));
+ /* 탭이 사라져서 「영어 탭」으로 잡던 자리를 주문표 머리로 옮긴다 —
+    로케일이 먹었는지를 보는 게 목적이라 어느 문자열이든 상관없다. */
+ const enDetect=await en1.evaluate(()=>({lang:LANG, 머리:$('formTitle').textContent,
+   퀵:[...document.querySelectorAll('.bet-quicks button')].pop().textContent}));
  L('en-US', enDetect);
  want('en 로케일 감지', enDetect.lang, 'en');
- want('영어 탭', enDetect.탭, 'Trade');
+ want('영어 주문표 머리', enDetect.머리, 'ORDER  SLIP');
  want('영어 퀵', enDetect.퀵, 'Max');
  const ja=await fresh({locale:'ja-JP'}); await dismiss(ja);
  want('ko가 아니면 en', await ja.evaluate(()=>LANG), 'en');
@@ -83,24 +83,24 @@ const { launch, GAME: url } = require('../lib/browser');
  await p.evaluate(()=>setLang('en'));
  const saved=await p.evaluate(()=>localStorage.getItem('moneyroad2_lang'));
  await p.reload(); await p.waitForTimeout(350); await dismiss(p);
- const after=await p.evaluate(()=>({lang:LANG, 탭:$('mtTrade').textContent}));
+ const after=await p.evaluate(()=>({lang:LANG, 탭:$('formTitle').textContent}));
  L('', {저장값:saved, 새로고침후:after});
  want('저장값', saved, 'en');
  want('새로고침 후 유지', after.lang, 'en');
- want('새로고침 후 화면', after.탭, 'Trade');
+ want('새로고침 후 화면', after.탭, 'ORDER  SLIP');
 
  /* ── 4. 전환이 화면을 다시 그리는가 ── */
  console.log('\n=== 4. 전환 ===');
  const swap=await p.evaluate(()=>{
-   const before=$('mtTrade').textContent;
+   const before=$('formTitle').textContent;
    setLang('ko');
-   const mid=$('mtTrade').textContent;
+   const mid=$('formTitle').textContent;
    setLang('en');
-   return {before, mid, after:$('mtTrade').textContent};
+   return {before, mid, after:$('formTitle').textContent};
  });
  L('', swap);
- want('en→ko 즉시 반영', swap.mid, '단타');
- want('ko→en 즉시 반영', swap.after, 'Trade');
+ want('en→ko 즉시 반영', swap.mid, '주 문 표');
+ want('ko→en 즉시 반영', swap.after, 'ORDER  SLIP');
  want('잘못된 값은 무시', await p.evaluate(()=>{setLang('zz');return LANG;}), 'en');
 
  /* ── 5. 폴백 — 영어에 없으면 한국어로 ── */
@@ -249,7 +249,7 @@ const { launch, GAME: url } = require('../lib/browser');
    }
    /* 화면 본체도 같이 — 상점·해금·스트립·라운드 카드 */
    render();
-   const body=['strip','panelTrade','panelShop','panelUnlock']
+   const body=['strip','tabsWrap']
      .map(id=>$(id)?$(id).textContent:'').join(' ');
    const bodyKo=body.match(/[가-힣]+/g);
    if(bodyKo)out['화면본체']=bodyKo.join(' ');

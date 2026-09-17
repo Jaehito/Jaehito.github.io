@@ -650,11 +650,11 @@
   .modal .dlg.doc{background:var(--paper); color:var(--paper-ink);
     background-image:repeating-linear-gradient(0deg,rgba(120,100,60,.045) 0 1px,transparent 1px 4px);}
   .dlg.doc .box{padding:11px; position:relative;}
-  .dlg.doc .rs-sub,.dlg.doc .rs-like,.dlg.doc .dc{color:var(--paper-dim);}
+  .dlg.doc .rs-sub,.dlg.doc .dc{color:var(--paper-dim);}
   .dlg.doc .rs-badge,.dlg.doc .rs-chip{background:var(--paper-memo); color:var(--paper-dim);
     border:1px solid var(--paper-line); border-radius:3px; box-shadow:none;}
-  .dlg.doc .cm-feed,.dlg.doc .rs-close,.dlg.doc .stat-grid,.dlg.doc .lv-gain{clear:both;}
-  .dlg.doc .cm-feed,.dlg.doc .rs-close,.dlg.doc .stat-grid .s,.dlg.doc .lv-gain{
+  .dlg.doc .rm,.dlg.doc .rs-close,.dlg.doc .stat-grid,.dlg.doc .lv-gain{clear:both;}
+  .dlg.doc .rs-close,.dlg.doc .stat-grid .s,.dlg.doc .lv-gain{
     background:var(--paper-memo); border:1px solid var(--paper-line); border-radius:3px;
     box-shadow:none;}
   .dlg.doc .stat-grid .s .k,.dlg.doc .rs-wallet{color:var(--paper-dim);}
@@ -702,13 +702,6 @@
   .rs-chip.grade{color:var(--green);} .rs-chip.grade.low{color:var(--blue);}
   .rs-chip.short,.rs-chip.lev{color:var(--blue);}
   .rs-chip.streak{color:var(--red);}
-  .cm-feed{display:flex; flex-direction:column; gap:6px; min-height:21px; margin-top:10px;
-    padding:8px; background:var(--field);
-    border:2px solid; border-color:var(--sh) var(--hi) var(--hi) var(--sh);}
-  .cm-msg{display:flex; align-items:flex-start; gap:7px; font-size:12.5px; line-height:1.5;}
-  .cm-msg .av{display:none;}   /* 말풍선 아이콘은 대화상자 제목표가 이미 달고 있다 */
-  .cm-msg b{font-weight:700; flex-shrink:0;}
-  .rs-like{color:var(--gray2); font-size:12.5px; margin-left:5px; white-space:nowrap;}
   .rs-sum{font-size:19px; font-weight:700;}
   .rs-sum.up{color:var(--red);} .rs-sum.down{color:var(--blue);}
   .rs-wallet{margin-top:10px; padding-top:8px; border-top:1px solid var(--sh); font-size:12.5px;}
@@ -1121,7 +1114,7 @@ const L={
     seSum:'합계', seCum:'· 누적 {v} XP', seToNext:'{n}까지 {v}',
     seAllOpen:'전부 승인됨', seNewUnlock:'새 해금 — {n}', seStart:'새 판 시작',
     /* 거래 결과 */
-    rsTitle:'거래 결과', rsHot:'실시간 인기', rsCold:'오늘의 참사',
+    rsTitle:'거래 결과',
     rsGrade:'매도 {g} · {p}%', rsWater:'평단 {v}x', rsSplit:'분할',
     rsShort:'숏', rsLev:'{n}배', rsStreak:'{n}연승',
     rsEarn:'{n}연승! 다음 판에 {names}이 걸려요',
@@ -1146,7 +1139,7 @@ const L={
     rtXpK:'받을 기록', rtGo:'마치고 정산', rtNo:'계속 거래합니다',
     /* 라운드 화면 · 토스트 */
     tsRoundLock:'단타가 끝나면 볼 수 있습니다',
-    likes:'공감 {n}', rvWaterLab:'물타기', rSellHalf:'절반 매도', secs:'{v}초', winsToGo:'{n}승',
+    rvWaterLab:'물타기', rSellHalf:'절반 매도', secs:'{v}초', winsToGo:'{n}승',
     /* 자리 비움 */
     awRefund:'진행 중이던 단타는 지켜보지 못해서 손익 없이 베팅금 <b>{v}</b>만 환불했습니다',
     awHM:'{h}시간 {m}분', awM:'{m}분', awTitle:'{v} 만입니다',
@@ -1163,14 +1156,23 @@ const L={
        "재신청은 언제든 가능합니다"는 절대 바꾸지 않는다 — 처음엔 친절로,
        열 번째엔 다르게 읽힌다. 반복되는 실패가 서사를 완성하는 유일한 장치다. */
     rmWho:'리스크 관리팀',
-    rm1:'&gt; 첫 차수입니다. 여기서 끝나는 계좌가 절반입니다.',
-    rm2:'&gt; 기록을 보고 있습니다.',
-    rm3:'&gt; 여기까지 오는 사람은 많지 않습니다.',
-    rm4:'&gt; 다음 차수는 규모가 다릅니다.',
-    rm5:'&gt; 회사도 이 계좌를 보고 있습니다.',
-    rm6:'&gt; 한 차수 남았습니다.',
-    rmFinal:'&gt; 계좌는 당신 이름으로 바뀝니다.',
-    rmBack:'&gt; 재신청은 언제든 가능합니다.',
+    rm1:'첫 차수입니다. 여기서 끝나는 계좌가 절반입니다.',
+    rm2:'기록을 보고 있습니다.',
+    rm3:'여기까지 오는 사람은 많지 않습니다.',
+    rm4:'다음 차수는 규모가 다릅니다.',
+    rm5:'회사도 이 계좌를 보고 있습니다.',
+    rm6:'한 차수 남았습니다.',
+    rmFinal:'계좌는 당신 이름으로 바뀝니다.',
+    rmBack:'재신청은 언제든 가능합니다.',
+    /* 체결 통지의 논평 — 매도 등급 하나에 상황 한 줄까지 최대 둘.
+       칭찬의 최대치가 「기록해 두겠습니다」다. */
+    rmGrS:'고점 부근에서 나오셨습니다.', rmGrA:'잘 나오셨습니다.',
+    rmGrB:'더 있었습니다.', rmGrC:'늦으셨습니다.',
+    rmGrD:'바닥에서 파셨습니다.', rmFlat:'움직이지 않는 장이었습니다.',
+    rmLiq1:'청산되었습니다.', rmLiq2:'배율은 회사가 정하지 않았습니다.',
+    rmStreak:'{n}판 연속입니다. 운은 기록에 남지 않습니다.',
+    rmJack:'기록해 두겠습니다.', rmBreak:'연속 기록이 끊겼습니다.',
+    rmLast:'오늘이 마지막 거래일입니다.',
     /* ⑤ 날짜 — 요일·월 이름은 목록이라 한 칸에 쉼표로 넣고 split해서 쓴다 */
     dateWd:'일,월,화,수,목,금,토',
     dateMon:'1,2,3,4,5,6,7,8,9,10,11,12',
@@ -1286,7 +1288,7 @@ const L={
     seTier:'{e} Tier {n} · {name}', sePen:'Account was liquidated — {p}% cut',
     seSum:'Total', seCum:'· {v} XP overall', seToNext:'{v} to {n}',
     seAllOpen:'Everything is open', seNewUnlock:'New unlock — {n}', seStart:'Start a new run',
-    rsTitle:'Trade result', rsHot:'Trending now', rsCold:'Blowup of the day',
+    rsTitle:'Trade result',
     rsGrade:'Sell {g} · {p}%', rsWater:'Avg {v}x', rsSplit:'Partial',
     rsShort:'Short', rsLev:'{n}×', rsStreak:'{n} in a row',
     rsEarn:'{n} in a row! {names} is on for the next session',
@@ -1309,7 +1311,7 @@ const L={
     rtDesc:'Stop here and you keep <b>100%</b> of the XP.<br>Push on and blow up, and {p}% is cut.',
     rtXpK:'XP you keep', rtGo:'Cash out and settle', rtNo:'Keep trading',
     tsRoundLock:'You can look once the session ends',
-    likes:'{n} likes', rvWaterLab:'Average down', rSellHalf:'Sell half', secs:'{v}s', winsToGo:'{n} more',
+    rvWaterLab:'Average down', rSellHalf:'Sell half', secs:'{v}s', winsToGo:'{n} more',
     awRefund:'Nobody watched the open session, so the <b>{v}</b> stake came back with no P&L',
     awHM:'{h}h {m}m', awM:'{m}m', awTitle:'Been {v}',
     awDesc:'Money neither grows nor shrinks while you are away — it only counts if you watch it.',
@@ -1323,14 +1325,21 @@ const L={
     /* Risk desk — the firm's voice. It never raises it.
        "Reapplication is available at any time." never changes. */
     rmWho:'Risk desk',
-    rm1:'&gt; First phase. Half the accounts end here.',
-    rm2:'&gt; We are reading your record.',
-    rm3:'&gt; Not many people get this far.',
-    rm4:'&gt; The next phase is a different size.',
-    rm5:'&gt; The firm is watching this account.',
-    rm6:'&gt; One phase left.',
-    rmFinal:'&gt; The account will be put in your name.',
-    rmBack:'&gt; Reapplication is available at any time.',
+    rm1:'First phase. Half the accounts end here.',
+    rm2:'We are reading your record.',
+    rm3:'Not many people get this far.',
+    rm4:'The next phase is a different size.',
+    rm5:'The firm is watching this account.',
+    rm6:'One phase left.',
+    rmFinal:'The account will be put in your name.',
+    rmBack:'Reapplication is available at any time.',
+    rmGrS:'You got out near the high.', rmGrA:'A clean exit.',
+    rmGrB:'There was more in it.', rmGrC:'You were late.',
+    rmGrD:'You sold the bottom.', rmFlat:'The session did not move.',
+    rmLiq1:'The position was liquidated.', rmLiq2:'The firm did not choose your leverage.',
+    rmStreak:'{n} in a row. Luck does not go in the record.',
+    rmJack:'We will note it.', rmBreak:'The streak is over.',
+    rmLast:'Today is the last session.',
     dateWd:'Sun,Mon,Tue,Wed,Thu,Fri,Sat',
     dateMon:'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec',
     dateFmt:'{mon} {d} ({w})',
@@ -2552,133 +2561,33 @@ function renderUnlock(){
   }).join('');
 }
 
-/* 댓글 작성자 이름과 문장은 아래 CHAT에 언어별로 통째로 둔다 — t() 사전에
-   넣지 않는다. 하나는 문장이 아니라 목록이고, 둘은 영어판이 한국어를 옮긴 게
-   아니기 때문이다. 같은 상황에서 한국 커뮤니티가 하는 말과 영어권 트레이딩
-   채팅이 하는 말은 겹치지 않는다 — "한강"을 걷어내야 하는 것도 같은 이유고,
-   반대로 "exit liquidity"를 한국어로 옮길 방법도 없다. */
+/* ===== 체결 통지의 논평 =====
+   커뮤니티 댓글이 있던 자리다. 체결 통지는 **회사가 발행한 문서**인데 거기에
+   「공감 65」가 붙어 있으면 톤이 맞지 않는다 — 사내 문서에 바깥 목소리가
+   섞여 있었다. 이제 리스크 관리팀이 읽는다.
 
-/* ===== 거래 결과에 대한 사회적 반응 =====
-   베팅 "중"에는 그래프와 배율만 보게 되므로 그때 띄우는 잡담은 아무도 안 본다.
-   그래서 반응은 매도가 끝난 "직후"에, 결과 크기에 비례해서 보여준다.
-   소액 익절은 아무도 관심 없고(시큰둥한 한 줄), 대박은 댓글이 쏟아지고 좋아요가 터진다 —
-   "따도 아무도 몰라주면 재미없다"를 정면으로 겨냥한 장치. 레버리지를 쓴 거래는
-   반응이 더 커져서, 크게 거는 이유가 돈 말고 하나 더 생긴다. */
-function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
-/* 예전엔 손익 크기만 보고 5개 등급 중 하나를 골라 4개씩 뿌렸다. 등급당 문장이 4~6개뿐이라
-   금방 다 보이고, 어느 문장도 "이번 판에 실제로 벌어진 일"을 몰라서 통째로 안 읽혔다.
-   그래서 개수를 최대 2개로 줄이고, 대신 이번 판의 사건을 문장에 넣는다 —
-   매도 등급 · 고점 · 연승 · 청산 · 쓴 티켓 · 배율 · 상환 기한. 문장 총량은 비슷한데
-   조합이 폭발하고, 무엇보다 "나를 보고 하는 말"이 된다. */
-const CHAT={
-  ko:{
-    names:['존버킹','단타의신','물타기장인','칼손절러','차트만본다','우량주러버','고점매수단','익절요정','풀매수맨','존리형','개미핥기','반대매매각','손절은없다','불장기원단','떡상기도중'],
-    react:{
-      jackpot:['미쳤다 이걸 잡네 ㄷㄷ','와 이거 실화임? 손 떨림','형님 소리가 절로 나온다','저도 좀 알려주세요 제발','이건 캡처각이다','오늘의 주인공 등장'],
-      win:['깔끔하게 먹었네요','타이밍 좋았다','오 축하합니다','이게 실력이지','부럽습니다 진짜'],
-      meh:['음... 수고하셨습니다','본전치기 ㅋㅋ','조용히 지나가겠습니다','뭐 나쁘진 않네요'],
-      loss:['에고 아쉽다','저도 방금 물렸어요','다음 판 가시죠','괜찮아요 흔한 일'],
-      disaster:['헉 괜찮으세요...?','아이고 이건 좀','제 계좌 보는 것 같아서 눈물이','오늘은 그만 쉬세요','같이 웁시다','이건 좀 아프겠는데'],
-    },
-    lev:{
-      win:['레버리지 배짱 좋네요','풀레버로 이걸 성공한다고?'],
-      loss:['레버리지가 사람 잡네','그러니까 배율을 좀...'],
-    },
-    ev:{
-      wiped:R=>[`${R.lev}배로 청산이라니 ㄷㄷ`,'계좌 녹는 소리가 여기까지 들려요','청산 당하셨네요 ㅠㅠ','이건 진짜 아프다'],
-      missPeak:R=>[`${R.hi.toFixed(2)}까지 갔는데 ${R.mult.toFixed(2)}에 파셨네요 ㅋㅋ`,
-        `아까 ${R.hi.toFixed(2)} 찍었을 때 팔았어야죠`,`${R.hi.toFixed(2)} 보고도 못 파는 게 사람이죠`],
-      perfect:R=>[`${R.mult.toFixed(2)}에 칼같이 터셨네`,'고점에서 정확히 잡으셨다','이게 매도의 정석입니다','손이 기계세요?'],
-      streakBreak:R=>[`${R.prevStreak}연승 끊긴 게 더 아프겠다`,`${R.prevStreak}연승까지 갔었는데...`,'연승 끊길 때가 제일 쓰라리죠'],
-      streakOn:R=>[`${R.streak}연승째다 이거`,`${R.streak}연승 실화?`,'지금 손이 뜨거우신 듯'],
-      buffFail:R=>[`${buffNames(R)} 쓰고도 이러네 ㅠㅠ`,'티켓이 아깝다 진짜','좋은 패 들고 지셨네'],
-      buffWin:R=>[`${buffNames(R)} 제대로 썼네요`,'티켓 값 뽑고도 남았다'],
-      bigLev:R=>[`${R.lev}배로 이걸 성공한다고?`,`${R.lev}배 배짱 미쳤네`,'간이 크시네 ㄷㄷ'],
-      dday:R=>[`D-${R.daysLeft}에 이걸 살리네`,'막판에 저력이 나오네요','마감 직전에 강한 타입'],
-      ddayFail:R=>[`D-${R.daysLeft}인데 이러면 곤란한데`,'상환일 다가오는데 어쩌죠','슬슬 반대매매 각인데'],
-    },
-  },
-  /* 영어판 이름은 한국식 별명의 음역이 아니라 트레이딩 채팅에서 실제로 굴러가는
-     핸들 모양으로 새로 지었다. 문장도 같은 기준이다 — 존댓말·ㅋㅋ·ㄷㄷ 같은
-     한국어 말투를 옮기려 하면 전부 어색해지므로, 같은 감정을 영어권 채팅 말투로
-     다시 썼다. 짧고, 소문자, 마침표 없음. */
-  en:{
-    names:['DiamondHandz','StopLossSkipper','ChartGoblin','AvgDownAndy','ExitLiquidity','BlueChipBrad','TopBuyerClub','TakeProfitFairy','AllInAlan','ValueGuyVic','AntEater','MarginCallMike','NeverStopOut','GreenCandlePrayer','PumpItPlease'],
-    react:{
-      jackpot:['ok that was insane','chat did you all see that','my hands are shaking and it is not even my trade','please teach me, seriously','someone clip this','print of the day right here'],
-      win:['clean exit','timing was right there','oh nice, congrats','that is what skill looks like','genuinely jealous'],
-      meh:['well... good session','round trip, ha','moving right along','not bad honestly'],
-      loss:['ah, that stings','I just got caught in the same one','next one is yours','it happens to everyone'],
-      disaster:['are you ok...?','oof, that is rough','looking at my own account, tearing up','take the rest of the day off','we cry together','that one is going to hurt'],
-    },
-    lev:{
-      win:['took real nerve with that size','full leverage and it worked?'],
-      loss:['leverage gets everybody','maybe ease off the size...'],
-    },
-    ev:{
-      wiped:R=>[`liquidated at ${R.lev}x, brutal`,'I can hear the account melting from here','liquidated, ouch','this one actually hurts'],
-      missPeak:R=>[`it printed ${R.hi.toFixed(2)} and you sold at ${R.mult.toFixed(2)}`,
-        `you had ${R.hi.toFixed(2)} right there`,`seeing ${R.hi.toFixed(2)} and still not selling, very human`],
-      perfect:R=>[`out at ${R.mult.toFixed(2)}, surgical`,'caught the top exactly','textbook exit','are your hands a machine?'],
-      streakBreak:R=>[`losing a ${R.prevStreak} streak stings more`,`you were ${R.prevStreak} deep...`,'the streak breaking is always the worst part'],
-      streakOn:R=>[`that is ${R.streak} in a row`,`${R.streak} straight, seriously?`,'hands are hot right now'],
-      buffFail:R=>[`${buffNames(R)} and still this`,'that ticket is wasted','good cards, lost hand'],
-      buffWin:R=>[`${buffNames(R)} used properly`,'that ticket paid for itself twice over'],
-      bigLev:R=>[`${R.lev}x and you pulled it off?`,`${R.lev}x takes nerve`,'zero fear in this one'],
-      dday:R=>[`saving it on D-${R.daysLeft}`,'strong finish','built for deadlines'],
-      ddayFail:R=>[`D-${R.daysLeft} and this is not great`,'the deadline is right there','this is getting close to a breach'],
-    },
-  },
-};
-function CH(){return CHAT[LANG]||CHAT.ko;}
-function buffNames(R){return (R.buffs||[]).map(b=>BUFFS[b].name).join('+');}
-/* 회귀 테스트가 FAKE_NAMES라는 이름으로 목록이 살아 있는지 본다.
-   이름을 살려두고 현재 언어의 목록을 준다 — 목록이 둘로 갈렸을 뿐 사라진 게 아니다. */
-try{ Object.defineProperty(window,'FAKE_NAMES',{get:()=>CH().names}); }catch(e){}
-function nameFor(seed){const n=CH().names; return n[Math.abs(Math.floor(seed))%n.length];}
-/* 사건별 문장 — 조건이 맞을 때만 후보에 오른다. when은 언어와 무관하니 여기 남고,
-   문장만 CHAT에서 가져온다. 영어에 빠진 사건이 있으면 한국어로 떨어진다. */
-const EVENT_LINES=[
-  {id:'wiped',       when:R=>R.profit<=-R.bet*0.95},
-  {id:'missPeak',    when:R=>R.grade&&R.grade.pct<45&&R.hi>=1.15},
-  {id:'perfect',     when:R=>R.grade&&R.grade.g==='S'},
-  {id:'streakBreak', when:R=>R.prevStreak>=3&&R.profit<=0},
-  {id:'streakOn',    when:R=>R.streak>=3&&R.profit>0},
-  {id:'buffFail',    when:R=>(R.buffs||[]).length>0&&R.profit<0},
-  {id:'buffWin',     when:R=>(R.buffs||[]).length>0&&R.profit>R.bet*0.5},
-  {id:'bigLev',      when:R=>R.lev>=5&&R.profit>R.bet},
-  {id:'dday',        when:R=>R.daysLeft<=2&&R.profit>0},
-  {id:'ddayFail',    when:R=>R.daysLeft<=2&&R.profit<0},
+   무작위로 고르지 않는다. 리스크 관리팀은 즉흥으로 말하지 않는다 —
+   조건이 맞는 첫 줄을 쓴다. 같은 판에는 같은 말이 나온다.
+   칭찬하지 않고 위로하지 않는다. 최대치가 「기록해 두겠습니다」다. */
+const RM_EVENT=[
+  {id:'rmStreak', when:R=>R.streak>=5},
+  {id:'rmJack',   when:R=>R.bet>0&&R.profit/R.bet>=1.0},
+  {id:'rmBreak',  when:R=>R.prevStreak>=3&&R.profit<=0},
+  {id:'rmLast',   when:R=>R.daysLeft<=1},
 ];
-function evLines(id,R){
-  const f=(CH().ev||{})[id]||CHAT.ko.ev[id];
-  try{ return f?f(R):[]; }catch(e){ return []; }
+function rmResultLines(R){
+  /* 청산은 등급을 말할 자리가 아니다 — 판단이 아니라 사고다 */
+  if(R.bet>0&&R.profit<=-R.bet*0.95)return [t('rmLiq1'),t('rmLiq2')];
+  const out=[R.grade?t('rmGr'+R.grade.g):t('rmFlat')];
+  const ev=RM_EVENT.find(e=>{try{return e.when(R);}catch(x){return false;}});
+  if(ev)out.push(t(ev.id,{n:R.streak}));
+  return out;
 }
-function reactPool(tier){return (CH().react||{})[tier]||CHAT.ko.react[tier];}
-function buildReactions(R){
-  const bet=R.bet, r=bet>0?R.profit/bet:0;
-  let tier;
-  if(r>=1.0)tier='jackpot'; else if(r>=0.15)tier='win';
-  else if(r>-0.15)tier='meh'; else if(r>-0.5)tier='loss'; else tier='disaster';
-  const likeBase={jackpot:260,win:28,meh:1,loss:16,disaster:140}[tier];
-  const out=[];
-  /* 이번 판에 해당하는 사건이 있으면 그중 하나를 먼저 — 이게 "나를 보고 하는 말"이 된다 */
-  const hits=EVENT_LINES.filter(e=>{try{return e.when(R);}catch(x){return false;}});
-  if(hits.length){ const lines=evLines(pick(hits).id,R); if(lines.length)out.push(pick(lines)); }
-  /* 그다음 일반 반응 하나 */
-  const pool=[...reactPool(tier)];
-  if(R.lev>1){const ex=(CH().lev||{})[r>=0.15?'win':r<=-0.15?'loss':null]; if(ex)pool.push(...ex);}
-  out.push(pick(pool));
-  const mult=1+(R.lev>1?R.lev*0.35:0);
-  /* map 인자를 txt로 둔다 — t는 번역 함수라 여기서 가리면 안 된다 */
-  return {tier, list:out.slice(0,2).map(txt=>({
-    name:nameFor(Math.random()*100000), text:txt,
-    likes:Math.max(0,Math.round(likeBase*mult*(0.5+Math.random())))}))};
-}
+
 function resultModalHTML(R){
   const up=R.profit>=0, g=R.grade;
-  const badge=R.tier==='jackpot'?`<span class="rs-badge hot">${t('rsHot')}</span>`
-    :R.tier==='disaster'?`<span class="rs-badge cold">${t('rsCold')}</span>`:'';
+  /* 대박·참사 배지는 커뮤니티가 떠드는 크기를 재던 값이다. 사내 문서에는
+     그런 감탄이 없다 — 리스크 관리팀 줄이 그 자리를 대신한다. */
   const chips=[];
   if(g)chips.push(`<span class="rs-chip grade${g.pct<45?' low':''}">${t('rsGrade',{g:g.g,p:g.pct})}</span>`);
   /* 뉴스가 맞았는지는 판이 끝나야 안다. 사후에 알려줘야 "다음엔 얼마나 믿을까"를 배운다. */
@@ -2696,18 +2605,15 @@ function resultModalHTML(R){
   const where=R.half?t('rsSoldHalf',{a:R.half.mult.toFixed(2),b:R.mult.toFixed(2)})
                     :t('rsSold',{v:R.mult.toFixed(2)});
   const sub=g?where:t('rsNoGrade',{where:where});
-  const msgs=R.list.map(m=>`<div class="cm-msg"><span><b>${m.name}</b> ${m.text}
-    <span class="rs-like">${t('likes',{n:m.likes.toLocaleString()})}</span></span></div>`).join('');
   /* 같은 종이가 통지서로 돌아온다 — 주문표에 도장을 찍었더니 체결 통지가 왔다.
      머리 모양이 주문표와 같아야 「내가 낸 그 서류」로 읽힌다. */
   return `<div class="doc-head">${t('docResult')}<small>${docNo()}</small></div>
-    ${badge?`<div class="rs-chips" style="margin:8px 0 0">${badge}</div>`:''}
     <div class="doc-stamp">${t('stampFill')}</div>
     <div class="rs-money ${up?'up':'down'}">${up?'+':''}${fmtMoney(R.profit)}</div>
     <div class="rs-sub">${sub}</div>
     <div class="rs-chips">${chips.join('')}</div>
     ${earnRow}
-    <div class="cm-feed" style="margin-top:11px">${msgs}</div>
+    ${rmLine2(rmResultLines(R))}
     <div class="rs-wallet">${t('rsWallet',{v:fmtMoney(S.cash)})}</div>
     ${closeRowHTML()}`;
 }
@@ -2772,9 +2678,10 @@ function checkLevelUp(){
    — 은퇴와 같은 대우다. 기한 안에 다 갚은 사람을 은퇴보다 불리하게 둘 이유가 없다. */
 
 /* 리스크 관리팀 한 줄. 차수가 오를수록 말이 짧아지고 덜 친절해진다. */
-function rmLine(key){
+function rmLine(key){ return rmLine2([t(key)]); }
+function rmLine2(lines){
   return `<div class="rm"><div class="who">${t('rmWho')}</div>
-    <div class="msg">${t(key)}</div></div>`;
+    <div class="msg">${lines.map(l=>'&gt; '+l).join('<br>')}</div></div>`;
 }
 function showRepayModal(g,nl,early,bonus){
   const done=gateDone();
@@ -3090,8 +2997,6 @@ function sellRound(auto){
   const res={mult,effMult,half,entry:R.entry||1,watered:!!R.watered,
     profit:totalProfit,bet:totalBet,lev,dir,
     grade,lo,hi,streak:S.streak,prevStreak,earned,buffs,daysLeft:S.daysLeft};
-  const rx=buildReactions(res);
-  res.tier=rx.tier; res.list=rx.list;
   S.lastResult=res;
   rollPending(); // 다음 라운드 패턴/신호를 새로 뽑는다(라운드가 끝날 때만)
   saveRun(); render();

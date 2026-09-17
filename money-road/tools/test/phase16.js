@@ -82,21 +82,8 @@ const { launch, GAME: url } = require('../lib/browser');
  }));
  await p.close();
 
- console.log('\n=== 7. 댓글: 사건 반영 + 최대 2개 ===');
- p=await fresh();
- L('', await p.evaluate(()=>{
-   const cases=[
-     ['고점 놓침', {mult:1.30,profit:300000,bet:1000000,lev:3,grade:{pct:30,g:'C'},hi:1.71,lo:0.9,streak:1,prevStreak:0,buffs:[],daysLeft:8}],
-     ['완벽 매도', {mult:1.71,profit:2100000,bet:1000000,lev:3,grade:{pct:95,g:'S'},hi:1.71,lo:0.9,streak:4,prevStreak:3,buffs:[],daysLeft:8}],
-     ['청산',     {mult:0.60,profit:-1000000,bet:1000000,lev:3,grade:{pct:10,g:'D'},hi:1.05,lo:0.6,streak:0,prevStreak:5,buffs:[],daysLeft:8}],
-     ['티켓 낭비', {mult:0.85,profit:-450000,bet:1000000,lev:3,grade:{pct:20,g:'C'},hi:1.1,lo:0.85,streak:0,prevStreak:1,buffs:['info'],daysLeft:8}],
-     ['D-1 역전', {mult:1.60,profit:1800000,bet:1000000,lev:3,grade:{pct:88,g:'A'},hi:1.65,lo:0.95,streak:2,prevStreak:1,buffs:[],daysLeft:1}],
-   ];
-   return cases.map(([n,R])=>{const x=buildReactions(R);
-     return {상황:n, 댓글수:x.list.length, 댓글:x.list.map(m=>m.text)};});
- }));
- await p.close();
-
+ /* 7. 댓글 — 삭제됐다. 체결 통지는 회사가 발행한 문서라 커뮤니티 목소리가
+    붙을 자리가 아니었다. 리스크 관리팀 논평은 phase31 10절이 본다. */
  console.log('\n=== 8. 파산은 그대로 ===');
  p=await fresh();
  await p.evaluate(()=>{if($('modal').classList.contains('on'))$('mOk').click();});  // 첫 진입 안내 닫기

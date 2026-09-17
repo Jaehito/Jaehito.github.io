@@ -14,7 +14,7 @@
      7) 🛠 도구에 언어 버튼이 있고 눌러서 바뀌는가
      8) 돈 표기 — 같은 정수가 한국어는 만/억, 영어는 $·K/M/B로 나오는가
      9) 날짜 표기 — 주말을 건너뛴 같은 날이 두 언어로 제대로 나오는가
-    10) 댓글 — 언어별 목록이 실제로 갈리는가, 한강 표현이 남아 있지 않은가
+    10) 체결 통지의 논평 — 리스크 관리팀이 등급·상황을 읽는가(무작위가 아니다)
     11) 모달 전수 검사 — 영어에서 한글이 남은 곳이 없는가 */
 const { launch, GAME: url } = require('../lib/browser');
 (async()=>{
@@ -185,32 +185,34 @@ const { launch, GAME: url } = require('../lib/browser');
  want('영어 첫날', dates.en[0], 'Mar 2 (Mon)');
  want('영어 주말 건너뛰기', dates.en[3], 'Mar 9 (Mon)');
 
- /* ── 10. 댓글 ── */
- /* 댓글은 사전이 아니라 CHAT{ko,en}에 목록째로 갈려 있다. 번역이 아니므로
-    "같은 상황에서 다른 문장이 나온다"가 정상이다. 심의에 걸리는 한강 표현이
-    돌아오지 않았는지도 같이 본다 — 한 번 지웠어도 다시 새기 쉬운 자리다. */
- console.log('\n=== 10. 댓글 ===');
- const chat=await p.evaluate(()=>{
-   const R={mult:0.60,profit:-1000000,bet:1000000,lev:6,grade:{pct:10,g:'D'},
-            hi:1.05,lo:0.6,streak:0,prevStreak:5,buffs:[],daysLeft:8};
-   const dump=l=>{ setLang(l);
-     const lines=new Set(), names=new Set();
-     for(let i=0;i<60;i++)buildReactions(R).list.forEach(m=>{lines.add(m.text);names.add(m.name);});
-     return {줄:[...lines], 이름:[...names]};
-   };
+ /* ── 10. 체결 통지의 논평 ── */
+ /* 커뮤니티 댓글이 있던 자리다. 체결 통지는 회사가 발행한 문서라 「공감 65」가
+    붙어 있으면 톤이 안 맞았다 — 이제 리스크 관리팀이 읽는다. 무작위가 아니므로
+    같은 판에는 같은 말이 나와야 한다(회사는 즉흥으로 말하지 않는다). */
+ console.log('\n=== 10. 체결 통지 — 리스크 관리팀 ===');
+ const rmc=await p.evaluate(()=>{
+   const R=(over)=>Object.assign({mult:1.3,profit:300000,bet:1000000,lev:3,
+     grade:{pct:50,g:'B'},hi:1.5,lo:0.9,streak:0,prevStreak:0,buffs:[],daysLeft:8},over);
+   const dump=l=>{ setLang(l); return {
+     B:rmResultLines(R({})),
+     S:rmResultLines(R({grade:{pct:95,g:'S'}})),
+     청산:rmResultLines(R({profit:-1000000})),
+     연승:rmResultLines(R({streak:6})),
+     마지막날:rmResultLines(R({daysLeft:1})),
+     등급없음:rmResultLines(R({grade:null})),
+   };};
    const ko=dump('ko'), en=dump('en');
-   const all=[].concat(CHAT.ko.names,CHAT.en.names,
-     ...['jackpot','win','meh','loss','disaster'].map(k=>CHAT.ko.react[k].concat(CHAT.en.react[k]))).join(' ');
-   return {ko, en, 한강:/한강/.test(all),
-     이름수:[CHAT.ko.names.length,CHAT.en.names.length],
-     영어에한글:en.줄.filter(x=>/[가-힣]/.test(x))};
+   /* 같은 판을 스무 번 읽어도 같은 말이 나오는가 */
+   setLang('ko');
+   const same=new Set(); for(let i=0;i<20;i++)same.add(rmResultLines(R({})).join('|'));
+   return {ko, en, 흔들림:same.size, 영어에한글:Object.values(en).flat().filter(x=>/[가-힣]/.test(x))};
  });
- L('한국어', chat.ko.줄.slice(0,4)); L('영어', chat.en.줄.slice(0,4));
- L('이름', {ko:chat.ko.이름.slice(0,3), en:chat.en.이름.slice(0,3), 개수:chat.이름수});
- want('한강 표현 없음', chat.한강, false);
- want('영어 댓글에 한글 없음', chat.영어에한글.length, 0);
- if(!chat.ko.줄.length||!chat.en.줄.length) fail.push('댓글이 비었다');
- if(chat.ko.줄.some(x=>chat.en.줄.includes(x))) fail.push('두 언어가 같은 문장을 쓴다: 목록이 안 갈렸다');
+ L('한국어', rmc.ko); L('영어', rmc.en);
+ want('같은 판은 같은 말', rmc.흔들림, 1);
+ want('영어에 한글 없음', rmc.영어에한글.length, 0);
+ want('청산은 등급을 말하지 않는다', rmc.ko.청산.length, 2);
+ if(rmc.ko.연승.length!==2) fail.push('연승 줄이 안 붙는다: '+JSON.stringify(rmc.ko.연승));
+ if(rmc.ko.B[0]===rmc.ko.S[0]) fail.push('등급별로 말이 안 갈린다');
 
  /* ── 11. 모달 전수 검사 ── */
  /* 영어로 두고 모달을 하나씩 열어 한글이 남았는지 본다. 사람이 눈으로 훑으면

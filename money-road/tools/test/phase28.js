@@ -32,7 +32,9 @@ const { launch, GAME: url } = require('../lib/browser');
    '.rank-chip 남음':document.querySelectorAll('.rank-chip').length,
    전역함수:['rankOf','rankText','renderRankChip','updateRankDrift','rankFromAmount']
      .filter(n=>typeof window[n]==='function'),
-   FAKE_NAMES유지:Array.isArray(FAKE_NAMES)&&FAKE_NAMES.length>0})));
+   /* 예전에는 FAKE_NAMES(댓글 작성자)가 살아 있는지도 같이 봤다. 댓글을
+      지우면서 같이 없어졌다 — 랭킹 흔적과는 상관없는 검사였다. */
+   'CHAT 흔적':typeof window.CHAT!=='undefined'})));
  L('결과 팝업에 순위 줄이 없다', await p.evaluate(()=>{
    S.cash=3000000; S.upg.leverageLv=3; setBet(1000000);
    startRound(1);

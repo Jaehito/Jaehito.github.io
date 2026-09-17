@@ -65,19 +65,33 @@ const G = {};
     'G.getDownMix=()=>[DOWN_NO_BOUNCE,DOWN_WEAK_BOUNCE];');
 })();
 
-/* 종목 — index.html의 TRADE_STOCKS에서 생성기가 실제로 읽는 필드만 옮긴다.
-   (open/lock/emo 같은 UI 필드는 경로에 영향이 없다) */
-G.STOCKS = {
-  stable: { id:'stable', name:'사성전자',  pMult:1.0,  noiseMult:1.0 },
-  theme:  { id:'theme',  name:'네코프로',  pMult:1.6,  noiseMult:1.8 },
-  surge:  { id:'surge',  name:'유메이드',  pMult:2.3,  noiseMult:2.6 },
-  etf:    { id:'etf',    name:'코스피ETF', pMult:0.75, noiseMult:0.7,
-            patW:{spike:0, delayup:0, delaydown:0} },
-  penny:  { id:'penny',  name:'동전주',    pMult:1.5,  noiseMult:1.7,
-            patW:{spike:3, up:0.4, delayup:1.5, delaydown:3, down:0.6, flat:0.2,
-                  v:1.5, invv:1.5, w:0.5, m:0.5} },
-  coin:   { id:'coin',   name:'코인',      pMult:2.6,  noiseMult:3.0, ticks:400 },
-};
+/* 종목도 베끼지 않는다. 여기 손으로 옮겨 적은 patW가 조용히 어긋나 있었다 —
+   동전주는 게임과 아예 다른 값이었고(spike 3 vs 2.5 · up 0.4 vs 1.0 · …),
+   ETF는 나중에 들어온 crash·earlypop을 안 막고 있었다. 그 상태로 잰 종목별
+   클리어율은 게임이 아니라 사본을 잰 값이다 — 이 파일이 생긴 이유가 바로
+   그것이었는데 종목 표만 예외로 남아 있었다.
+
+   UI 필드(emo·name·ds·lock)는 전부 게터고 open은 함수라, 배열을 만드는
+   시점에는 t()도 ic()도 안 불린다. 그래서 그대로 평가할 수 있다.
+   이름만 여기서 정해 준다 — 표시용이라 경로에는 영향이 없다. */
+const STOCK_NAMES = { stable:'사성전자', theme:'네코프로', surge:'유메이드',
+                      etf:'코스피ETF', penny:'동전주', coin:'코인' };
+G.STOCKS = {};
+(function () {
+  const src = slice('const TRADE_STOCKS=[', '\n];')
+    .replace(/^const TRADE_STOCKS=/, '').replace(/;\s*$/, '');
+  // eslint-disable-next-line no-eval
+  const list = eval('(' + src + ')');
+  for (const st of list) {
+    const o = { id: st.id, name: STOCK_NAMES[st.id] || st.id,
+                pMult: st.pMult, noiseMult: st.noiseMult, rng: st.rng };
+    if (st.ticks) o.ticks = st.ticks;
+    if (st.patW)  o.patW  = st.patW;
+    G.STOCKS[st.id] = o;
+  }
+  if (Object.keys(G.STOCKS).length !== 6) throw new Error('종목 수가 6이 아니다');
+})();
+
 G.ticksOf = st => (st && st.ticks) || G.ROUND_TICKS;
 G.byId = id => G.PATTERNS.find(p => p.id === id);
 

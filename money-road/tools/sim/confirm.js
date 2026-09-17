@@ -54,8 +54,12 @@ function panic(path){ let mx=path[0],pend=-1;
   return cash(path[path.length-1]); }
 function hold(path){ for(let i=1;i<path.length;i++) if(path[i]<=LIQ)return 0;
   return cash(path[path.length-1]); }
-const MODES={ '트레일12':p=>warmTrail(p,0,0.12), '버티25':p=>warmTrail(p,Math.floor(T*0.25),0.12),
-  '버티35':p=>warmTrail(p,Math.floor(T*0.35),0.08), '쫄보':panic, '홀드':hold };
+/* 「25%를 버틴다」는 그 판 길이의 25%다. T(=300)로 고정해 두면 20초짜리 코인에서만
+   26%·18%가 되어, 코인은 다른 종목과 다른 전략을 재고 있게 된다 — 코인이 유독
+   약하게 나오던 이유의 일부였다. 경로 길이에서 뽑는다. */
+const warmAt = (p,f) => Math.floor((p.length-1)*f);
+const MODES={ '트레일12':p=>warmTrail(p,0,0.12), '버티25':p=>warmTrail(p,warmAt(p,0.25),0.12),
+  '버티35':p=>warmTrail(p,warmAt(p,0.35),0.08), '쫄보':panic, '홀드':hold };
 const GATES=[[5e5,13],[3e6,13],[2e7,13],[1.5e8,15],[1e9,15],[8e9,17],[5e10,17]];
 const MIN_BET=10000, RATE=0.10, INFO_ACC=0.55, TIERS=['strong','mid','weak'];
 const sigOf = t => Math.random()<INFO_ACC ? t : TIERS.filter(x=>x!==t)[(Math.random()*2)|0];
@@ -72,7 +76,8 @@ function runOne(pick, mode, stock){
       const {p,t}=pick(); let ret;
       if(mode==='신호'){ const s=sigOf(t);
         if(s==='weak'){ left--; total++; if(total>500)return '초과'; continue; }
-        ret=warmTrail(p.gen(stock,Tt), s==='strong'?Math.floor(T*0.35):0, 0.12); }
+        { const path=p.gen(stock,Tt);
+          ret=warmTrail(path, s==='strong'?warmAt(path,0.35):0, 0.12); } }
       else ret=MODES[mode](p.gen(stock,Tt));
       money=money-bet+Math.max(0,bet*ret);
       left--; total++; if(total>500)return '초과';

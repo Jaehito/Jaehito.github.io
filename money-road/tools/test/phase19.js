@@ -55,7 +55,7 @@ const { launch, GAME: url } = require('../lib/browser');
    return {metaHas:metaHas('autosell'), 칩있음:!!$('autoToggle'),
      'Lv.4 보상에 autosell 없음':!JSON.stringify(LEVELS.find(l=>l.lv===4)).includes('autosell')};}));
  L('XP 40이면', await p.evaluate(()=>{
-   META.xp=40; saveMeta(); renderTrade();
+   META.xp=40; grantByXp(); saveMeta(); renderTrade();
    return {metaHas:metaHas('autosell'), 칩있음:!!$('autoToggle'), 메타레벨:metaLv()};}));
  await p.close();
 

@@ -118,7 +118,7 @@ const { launch, GAME: url } = require('../lib/browser');
 
  /* ── 6. devWipe이 언어를 안 지우는가 ── */
  console.log('\n=== 6. 전부 초기화 ===');
- await p.evaluate(()=>{ setLang('en'); META.xp=500; saveMeta(); });
+ await p.evaluate(()=>{ setLang('en'); META.xp=500; grantByXp(); saveMeta(); });
  await p.evaluate(()=>devWipe('all'));
  await p.waitForTimeout(500); await dismiss(p);
  const wiped=await p.evaluate(()=>({
@@ -223,7 +223,7 @@ const { launch, GAME: url } = require('../lib/browser');
  const leaks=await p.evaluate(()=>{
    setLang('en');
    S.cash=3000000; S.peakCash=8000000; S.upg.stoplossLv=1; S.upg.infoLv=1;
-   META.xp=900; META.cleared=2; S.level=6;
+   META.xp=900; grantByXp(); META.cleared=2; S.level=6;
    const R={mult:1.62,profit:1800000,bet:1000000,lev:6,grade:{pct:88,g:'A'},hi:1.7,lo:0.9,
             streak:3,prevStreak:2,buffs:['info'],earned:['boost'],daysLeft:2,
             entry:1,half:null,watered:false,dir:1,tier:'win',

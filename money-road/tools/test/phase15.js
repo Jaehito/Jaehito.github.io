@@ -17,7 +17,7 @@ const { launch, GAME: url } = require('../lib/browser');
  L('', await p.evaluate(()=>{
    /* 자동 익절은 C단계에서 판 안 업그레이드 → 메타 해금으로 옮겨갔다(phase19). 여기서는
       화면 배치만 보므로 XP를 채워서 켠다. */
-   META.xp=999; saveMeta();
+   META.xp=999; grantByXp(); saveMeta();
    S.level=6;S.peakCash=1.2e9;S.cash=320000000;S.upg.leverageLv=3;
    S.themeUnlocked=true;S.buffs=['info'];setBet(32000000);render();
    return {히어로:!!document.querySelector('.hero'), 지갑줄:!!document.querySelector('.wallet'),
@@ -52,12 +52,12 @@ const { launch, GAME: url } = require('../lib/browser');
     방향 토글 혼자 쓴다 — 공매도 해금 전에는 줄 자체가 없다. */
  console.log('\n=== 옵션 줄 — 방향 토글뿐 ===');
  L('공매도 해금 전 — 줄 자체가 없다', await p.evaluate(()=>{
-   META.xp=0; saveMeta(); renderTrade();   /* 위에서 999를 넣어뒀으므로 도로 잠근다 */
+   META.xp=0; grantByXp(); saveMeta(); renderTrade();   /* 위에서 999를 넣어뒀으므로 도로 잠근다 */
    return {자동익절:!!$('autoToggle'), 방향토글:!!$('dirToggle'),
      옵션줄:!!document.querySelector('.opt-row'),
      시작버튼:$('tradeGo').textContent.trim()};}));
  /* 400 XP — 공매도가 사다리 네 번째 칸으로 옮겨간 뒤의 문턱이다. */
- L('해금하면', await p.evaluate(()=>{ META.xp=400; saveMeta(); renderTrade();
+ L('해금하면', await p.evaluate(()=>{ META.xp=400; grantByXp(); saveMeta(); renderTrade();
    return {방향토글:$('dirToggle').textContent.replace(/\s+/g,' ').trim(),
      시작버튼:$('tradeGo').textContent.trim(), betDir:S.betDir};}));
  L('하락으로 — 버튼은 아이콘·색만으로 갈린다', await p.evaluate(()=>{

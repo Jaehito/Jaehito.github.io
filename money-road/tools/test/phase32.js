@@ -69,7 +69,7 @@ const { launch, GAME: url } = require('../lib/browser');
  });
  const screens=await p.evaluate(()=>{
    const out={};
-   S.cash=3000000; S.level=6; META.xp=900; META.cleared=2; render();
+   S.cash=3000000; S.level=6; META.xp=900; grantByXp(); META.cleared=2; render();
    return out;
  });
  let emo=await emoScan();
@@ -82,7 +82,7 @@ const { launch, GAME: url } = require('../lib/browser');
                'showDefaultModal()','showBankruptModal()','showSettleModal(settleOf(0))',
                'showAwayModal({awaySec:5400,roundRefunded:{bet:200000}})'];
  for(const m of modals){
-   await p.evaluate(e=>{ $('modal').classList.remove('on'); META.xp=2000; eval(e); },m);
+   await p.evaluate(e=>{ $('modal').classList.remove('on'); META.xp=2000; grantByXp(); eval(e); },m);
    await p.waitForTimeout(120);
    emo=emo.concat(await emoScan());
  }

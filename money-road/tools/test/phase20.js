@@ -91,11 +91,14 @@ const { launch, GAME: url } = require('../lib/browser');
    $('mOk').click();                                                      // 새 판 시작
    return {모달:$('modal').classList.contains('on'), tier:S.tier, 현금:fmtMoney(S.cash)};}));
  await p.waitForTimeout(150);
+ /* 정산 → (승진 통지) → 난이도. 승진이 사이에 끼면서 클릭 수가 판마다 달라졌다 —
+    난이도 카드가 나올 때까지 도장을 찍는다. 몇 번을 찍었는지도 같이 낸다. */
  L('단계를 깼으면 선택 화면', await p.evaluate(()=>{
    META.cleared=2; saveMeta();
-   S.peakCash=3000000; S.cash=0; showBankruptModal(); $('mOk').click();
-   $('mOk').click();
-   return {제목:$('modalBox').querySelector('.tt').textContent,
+   S.peakCash=3000000; S.cash=0; showBankruptModal();
+   let n=0;
+   while(n<6 && !document.querySelector('.diff-card')){ const b=$('mOk'); if(!b)break; b.click(); n++; }
+   return {도장수:n, 제목:($('modalBox').querySelector('.tt')||{}).textContent||'-',
      카드수:document.querySelectorAll('.diff-card').length,
      잠긴카드:document.querySelectorAll('.diff-card.lock').length,
      기본선택:tierPick+1, 버튼:$('mOk').textContent.trim()};}));

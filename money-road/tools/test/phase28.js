@@ -173,7 +173,7 @@ const { launch, GAME: url } = require('../lib/browser');
    await rp.reload(); await rp.waitForTimeout(350);
    await dismiss(rp);
    /* 해금을 전부 켜서 제일 높은 라운드 화면(물타기 줄 + 절반 매도)으로 잰다 */
-   await rp.evaluate(()=>{ META.xp=99999; saveMeta(); S.cash=3000000; setBet(300000); startRound(1); });
+   await rp.evaluate(()=>{ META.xp=99999; grantByXp(); saveMeta(); S.cash=3000000; setBet(300000); startRound(1); });
    await rp.waitForTimeout(300);
    const m=await rp.evaluate(()=>{
      const bd=$('appBody');

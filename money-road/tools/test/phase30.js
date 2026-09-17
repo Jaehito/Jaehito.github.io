@@ -247,7 +247,7 @@ const { launch, GAME: url } = require('../lib/browser');
     reload 경로(pagehide→saveRun)를 안 타서 진짜 버그를 못 잡는다. */
  const seed=async(page)=>{ await page.evaluate(()=>{
    localStorage.setItem('moneyroad2_meta_v4', JSON.stringify({mute:false,legacyPoints:777,seenIntro:true}));
-   META.xp=654; saveMeta();
+   META.xp=654; grantByXp(); saveMeta();
    S.cash=S.peakCash=88000000; S.gate=3; saveRun(); }); };
 
  L('20. 판만 초기화 — 판은 날아가고 메타는 남는다', await (async()=>{

@@ -19,7 +19,7 @@ const SHORT_XP = 400;
    await p.goto(url); await p.waitForTimeout(150);
    await p.evaluate(()=>localStorage.clear()); await p.reload(); await p.waitForTimeout(300);
    await p.evaluate(()=>{ if($('modal').classList.contains('on')&&$('mOk'))$('mOk').click(); });
-   await p.evaluate(x=>{ META.xp=x; saveMeta();
+   await p.evaluate(x=>{ META.xp=x; grantByXp(); saveMeta();
      S.cash=S.peakCash=3000000; S.upg.leverageLv=3; setBet(1000000); renderTrade(); }, xp);
    return p;}
  const L=(t,v)=>console.log(t,JSON.stringify(v,null,1));

@@ -18,7 +18,7 @@ const { launch, GAME: url } = require('../lib/browser');
    await p.goto(url); await p.waitForTimeout(150);
    await p.evaluate(()=>localStorage.clear()); await p.reload(); await p.waitForTimeout(300);
    await p.evaluate(()=>{ if($('modal').classList.contains('on')&&$('mOk'))$('mOk').click(); });
-   await p.evaluate(([x,c])=>{ META.xp=x; saveMeta();
+   await p.evaluate(([x,c])=>{ META.xp=x; grantByXp(); saveMeta();
      S.cash=S.peakCash=c; S.upg.leverageLv=3; setBet(2000000); renderTrade(); }, [xp,cash]);
    await p.evaluate(`window.openAt=(dir,mult)=>{ startRound(dir);
      S.activeRound.path=S.activeRound.path.map(()=>mult);

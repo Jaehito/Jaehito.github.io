@@ -214,25 +214,34 @@
   /* ── 단타 패널 ── */
   .trade-panel{display:flex; flex-direction:column; gap:12px;}
   .tp-head{display:none;}   /* 목표·D-day는 상환 그룹이 이미 말한다 — 같은 값을 두 번 쓰지 않는다 */
-  .stock-tabs{display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;}
-  .stock-tab{background:var(--paper-hi); color:var(--paper-ink); cursor:pointer; min-height:74px;
-    padding:6px 2px; font-size:12.5px; line-height:14px;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+  /* 종목은 세로 목록이다. 막대가 같은 왼쪽 눈금에서 출발해야 서로 비교가 되고,
+     타일로 흩어 놓으면 그 비교가 흐려진다. 대신 여섯 줄이 자리를 먹는다 —
+     한 칸 48px(터치 규격)을 지켜야 하므로 격자보다 170px쯤 높다.
+     주문표는 스크롤해도 되는 화면이라 그 값을 치를 수 있다(라운드는 안 된다). */
+  .stock-tabs{display:flex; flex-direction:column; gap:3px;}
+  .stock-tab{background:var(--paper-hi); color:var(--paper-ink); cursor:pointer; min-height:48px;
+    padding:5px 9px; font-size:12.5px; line-height:1.3;
+    display:flex; flex-direction:row; align-items:center; gap:9px;
     border:1px solid var(--paper-line); border-radius:3px; box-shadow:none;}
   /* 고른 종목은 테를 굵게 — 잉크로 채우면 미니 차트가 안 보인다 */
   .stock-tab.sel{border:2px solid var(--paper-ink); box-shadow:none;}
   .stock-tab.locked{color:#a2977c; text-shadow:none; cursor:default;}
-  .stock-tab .e{line-height:0; color:var(--paper-dim);}
+  .stock-tab .e{line-height:0; color:var(--paper-dim); width:40px; flex:0 0 auto;}
+  .stock-tab .n{width:74px; flex:0 0 auto;}
+  .stock-tab .v{margin-left:auto; color:var(--paper-dim); font-size:12px;}
   .stock-tab.sel .e{color:var(--paper-ink);}
   .stock-tab.locked .e{color:#c4b088;}
   .ink-spark{display:block; margin:0 auto;}
   /* 범위 막대 — span이라 display:block을 꼭 줘야 한다. 인라인에는 width가 안 먹어서
      폭 0으로 눌린다(목업에서 두 번 당했다). */
-  .stock-tab .rng{display:block; position:relative; width:100%; height:8px; margin-top:2px;}
+  .stock-tab .rng{display:block; position:relative; flex:1; min-width:0; height:10px;}
   .stock-tab .rng i{position:absolute; top:50%; transform:translateY(-50%); display:block;}
-  .stock-tab .rng .x{height:3px; background:#d8cdb2; border-radius:2px;}
-  .stock-tab .rng .m{height:6px; background:#8a5a00; border-radius:2px;}
-  .stock-tab .rng .e{width:1px; height:9px; background:var(--stamp); transform:translate(-50%,-50%);}
+  .stock-tab .rng .x{height:4px; background:#d8cdb2; border-radius:2px;}
+  .stock-tab .rng .m{height:9px; background:#8a5a00; border-radius:2px;}
+  .stock-tab .rng .e{width:1px; height:14px; background:var(--stamp); transform:translate(-50%,-50%);}
+  /* 눈금 설명 — 막대가 무엇인지 한 번은 말해야 한다. 로그 눈금이라 가운데가 1.00x가 아니다. */
+  .stock-scale{display:flex; font-size:12px; color:var(--paper-dim); padding:3px 9px 0; margin-top:2px;}
+  .stock-scale .c{margin:0 auto; color:var(--stamp);}
   .stock-note{display:flex; align-items:center; gap:8px; margin-top:7px; padding:5px 9px;
     background:var(--paper-memo); border-left:3px solid #8a5a00; font-size:12.5px;}
   .stock-note b{font-size:12.5px;} .stock-note span{color:var(--paper-dim);}
@@ -812,6 +821,7 @@
             <div class="tp-head"><span class="tp-goal" id="tpGoal"></span></div>
             <div class="grp" id="stockGrp"><span class="lg" id="stockLg"></span>
               <div class="stock-tabs" id="stockTabs"></div>
+              <div class="stock-scale" id="stockScale"></div>
               <div class="stock-note" id="stockNote"></div>
             </div>
             <div id="tradeBody"></div>
@@ -1530,6 +1540,7 @@ function inkSpark(id){
 /* 눈금은 로그다. 0.05x와 3.5x를 한 줄에 놓으려면 선형으로는 안 된다 —
    ETF(0.81~1.26)가 점 하나로 뭉개진다. */
 const RNG_LO=0.05, RNG_HI=3.5;
+const fmtMult=v=>v.toFixed(2).replace(/0$/,'')+'x';
 function rngPos(v){
   const l=Math.log(RNG_LO), h=Math.log(RNG_HI);
   return Math.max(0,Math.min(100,(Math.log(v)-l)/(h-l)*100));
@@ -2925,9 +2936,6 @@ function renderTradeTabs(){
   /* 종목이 넷 이상이면 한 줄에 다 못 넣는다. 가로 스크롤은 안 쓴다 —
      ETF·동전주가 들어오면 신호를 보고 종목을 고르게 되어 매 판 바꾸는 값이 되는데,
      그걸 매번 옆으로 굴려 찾게 할 수는 없다. 줄을 나눠서 전부 보이게 한다. */
-  const n=TRADE_STOCKS.length;
-  const cols=n<=3?n:(n===4?2:3);
-  $('stockTabs').style.gridTemplateColumns=`repeat(${cols},1fr)`;
   /* 타일에서 설명을 빼고 아래 한 줄로 내린다 — 여섯 개를 다 읽게 하면 아무것도
      안 읽힌다. 고른 것 하나만 말하면 되고, 나머지는 선과 막대가 대신한다. */
   $('stockTabs').innerHTML=TRADE_STOCKS.map(s=>{
@@ -2949,6 +2957,9 @@ function renderTradeTabs(){
    여섯 중 다섯이 15초라 정보가 아니고(코인만 20초인데 그건 ds가 말한다),
    범위 숫자는 막대가 이미 말한다. 같은 것을 두 번 쓰지 않는다. */
 function renderStockNote(){
+  const sc=$('stockScale');
+  if(sc)sc.innerHTML=`<span>${fmtMult(RNG_LO)}</span><span class="c">${t('rEntry')}</span>`+
+    `<span>${fmtMult(RNG_HI)}</span>`;
   const el=$('stockNote'); if(!el)return;
   /* 고른 종목을 꺼내는 이름난 함수가 없다 — 세 군데가 각자 find로 꺼내 쓴다.
      여기서 네 번째를 만들지 않고 같은 꼴을 쓴다. */

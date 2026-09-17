@@ -447,6 +447,37 @@
     .rv-pulse,.round-view.tense .round-chartbox,.round-count.on{animation:none;}
     .round-mult{transition:none;}
   }
+  /* ── 모니터(MT-14) ── 라운드는 책상 위 기기 안에서 돈다.
+     판이 없으면 대기 줄로 눕고, 판이 돌면 불이 들어와 서류를 치우고 화면을 차지한다.
+     화면 안쪽은 게임 것을 그대로 쓴다 — .trm에서 빼는 것은 자기 테두리와 그림자
+     한 줄뿐이다(기기 안에서는 화면이 곧 유리라서). 차트 코드는 한 줄도 안 건드렸다. */
+  .dev{margin-top:9px;}
+  .bezel{background:linear-gradient(#d9d0b8,#b9ae92); border-radius:9px 9px 3px 3px;
+    padding:7px 7px 6px;
+    box-shadow:0 5px 0 rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.65),
+      inset 0 -2px 0 rgba(0,0,0,.18);}
+  .scrn{position:relative; border-radius:14px/9px; overflow:hidden; background:#05080a;
+    box-shadow:inset 0 0 30px rgba(0,0,0,.9);}
+  .scrn::after{content:''; position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);}
+  .glare{position:absolute; left:-10%; top:-28%; width:70%; height:70%; pointer-events:none;
+    z-index:2; transform:rotate(-16deg);
+    background:radial-gradient(ellipse at center,rgba(255,255,255,.07),transparent 62%);}
+  .scrn .trm{border:0; box-shadow:inset 0 0 22px rgba(51,255,119,.13);}
+  .chin{display:flex; align-items:center; gap:8px; padding:4px 11px;
+    background:linear-gradient(#c9bfa4,#a89c7e); border-radius:0 0 5px 5px;
+    box-shadow:0 4px 0 rgba(0,0,0,.3);}
+  .plate{font-family:'Galmuri11',monospace; font-size:12px; color:#5a5240;
+    -webkit-font-smoothing:none; font-smooth:never; letter-spacing:0;}
+  .led{width:7px; height:7px; border-radius:50%; margin-left:auto; background:#39ff88;
+    box-shadow:0 0 7px #39ff88, inset 0 0 2px rgba(0,0,0,.4);}
+  .led.off{background:#4a5a4a; box-shadow:inset 0 0 2px rgba(0,0,0,.5);}
+  /* 대기 상태 — 44px 한 줄. 꺼진 모니터가 아니라 "다음 판을 기다리는" 모니터다 */
+  .dev.idle .scrn{height:44px; display:grid; place-items:center;}
+  .idlemsg{font-family:'Galmuri11',monospace; font-size:12px; color:#1f8f47;
+    -webkit-font-smoothing:none; font-smooth:never; letter-spacing:0;}
+  .round-view .dev{margin-top:0;}
+
   .trm .round-timer{font-size:11px; color:#1f8f47; padding:0 0 5px; margin-bottom:4px;
     border-bottom:1px solid #16351f;}
   .trm .round-timer .rt-r{color:#ffb000;}
@@ -474,14 +505,32 @@
   .round-bar i{display:block; height:100%; width:12px; flex-shrink:0; background:var(--blue);}
   .round-bar i.e{background:transparent;}
   .round-view.tense .round-bar i{background:var(--red);}
+  /* 물타기는 책상 위 버튼이다 — 라운드 화면에서 유일하게 98 회색으로 남아
+     기기 아래에 혼자 떠 있었다. 매도 버튼과 같은 물건이어야 손이 그리로 간다. */
   .water{display:flex; align-items:center; gap:8px; min-height:48px; padding:8px 10px;
-    font-size:12.5px; cursor:pointer; background:var(--face); color:var(--ink);
-    border:2px solid; border-color:var(--lt) var(--dk) var(--dk) var(--lt);
-    box-shadow:inset 1px 1px 0 var(--hi), inset -1px -1px 0 var(--sh);}
+    font-size:12.5px; cursor:pointer; background:var(--paper-hi); color:var(--paper-ink);
+    border:1px solid var(--paper-line); border-radius:4px;
+    box-shadow:0 3px 0 rgba(0,0,0,.28);}
   .water b{font-weight:700;}
-  .water .r{margin-left:auto; color:var(--gray2);}
-  .water.off{color:var(--gray3); text-shadow:1px 1px 0 var(--hi); cursor:default;}
-  .water.off .r{color:var(--gray3);}
+  .water .r{margin-left:auto; color:var(--paper-dim);}
+  .water.off{color:#a2977c; background:var(--paper-memo); text-shadow:none; cursor:default;
+    box-shadow:none;}
+  .water.off .r{color:#a2977c;}
+
+  /* 짧은 화면 — 라운드는 스크롤이 절대 안 되는 화면이다(15초 동안 차트와 매도
+     버튼이 같이 보여야 한다). 차트는 손대지 않기로 한 자리라, 줄일 수 있는 것은
+     기기 껍데기의 여백뿐이다. 320×568에서 1.8px이 모자랐다. */
+  @media(max-height:640px){
+    .bezel{padding:4px 4px 3px;}
+    .chin{padding:2px 9px;}
+    .trm-pad{padding:5px 9px;}
+    .round-view{gap:7px;}
+    /* 도트 서체는 11px 격자에 그려져서, 터미널 안 크기는 11의 배수로만 내린다 */
+    .trm .round-mult{font-size:33px;}
+    .trm .round-chartbox{margin:3px 0 2px;}
+    /* 48px은 터치 규격이라 그 아래로는 못 내린다 — 62에서 54까지만 */
+    .sell-btn{min-height:54px;}
+  }
 
   /* ── 오늘의 기록 ── 상태표시줄로 내려갔다. 98에 원래 그 자리가 있다. */
   .strip{display:flex; gap:2px; padding:3px; flex-shrink:0; background:var(--face); cursor:pointer;
@@ -827,7 +876,7 @@
       </div>
     </div>
 
-    <div>
+    <div id="tabsWrap">
       <div class="main-tabs">
         <button class="main-tab on" data-tab="trade" id="mtTrade">단타</button>
         <button class="main-tab" data-tab="shop" id="mtShop">상점</button>
@@ -859,6 +908,15 @@
         </div>
       </div>
     </div>
+
+    <!-- 모니터 — 책상 위에 늘 놓여 있는 물건이다. 판이 없으면 대기 줄로 눕고,
+         판이 돌면 여기가 아니라 #roundHost 안에서 불이 들어와 화면을 차지한다.
+         판단하는 곳(종이)과 지켜보는 곳(유리)이 다른 물건이라는 것이 이 방향의 뼈대다. -->
+    <div class="dev idle" id="devIdle">
+      <div class="bezel"><div class="scrn"><div class="idlemsg" id="devIdleMsg"></div></div></div>
+      <div class="chin"><span class="plate" id="devPlate1"></span><i class="led off"></i></div>
+    </div>
+    <div id="roundHost" hidden></div>
   </div>
 
   <!-- 상태표시줄 — 오늘의 기록이 본문에서 여기로 내려왔다. 98에 원래 그 자리가 있다. -->
@@ -912,6 +970,7 @@ const L={
     paceLast:'마지막 거래일', paceNeed:'판당 <b>{p}</b> 필요',
     tradeNote:'끝까지 들고만 있으면 손해입니다 — 패턴을 보고 반응하십시오',
     goNoFunds:'베팅금이 부족합니다', amtLev:'{v} × {n}배',
+    devIdle:'다음 판 대기',
     sigAcc:'이 신호가 맞을 확률 {p}%', sigSure:'이번 판은 이 신호가 반드시 맞습니다',
     /* 신호 등급 */
     sigStrongN:'강세', sigStrongD:'큰 고점이 나올 만한 장',
@@ -1088,6 +1147,7 @@ const L={
     paceLast:'Last session', paceNeed:'need <b>{p}</b> per session',
     tradeNote:'Holding to the end loses — read the pattern and react!',
     goNoFunds:'Not enough to stake', amtLev:'{v} × {n}',
+    devIdle:'STANDBY',
     sigAcc:'This signal is right {p}% of the time',
     sigSure:'This signal is guaranteed this session',
     sigStrongN:'Bullish', sigStrongD:'a session that can print a high',
@@ -2990,6 +3050,20 @@ function renderStockNote(){
   el.innerHTML=`<b>${st.name}</b><span>${st.ds}</span>`;
 }
 function renderTrade(){
+  /* 판이 돌면 서류를 치우고 모니터가 화면을 차지한다. 예전에는 라운드 뷰가
+     주문표 안(#tradeBody)에 들어가서, 15초 동안 볼 것은 차트 하나인데
+     그 위에 주문표 머리와 종목 여섯 줄이 그대로 남아 차트를 접힘선 아래로
+     밀어냈다. 스크롤이 절대 안 되는 화면은 라운드뿐이라 그 자리부터 비운다. */
+  const live=!!S.activeRound;
+  $('tabsWrap').hidden=live; $('devIdle').hidden=live; $('roundHost').hidden=!live;
+  if(!live)$('roundHost').innerHTML='';
+  /* ACCOUNT 패널(156px)도 접어서 창틀의 계좌줄(44px)로 내린다. 목표와 D-day는
+     15초 동안에도 "언제 팔까"를 고르는 값이라 지워선 안 되지만, 큰 판때기로
+     둘 자리는 없다 — 360×640에서 매도 버튼이 상태표시줄 아래로 밀려났다. */
+  const bd=$('appBody');
+  $('repayGrp').hidden=live;
+  $('acctMini').hidden=!(live||bd.scrollTop>40);
+  if(!$('acctMini').hidden)renderAcctMini();
   const maxLev=leverageMultOf();
   /* 예전에는 여기 "빚 때문에 최소 3배"가 있었다. 고를 배율이 하나뿐이면 아무 선택도
      안 바꾸는 문장이다(설명은 인트로에 남아 있다). 베팅금을 고르는 자리에 필요한 건
@@ -3098,13 +3172,17 @@ function goRowHTML(canGo,canShort,lev,pr){
    그래서 노드를 RV에 캐시해 두고 update만 돌린다. */
 let RV=null;
 const RV_H=150, RV_PADX=8, RV_PADY=16;
+/* 기기 이름은 번역하지 않는다 — 책상 위 물건에 찍힌 모델명이지 UI 문구가 아니다 */
+const DEV_PLATE='MERIDIAN \u00b7 MT-14';
 
 function buildRoundView(r,stock){
   const lev=r.leverage||1;
   /* 배율·차트·손익·남은 시간을 한 덩어리로 묶어 터미널에 넣는다.
      여기가 15초 동안 눈이 붙어 있는 자리고, 지금까지 이 화면에서 가장
      디자인이 안 된 곳이었다. */
-  $('tradeBody').innerHTML=`<div class="round-view" id="rvRoot">
+  $('roundHost').innerHTML=`<div class="round-view" id="rvRoot">
+    <div class="dev live">
+    <div class="bezel"><div class="scrn">
     <div class="trm"><div class="trm-pad">
     <div class="round-timer"><span class="rt-l" id="rvT1"></span><span class="rt-r" id="rvT2"></span></div>
     <div class="round-mult" id="rvMult">1.00x</div>
@@ -3136,6 +3214,10 @@ function buildRoundView(r,stock){
     <div class="rv-wallet" id="rvWallet"></div>
     <div class="round-bar" id="rvBar"></div>
     </div></div>
+    <div class="glare"></div>
+    </div></div>
+    <div class="chin"><span class="plate">${DEV_PLATE}</span><i class="led"></i></div>
+    </div>
     <div class="water" id="rvWater" hidden>
       <span>${t('rvWaterLab')} <b id="rvWaterAmt"></b></span><span class="r" id="rvWaterNote"></span></div>
     <div class="sell-row">
@@ -3432,6 +3514,8 @@ function applyStaticLabels(){
   set('cashLab',t('kCash'));
   set('stockLg',t('gStock'));
   set('formTitle',t('gForm'));
+  set('devIdleMsg',t('devIdle'));
+  set('devPlate1',DEV_PLATE);
   set('mnLang',t('mnLang'));
   set('mnHelp',t('mnHelp'));
   try{ document.title=t('docTitle'); }catch(e){}

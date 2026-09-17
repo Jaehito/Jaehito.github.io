@@ -7,7 +7,8 @@
      4) 상환금·D-day가 스트립과 겹치지 않는가 (중복 제거)
      5) 인트로가 저장 상태에 따라 제대로 뜨는가 (introV)
      6) 칩을 눌러 인트로를 다시 열 수 있는가
-     7) 완제하면 칩이 무엇을 보여주는가 */
+     7) 완제하면 칩이 무엇을 보여주는가
+     8) 라운드 화면이 스크롤되지 않는가 — 판이 돌면 모니터가 화면을 차지한다 */
 const { launch, GAME: url } = require('../lib/browser');
 (async()=>{
  const b = await launch();
@@ -156,6 +157,43 @@ const { launch, GAME: url } = require('../lib/browser');
      클래스:$('repayChip').className,
      스트립:$('repayStrip').textContent.replace(/\s+/g,' ').trim()};}));
  await p.close();
+
+ /* ── 8. 라운드는 스크롤되지 않는다 ──
+    주문표는 스크롤해도 되지만 라운드는 안 된다 — 15초 동안 차트와 매도 버튼이
+    같이 보여야 한다. 라운드 뷰가 주문표 안(#tradeBody)에 있던 동안은 탭과 종목
+    여섯 줄이 위에 남아 차트를 접힘선 아래로 밀어냈다. 실기준선은 360×640이다. */
+ console.log('\n=== 8. 라운드가 화면에 들어가는가 ===');
+ for(const [w,h] of [[390,844],[360,640]]){
+   const rp=await b.newPage({viewport:{width:w,height:h}});
+   rp.on('pageerror',e=>errs.push('EXC: '+e.message));
+   await rp.goto(url); await rp.waitForTimeout(150);
+   await rp.evaluate(()=>localStorage.clear());
+   await rp.reload(); await rp.waitForTimeout(350);
+   await dismiss(rp);
+   /* 해금을 전부 켜서 제일 높은 라운드 화면(물타기 줄 + 절반 매도)으로 잰다 */
+   await rp.evaluate(()=>{ META.xp=99999; saveMeta(); S.cash=3000000; setBet(300000); startRound(1); });
+   await rp.waitForTimeout(300);
+   const m=await rp.evaluate(()=>{
+     const bd=$('appBody');
+     /* scrollHeight는 clientHeight 아래로 안 내려가서 넘침을 0으로 거짓말한다 —
+        보이는 자식을 직접 더한다. 예전에 이 실수로 모든 화면이 통과했다. */
+     let hh=0; for(const c of bd.children){ if(c.hidden)continue; hh+=c.getBoundingClientRect().height; }
+     const cs=getComputedStyle(bd); hh+=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);
+     return {넘침:Math.round(hh-bd.clientHeight),
+       '매도버튼 아래 여유':Math.round($('strip').getBoundingClientRect().top
+         -$('sellBtn').getBoundingClientRect().bottom),
+       '서류철 접힘':$('tabsWrap').hidden, '계좌 패널 접힘':$('repayGrp').hidden,
+       '계좌줄 떴나':!$('acctMini').hidden,
+       '기기 안에 화면':!!document.querySelector('.dev.live .scrn .trm'),
+       명판:(document.querySelector('.dev.live .plate')||{}).textContent||'-'};});
+   L(w+'×'+h, m);
+   if(m.넘침>0) fail.push(`라운드가 ${w}×${h}에서 ${m.넘침}px 넘친다`);
+   if(m['매도버튼 아래 여유']<0) fail.push(`매도 버튼이 ${w}×${h}에서 상태표시줄 아래로 밀렸다`);
+   if(!m['서류철 접힘']) fail.push('판이 도는데 서류철이 그대로 있다');
+   if(!m['계좌 패널 접힘']||!m['계좌줄 떴나']) fail.push('ACCOUNT 패널이 계좌줄로 안 접혔다');
+   if(!m['기기 안에 화면']) fail.push('라운드 화면이 기기 안에 없다');
+   await rp.close();
+ }
 
  console.log('\n=== 오류 ==='); console.log(errs.length?errs.join('\n'):'없음');
  /* 3번 절이 실제로 재는 절이 된 이상 결과도 내야 한다 — 이 파일은 그동안

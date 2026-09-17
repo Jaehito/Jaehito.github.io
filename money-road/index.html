@@ -901,6 +901,7 @@ const L={
     patUp:'상승', patDown:'하락', patV:'눌림목', patSpike:'급등급락', patFlat:'횡보',
     patInvv:'고점 후 하락', patW:'이중 바닥', patM:'이중 고점',
     patDelayup:'지연 상승', patDelaydown:'지연 하락',
+    patEarlypop:'초반 급등급락', patCrash:'나락',
     /* 공통 버튼·항목 이름 */
     btnOk:'확인', btnClose:'닫기',
     kRunPeak:'이번 판 최고 기록', kPeak:'최고 기록', kXp:'기록',
@@ -1066,6 +1067,7 @@ const L={
     patUp:'Uptrend', patDown:'Downtrend', patV:'Dip & recover', patSpike:'Spike & crash',
     patFlat:'Flat', patInvv:'Peak & fade', patW:'Double bottom', patM:'Double top',
     patDelayup:'Late rally', patDelaydown:'Late drop',
+    patEarlypop:'Opening pop', patCrash:'Free fall',
     btnOk:'OK', btnClose:'Close',
     kRunPeak:'Peak this run', kPeak:'Peak', kXp:'XP',
     kDeadline:'Window', kBalance:'Balance', vDays:'{n} sessions',
@@ -1421,7 +1423,9 @@ const TRADE_STOCKS=[
   {id:'etf',    get emo(){return ic('etf');}, get name(){return t('instEtfN');}, get ds(){return t('instEtfD');},
    pMult:0.75, noiseMult:0.7,
    open:()=>metaHas('etf'),   get lock(){return t('instLockMeta');},
-   patW:{spike:0, delayup:0, delaydown:0}},
+   /* 나락과 초반 급등급락도 막는다 — 이 종목의 설명이 "급변 없음"이다.
+      막지 않으면 지수를 따라가는 종목에서 되돌림 없는 폭락이 나온다. */
+   patW:{spike:0, delayup:0, delaydown:0, crash:0, earlypop:0}},
   /* 🎲 ETF의 정반대편. 진폭(1.5)은 네코프로와 비슷한데 나오는 패턴이 급변뿐이라
      체감이 완전히 다르다 — 강세면 대개 급등급락(spike), 약세면 대개 지연 급락
      (delaydown)이다. 완만하게 흘러가는 판이 거의 없어서 손이 쉴 틈이 없다. */
@@ -1434,6 +1438,8 @@ const TRADE_STOCKS=[
       이제 눌러야 할 것은 완만한 쪽(flat·w·m)이다. */
    patW:{spike:2.5, up:1.0, down:1.0, delayup:1.2,
          delaydown:2.0, flat:0.15,
+         /* 새 둘도 이쪽 성격이다 — 되돌림 없는 폭락과 개장 직후 급등락 */
+         crash:2.0, earlypop:2.0,
          v:1.2, invv:1.5, w:0.4, m:0.4}},
   /* 🪙 유일하게 시간축이 다른 종목 — 20초다(다른 종목은 15초).
      한 판 = 하루라는 규칙은 그대로라, 코인은 "같은 하루를 더 오래 지켜보는" 종목이다.
@@ -1471,7 +1477,7 @@ function dev(base,mult){return Math.max(0.05,1+(base-1)*mult);}
    선언이 여기(위쪽)에 있어야 한다 — 도구 쪽에 두면 TDZ에 걸린다. */
 const DEV={pat:null, w:null, tab:'pat', tpl:false, tplEdit:false};
 
-let DIP=0.84;
+let DIP=0.88;
 const DIP_BASE=DIP;   // 테스트 도구가 DIP를 밀어도 돌아올 자리
 
 /* 보통 등급의 머리. 같은 패턴이라도 판마다 다르게 열린다 — p 확률로 눌리며
@@ -1527,12 +1533,33 @@ const PATTERNS=[
       [1,                       dev(1.70+Math.random()*0.25,st.pMult)],
     ],0.013*noiseScale(T)*st.noiseMult,T);
   }},
+  /* 하락의 반등은 판마다 얼굴이 다르다. 예전에는 하나뿐이었고 반드시 본전 위까지
+     올라왔다 — 그래서 "빠지면 기다렸다가 반등에 턴다"가 언제나 맞았고, 손절만
+     걸면 파산이 수학적으로 불가능했다. 셋으로 가른다:
+
+       없음    — 머리에서 그대로 미끄러진다. 털 자리가 없다.
+       얕은    — 올라오긴 하는데 본전(1.00x)을 못 넘는다. 탈출은 되지만 손해 확정이다.
+       제대로  — 1.00~1.14까지 올라온다. 본전이나 약간의 이익으로 빠져나올 수 있다.
+
+     셋이 같은 머리로 열리므로 반등이 시작될 때는 어느 쪽인지 알 수 없다.
+     "조금 올라왔다"를 보고 본전까지 기다릴지 지금 털지가 판단이 된다 —
+     예전에는 기다리는 쪽이 언제나 옳아서 판단할 것이 없었다. */
   {id:'down',get name(){return t('patDown');},spark:'M2 7 L14 16 L30 9 L46 15 L70 21',weight:.22,gen:(st,T)=>{
+    const head=[0.18+Math.random()*0.10, dev(DIP-0.02+Math.random()*0.06,st.pMult)];
+    const end =[1,                       dev(0.45+Math.random()*0.15,st.pMult)];
+    const r=Math.random();
+    if(r<DOWN_NO_BOUNCE) return buildMultiPhase([
+      head, [0.55+Math.random()*0.15, dev(0.70+Math.random()*0.10,st.pMult)], end,
+    ],0.013*noiseScale(T)*st.noiseMult,T);
+    /* 얕은 반등의 천장은 본전 바로 아래다. 3배로 걸었으면 여기서 털어도 −30% 언저리 */
+    const weak=r<DOWN_NO_BOUNCE+DOWN_WEAK_BOUNCE;
+    const top=weak ? dev(0.90+Math.random()*0.07,st.pMult)
+                   : dev(DIP+0.16+Math.random()*0.10,st.pMult);
     return buildMultiPhase([
-      [0.18+Math.random()*0.10, dev(DIP-0.02+Math.random()*0.06,st.pMult)],
-      [0.42+Math.random()*0.10, dev(DIP+0.16+Math.random()*0.10,st.pMult)],
+      head,
+      [0.42+Math.random()*0.10, top],
       [0.65+Math.random()*0.08, dev(DIP+Math.random()*0.06,st.pMult)],
-      [1,                       dev(0.45+Math.random()*0.15,st.pMult)],
+      end,
     ],0.013*noiseScale(T)*st.noiseMult,T);
   }},
   {id:'v',get name(){return t('patV');},spark:'M2 11 L14 18 L32 7 L48 14 L70 6',weight:.12,gen:(st,T)=>{
@@ -1543,7 +1570,7 @@ const PATTERNS=[
       [1,                       dev(1.20+Math.random()*0.25,st.pMult)],
     ],0.013*noiseScale(T)*st.noiseMult,T);
   }},
-  {id:'spike',get name(){return t('patSpike');},spark:'M2 12 L14 19 L34 2 L48 9 L70 21',weight:.10,gen:(st,T)=>{
+  {id:'spike',get name(){return t('patSpike');},spark:'M2 12 L14 19 L34 2 L48 9 L70 21',weight:.07,gen:(st,T)=>{
     /* 폭등을 중반으로 미뤘다. 예전에는 8~25%에서 2.65배까지 치솟아서, 이 패턴
        하나가 "초반에 오르는 판"의 큰 지분이었다. 롤러코스터라는 성격은 그대로다. */
     return buildMultiPhase([
@@ -1580,7 +1607,36 @@ const PATTERNS=[
     const flatV=dev(0.98+Math.random()*0.08,1), endV=dev(0.4+Math.random()*0.25,st.pMult);
     return buildMultiPhase([[0.55,flatV],[1,endV]],0.008*noiseScale(T)*st.noiseMult,T);
   }},
+  /* 초반 급등급락 — 눌림 없이 열려서 1~3초에 고점을 찍고 5초 전에 끝난다.
+     "처음 몇 초는 버티고 본다"는 규칙이 이 판을 통째로 놓치게 만드는 것이 목적이다.
+     급등급락(spike)에서 지분 0.03을 가져왔다 — 그쪽은 고점이 판 중반이라
+     버티는 사람이 딱 잡기 좋은 자리였다. 수익의 총량은 그대로고 자리만 옮긴다. */
+  {id:'earlypop',get name(){return t('patEarlypop');},spark:'M2 20 L10 3 L20 16 L40 18 L70 17',weight:.03,gen:(st,T)=>{
+    const pf=0.08+Math.random()*0.14;
+    return buildMultiPhase([
+      [pf,                          dev(1.35+Math.random()*0.55,st.pMult)],
+      [pf+0.10+Math.random()*0.10,  dev(0.97+Math.random()*0.10,st.pMult)],
+      [1,                           dev(0.88+Math.random()*0.26,st.pMult)],
+    ],0.016*noiseScale(T)*st.noiseMult,T);
+  }},
+  /* 나락 — 되돌림이 아예 없다. 파산이 가능해지는 유일한 통로다.
+     다른 약세 패턴은 전부 죽기 전에 한 번쯤 되돌아오는 구간이 있어서 손절만
+     걸면 한 판 손실에 상한이 잡혔다(sim/crash.js가 남긴 기록). */
+  {id:'crash',get name(){return t('patCrash');},spark:'M2 4 L10 6 L22 17 L40 21 L70 22',weight:.04,gen:(st,T)=>{
+    return buildMultiPhase([
+      [0.04+Math.random()*0.05, dev(0.94+Math.random()*0.04,st.pMult)],
+      [0.26+Math.random()*0.18, dev(0.42+Math.random()*0.16,st.pMult)],
+      [1,                       dev(0.36+Math.random()*0.20,st.pMult)],
+    ],0.011*noiseScale(T)*st.noiseMult,T);
+  }},
 ];
+/* 하락 판에서 반등이 어떤 얼굴로 오는지의 비율. 이 둘과 나락 비중이 이번
+   난이도를 만든다 — 난이도 단계표(TIERS)는 안 건드렸다. 3단계를 0.07로
+   올리면 4·5단계보다 어려워져 사다리가 뒤집히고, 화면의 "하락 패턴 +N%p"
+   다섯 줄도 같이 바뀐다. */
+let DOWN_NO_BOUNCE=0.30;     // 반등 없이 미끄러짐
+let DOWN_WEAK_BOUNCE=0.35;   // 본전을 못 넘는 반등 (나머지는 1.00~1.14까지)
+const DOWN_NO_BOUNCE_BASE=DOWN_NO_BOUNCE, DOWN_WEAK_BOUNCE_BASE=DOWN_WEAK_BOUNCE;
 function pickPattern(){
   let r=Math.random(),acc=0;
   for(const p of PATTERNS){acc+=p.weight; if(r<=acc)return p;}
@@ -1623,8 +1679,8 @@ function genRound(stock,tier){
    34%를 차지했다 — 3배에서 0.67은 청산이라, 강세 신호를 믿고 들고 있으면 셋 중
    하나꼴로 죽었다. 그래서 "강세여도 일단 빨리 털어라"가 학습됐다. */
 const PATTERN_TIER={up:'strong',delayup:'strong',
-  v:'mid',w:'mid',m:'mid',invv:'mid',spike:'mid',
-  down:'weak',flat:'weak',delaydown:'weak'};
+  v:'mid',w:'mid',m:'mid',invv:'mid',spike:'mid',earlypop:'mid',
+  down:'weak',flat:'weak',delaydown:'weak',crash:'weak'};
 /* 하락 가중치 — 상승/하락 패턴의 등장 비율을 옮겨 판당 기댓값을 조절하는 다이얼.
    예전에는 고정 상수(DOWN_SHIFT=0.04) 하나였다. 이제 난이도 단계가 정하므로
    판을 시작할 때마다 다시 계산한다. 원본 비율은 BASE_WEIGHTS에 남겨둬야

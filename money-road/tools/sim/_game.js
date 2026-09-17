@@ -42,6 +42,10 @@ const parts = [
   slice('function midHead(st,p,lo,hi){', '\n}'),   // 보통 등급의 머리
   slice('function buildMultiPhase(keypoints,noiseAmt,T){', '\n}'),
   slice('function buildFlat(noiseAmt,driftAmt,T){', '\n}'),
+  /* 하락의 반등 얼굴 비율. PATTERNS의 down이 읽으므로 같이 가져와야 한다.
+     선언은 PATTERNS 뒤에 있지만 let은 호이스팅되고 gen은 나중에 불리므로 순서는 상관없다. */
+  slice('let DOWN_NO_BOUNCE=', '\n'),
+  slice('let DOWN_WEAK_BOUNCE=', '\n'),
   slice('const PATTERNS=[', '\n];'),
   slice('const PATTERN_TIER={', '};'),
 ];
@@ -56,7 +60,9 @@ const G = {};
        같은 손잡이를 돌려야 "패턴을 바꿀 것인가 머리 깊이를 바꿀 것인가"를
        한 표에서 비교할 수 있다. */
     'G.setDIP=v=>{DIP=v}; G.getDIP=()=>DIP;' +
-    'G.setMidDip=v=>{MID_DIP=v}; G.getMidDip=()=>MID_DIP;');
+    'G.setMidDip=v=>{MID_DIP=v}; G.getMidDip=()=>MID_DIP;' +
+    'G.setDownMix=(nb,wb)=>{DOWN_NO_BOUNCE=nb; DOWN_WEAK_BOUNCE=wb};' +
+    'G.getDownMix=()=>[DOWN_NO_BOUNCE,DOWN_WEAK_BOUNCE];');
 })();
 
 /* 종목 — index.html의 TRADE_STOCKS에서 생성기가 실제로 읽는 필드만 옮긴다.

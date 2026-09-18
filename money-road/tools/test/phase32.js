@@ -182,15 +182,19 @@ const { launch, GAME: url } = require('../lib/browser');
  want('대화상자 제목', bar.대화상자제목, '머니로드');
  want('대화상자 아이콘', bar.대화상자아이콘, true);
 
- /* ── 6. 메뉴바 언어 전환 ── 번역이 끝나서 🛠 도구 밖으로 나온 자리 */
- console.log('\n=== 6. 메뉴바 ===');
- await p.evaluate(()=>$('mnLang').click()); await p.waitForTimeout(150);
+ /* ── 6. 설정 메뉴 언어 전환 ── 메뉴바(51px)가 제목표의 톱니 하나로 합쳐졌다 */
+ console.log('\n=== 6. 설정 메뉴 ===');
+ await p.evaluate(()=>$('setBtn').click()); await p.waitForTimeout(150);
  const menu=await p.evaluate(()=>({
+   메뉴바없음:!document.querySelector('.menubar'),
    열림:!!document.querySelector('.menu'),
    항목수:document.querySelectorAll('.menu [data-set]').length,
    현재표시:[...document.querySelectorAll('.menu [data-set]')]
      .filter(b=>b.querySelector('.rd').textContent.trim()).map(b=>b.dataset.set),
-   높이:document.querySelector('.menubar > button').offsetHeight,
+   높이:$('setBtn').offsetHeight,
+   /* 메뉴는 톱니 아래에 걸린다 — 오른쪽 끝이 창 오른쪽에서 6px 안쪽 */
+   오른쪽걸림:(()=>{ const m=document.querySelector('.menu').getBoundingClientRect();
+     return Math.round(innerWidth-m.right)<=8; })(),
  }));
  await p.evaluate(()=>document.querySelector('.menu [data-set="en"]').click());
  await p.waitForTimeout(250);
@@ -198,11 +202,15 @@ const { launch, GAME: url } = require('../lib/browser');
  menu.화면=await p.evaluate(()=>$('formTitle').textContent.trim());
  menu.닫힘=await p.evaluate(()=>!document.querySelector('.menu'));
  L('', menu);
+ want('메뉴바가 없다', menu.메뉴바없음, true);
  want('메뉴 열림', menu.열림, true);
+ want('톱니 아래에 걸린다', menu.오른쪽걸림, true);
  want('항목 3개', menu.항목수, 3);
  want('현재 언어에 표시', menu.현재표시.join(','), 'ko');
- /* 규칙은 "48px 이상"이다 — 딱 48이어야 하는 게 아니다 */
- if(menu.높이<48) fail.push('여는 버튼이 48px보다 작다: '+menu.높이);
+ /* 여는 버튼은 제목표의 아이콘 버튼이다. 제목표 자체가 32px이라 48px 규칙을
+    적용할 수 없는 자리고(창틀은 본문이 아니다), 항목 높이 38px 예외와 같은 이유로
+    둔다 — 메뉴는 휘둘러 누르는 곳이 아니라 겨냥해 누르는 곳이다. */
+ if(menu.높이<22) fail.push('톱니가 너무 작다: '+menu.높이);
  want('전환됨', menu.누른뒤, 'en');
  want('화면도 바뀜', menu.화면, 'ORDER  SLIP');
  want('고르면 닫힘', menu.닫힘, true);

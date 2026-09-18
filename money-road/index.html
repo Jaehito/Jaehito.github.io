@@ -94,6 +94,7 @@
 
   /* ── 제목표 ── 대화상자가 뜨면 .off로 회색이 된다(98의 초점 표시) */
   .topbar{display:flex; align-items:center; gap:6px; padding:4px 4px 4px 7px; flex-shrink:0;
+    position:relative; z-index:30;
     background:linear-gradient(90deg,#000080,#1084d0); color:#fff;}
   .topbar.off{background:linear-gradient(90deg,#808080,#b5b5b5);}
   .topbar .brand{font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden;
@@ -113,14 +114,11 @@
   .cash-row .k{font-size:12.5px; color:var(--gray2);}
   .cash-top{margin-left:auto; font-size:19px; font-weight:700;}
 
-  /* ── 메뉴바 ── */
-  .menubar{display:flex; flex-shrink:0; background:var(--face);
-    border-bottom:1px solid var(--sh); position:relative; z-index:30;}
-  .menubar > button{background:transparent; border:0; color:var(--ink); cursor:pointer;
-    font-size:12px; padding:16px 11px; line-height:1.5;}
-  .menubar > button.on{background:var(--blue); color:#fff;}
-  .menubar u{text-decoration:underline;}
-  .menu{position:absolute; top:100%; z-index:31; min-width:196px; background:var(--face); padding:3px;
+  /* ── 설정 메뉴 ── 메뉴바(51px) 자리에 톱니 하나. 제목표에 매달린다. */
+  .icon-btn.on{border-color:var(--sh) var(--hi) var(--hi) var(--sh);
+    box-shadow:inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--lt);}
+  .menu{position:absolute; top:100%; right:4px; z-index:31; min-width:196px;
+    background:var(--face); padding:3px;
     border:2px solid; border-color:var(--lt) var(--dk) var(--dk) var(--lt);
     box-shadow:inset 1px 1px 0 var(--hi), inset -1px -1px 0 var(--sh), 2px 2px 0 rgba(0,0,0,.3);}
   .menu button{display:flex; align-items:center; gap:8px; width:100%; height:38px; padding:0 10px;
@@ -222,19 +220,10 @@
   .trade-panel .grp > .lg{position:static; display:block; margin-bottom:5px;}
   .trade-panel .grp.last{border-bottom:none; padding-bottom:2px;}
   /* 도장 — 서류 맨 아래 결재란. 폭 전체를 쓴다.
-     종이 맨 아래에 붙어 따라온다. 한 장이 화면보다 길면 도장이 밖으로 나가는데,
-     그러면 남는 것 중 제일 크고 제일 검은 덩어리(레버리지 칸)가 결재 버튼으로
-     읽혔다 — 실제로 그렇게 눌렀다는 제보가 있었다. 고정하면 기기 높이와 무관하게
-     찍을 자리가 늘 손끝에 있다.
-     bottom이 -9px인 것은 .body의 안쪽 여백이 9px이라서다 — 0으로 두면 그만큼
-     떠서 아래 종이가 띠처럼 비친다. */
-  .stamp-foot{position:sticky; bottom:-9px; z-index:2; background:var(--paper);
-    margin:12px 0 -12px; padding:10px 0 21px;
-    border-top:1px solid var(--paper-line);
-    /* 종이의 좌우 여백(11px)까지 덮어야 뒤로 흐르는 글이 옆구리로 비치지 않는다.
-       음수 여백으로 넓히면 부모의 가로 스크롤 폭이 늘어난다(phase32가 잡았다) —
-       그림자는 자리를 안 차지하므로 폭이 그대로다. */
-    box-shadow:-11px 0 0 var(--paper), 11px 0 0 var(--paper);}
+     한때 화면 아래에 붙여 따라오게 했는데(sticky), 체결 통지의 「다 음 판」
+     바로 밑에 매수 도장이 겹쳐 서서 도장이 둘로 보였다. 창틀을 줄여 종이가
+     한 화면에 들어오게 하는 쪽이 맞다 — 고정은 증상만 가린다. */
+  .stamp-foot{margin-top:12px;}
   .stamp-foot .trade-go{width:100%; min-height:62px;}
   .foot-note{margin-top:7px; font-size:12px; color:var(--paper-dim); text-align:center;
     line-height:1.45;}
@@ -938,15 +927,14 @@
       <div class="lv-chip" id="lvChip">Lv.1</div>
       <div class="top-right-row">
         <button class="icon-btn" id="muteBtn"></button>
+        <!-- 톱니가 맨 오른쪽이라야 아래로 펼쳐지는 메뉴가 그 밑에 걸린다 -->
+        <button class="icon-btn" id="setBtn"></button>
       </div>
     </div>
   </div>
 
-  <!-- 메뉴바 — 언어 전환이 사는 자리. 번역이 끝나서 🛠 도구 밖으로 나왔다. -->
-  <div class="menubar" id="menubar">
-    <button id="mnLang" data-menu="lang"></button>
-    <button id="mnHelp" data-menu="help"></button>
-  </div>
+  <!-- 메뉴바가 없어졌다. 51px을 차지하면서 든 것은 언어와 도움말 둘뿐이라
+       한 판에 한 번도 안 눌렸다. 제목표 오른쪽 톱니 한 개로 들어간다. -->
 
   <!-- 접힌 계좌줄 — 창틀에 붙어 있어서 sticky가 필요 없다. 본문이 구를 때만 뜬다. -->
   <div class="acct-mini" id="acctMini" hidden>
@@ -1279,7 +1267,6 @@ const L={
     docResult:'체 결 통 지', docSeize:'계 좌 회 수',
     stampFill:'체결', stampSeize:'회수', stampNext:'다 음 판',
     stampNote:'기한 안에 목표를 못 채우면 계좌를 회수합니다.',
-    mnLang:'언어(<u>L</u>)', mnHelp:'도움말(<u>H</u>)',
     mnKo:'한국어', mnEn:'English', mnAuto:'브라우저 설정 따르기',
     mnAbout:'이 게임에 대하여', mnIntro:'규칙 다시 보기'
   },
@@ -1502,7 +1489,6 @@ const L={
     docResult:'FILL  NOTICE', docSeize:'ACCOUNT  CLOSED',
     stampFill:'FILLED', stampSeize:'CLOSED', stampNext:'NEXT ROUND',
     stampNote:'Miss the window and the firm closes the account.',
-    mnLang:'<u>L</u>anguage', mnHelp:'<u>H</u>elp',
     mnKo:'한국어', mnEn:'English', mnAuto:'Follow browser',
     mnAbout:'About this game', mnIntro:'Show the rules again'
   }
@@ -1571,6 +1557,11 @@ sigdn:["................","................","..000000000000..","..044444444440.
 "...0444444440...","...0044444400...","....04444440....","....00444400....",
 ".....044440.....",".....004400.....","......0440......","......0000......",
 "................","................","................","................"],
+/* 설정 — 제목표 오른쪽의 톱니. 메뉴바가 없어지면서 언어·도움말이 여기로 들어왔다. */
+gear:["......0000......","......0330......","......0330......","....00333300....",
+"...0333333330...","...0330000330...","000330....033000","033330....033330",
+"033330....033330","000330....033000","...0330000330...","...0333333330...",
+"....00333300....","......0330......","......0330......","......0000......"],
 /* 98의 경고·알림 아이콘. 둘 다 그 시절 대화상자의 얼굴이다. */
 warn:["................",".......00.......","......0880......","......0880......",
 ".....088880.....",".....088880.....","....08800880....","....08800880....",
@@ -2700,6 +2691,7 @@ loadMeta();
 /* 아이콘이 상태를 말한다 — 부팅과 토글이 같은 한 줄을 쓴다 */
 function paintMute(){ $('muteBtn').innerHTML=META.mute?ic('mute',1):ic('sound',1); }
 paintMute();
+$('setBtn').innerHTML=ic('gear',1);
 let awayReport=null;
 if(loadRun()){ awayReport=catchUp(); } else { startRun(); }
 applyTierWeights();   // 이어하는 판이든 새 판이든, 그 판의 단계로 패턴 비율을 맞춘다
@@ -3501,8 +3493,8 @@ function renderTrade(){
      그리고 담당자 소견을 읽고 도장을 찍는다. 소견이 도장 바로 위에 있어야
      "읽고 결재한다"는 순서가 된다. 예전에는 장세가 맨 위에 있어서 얼마를
      걸지 정하기 전에 읽고 잊어버렸다.
-     사유와 안내 줄은 도장 위로 올렸다 — 도장이 종이의 마지막 칸이라야
-     아래에 붙어 따라올 때 뒤에 깔릴 것이 없다. */
+     사유와 안내 줄은 도장 아래 각주다 — 서류의 주석이 찍는 자리 위에 끼면
+     읽고 결재하는 순서가 한 칸 밀린다. */
   $('tradeBody').innerHTML=`
     <div class="grp">
       <div class="bet-head"><span class="lg">${t('gBet')}</span>
@@ -3520,9 +3512,9 @@ function renderTrade(){
     <div class="grp last"><span class="lg">${t('gSig')}</span>${signalRow}</div>
     ${buffLine}
     ${paceLine}
+    <div class="stamp-foot">${goRowHTML(canGo,canShort,curLev,pr)}</div>
     ${gateDone()?'':`<div class="foot-note"><b>${reasonN(reasonOf())}</b> — ${reasonD(reasonOf())}</div>`}
-    ${(S.today.rounds<3)?`<div class="trade-note">${t('tradeNote')}</div>`:''}
-    <div class="stamp-foot">${goRowHTML(canGo,canShort,curLev,pr)}</div>`;
+    ${(S.today.rounds<3)?`<div class="trade-note">${t('tradeNote')}</div>`:''}`;
   const step=Math.max(MIN_BET,Math.round(S.cash*0.05));
   $('betMinus').onclick=()=>{sfx.tap();setBet(S.betAmount-step);};
   $('betPlus').onclick=()=>{sfx.tap();setBet(S.betAmount+step);};
@@ -3899,8 +3891,6 @@ function applyStaticLabels(){
   set('cashLab',t('kCash'));
   set('stockLg',t('gStock'));
   set('formTitle',t('gForm'));
-  set('mnLang',t('mnLang'));
-  set('mnHelp',t('mnHelp'));
   try{ document.title=t('docTitle'); }catch(e){}
 }
 function render(){
@@ -4550,24 +4540,22 @@ let MENU_OPEN=null;
 function closeMenu(){
   MENU_OPEN=null;
   const d=document.querySelector('.menu'); if(d)d.remove();
-  document.querySelectorAll('.menubar > button').forEach(b=>b.classList.remove('on'));
+  const b=$('setBtn'); if(b)b.classList.remove('on');
 }
-function openMenu(which){
+/* 메뉴바 두 개(언어·도움말)가 톱니 하나로 합쳐졌다. 항목이 넷뿐이라 한 장에
+   다 들어가고, 51px짜리 줄을 상시로 이고 있을 이유가 없어졌다. */
+function openMenu(){
   closeMenu();
-  MENU_OPEN=which;
-  const host=$('menubar'), btn=host.querySelector(`[data-menu="${which}"]`);
+  MENU_OPEN='set';
+  const host=$('topbar'), btn=$('setBtn');
   btn.classList.add('on');
   const d=document.createElement('div');
   d.className='menu';
-  d.style.left=btn.offsetLeft+'px';
   const rd=on=>`<span class="rd">${on?'\u25cf':''}</span>`;   // 98의 라디오 표시
-  if(which==='lang'){
-    d.innerHTML=`<button data-set="ko">${rd(LANG==='ko')}${t('mnKo')}</button>`
-      +`<button data-set="en">${rd(LANG==='en')}${t('mnEn')}</button>`
-      +`<hr><button data-set="auto">${rd(false)}${t('mnAuto')}</button>`;
-  }else{
-    d.innerHTML=`<button data-do="intro"><span class="rd"></span>${t('mnIntro')}</button>`;
-  }
+  d.innerHTML=`<button data-set="ko">${rd(LANG==='ko')}${t('mnKo')}</button>`
+    +`<button data-set="en">${rd(LANG==='en')}${t('mnEn')}</button>`
+    +`<button data-set="auto">${rd(false)}${t('mnAuto')}</button>`
+    +`<hr><button data-do="intro"><span class="rd"></span>${t('mnIntro')}</button>`;
   host.appendChild(d);
   d.querySelectorAll('[data-set]').forEach(b=>b.onclick=e=>{
     e.stopPropagation(); sfx.tap();
@@ -4583,8 +4571,7 @@ function openMenu(which){
   });
 }
 document.addEventListener('click',e=>{
-  const b=e.target.closest('.menubar > button');
-  if(b){ e.stopPropagation(); sfx.tap(); MENU_OPEN===b.dataset.menu?closeMenu():openMenu(b.dataset.menu); return; }
+  if(e.target.closest('#setBtn')){ e.stopPropagation(); sfx.tap(); MENU_OPEN?closeMenu():openMenu(); return; }
   if(!e.target.closest('.menu'))closeMenu();
 });
 

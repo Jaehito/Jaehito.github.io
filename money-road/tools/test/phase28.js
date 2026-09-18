@@ -101,7 +101,7 @@ const { launch, GAME: url } = require('../lib/browser');
  L('화면 높이', await p.evaluate(()=>({
    본문:$('appBody').scrollHeight, 뷰포트:innerHeight,
    '문서가 안 구른다':document.documentElement.scrollHeight<=innerHeight+2,
-   고정영역:['.topbar','.menubar','.acct-mini','.strip'].reduce((a,s)=>{
+   고정영역:['.topbar','.acct-mini','.strip'].reduce((a,s)=>{
      const e=document.querySelector(s); return a+(e&&!e.hidden?Math.round(e.getBoundingClientRect().height):0);},0)})));
  await p.close();
 

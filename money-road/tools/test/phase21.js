@@ -34,7 +34,7 @@ const SHORT_XP = 400;
    metaHas:metaHas('short'),
    시작버튼:!!$('tradeGo'), 방향토글:!!$('dirToggle'),
    버튼문구:$('tradeGo').textContent.replace(/\s+/g,' ').trim(),
-   레버리지소문자:[...document.querySelectorAll('.lev-row small')].map(e=>e.textContent)})));
+   청산줄:document.querySelector('.lev-note').textContent.trim()})));
  L('해금해도 startRound(-1)은 롱으로 막힌다', await p.evaluate(()=>{
    startRound(-1); const d=S.activeRound.dir; S.activeRound=null; return {dir:d};}));
  await p.close();
@@ -47,7 +47,7 @@ const SHORT_XP = 400;
    시작버튼:$('tradeGo').textContent.replace(/\s+/g,' ').trim(),
    하락으로바꾸면:(()=>{ $('dirToggle').querySelector('[data-d="-1"]').click();
      return $('tradeGo').textContent.replace(/\s+/g,' ').trim(); })(),
-   레버리지소문자:[...document.querySelectorAll('.lev-row small')].map(e=>e.textContent.trim())})));
+   청산줄:document.querySelector('.lev-note').textContent.trim()})));
  await p.close();
 
  console.log('\n=== 2. 손익 부호 대칭 ===');

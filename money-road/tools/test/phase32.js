@@ -98,6 +98,7 @@ const { launch, GAME: url } = require('../lib/browser');
  await p.waitForTimeout(150);
  const icons=await p.evaluate(()=>({
    개수:document.querySelectorAll('#app svg.ic').length,
+   장세도표:document.querySelectorAll('.signal svg.sg-chart').length,
    /* 탭 컨트롤이 사라졌다 — 「탭에 아이콘을 안 붙인다」는 규칙도 같이 없어진다 */
    탭없음:!document.querySelector('.main-tab'),
    /* 종목은 이제 16×16 픽셀 비트맵이 아니라 종이에 그은 작은 그래프다.
@@ -117,7 +118,11 @@ const { launch, GAME: url } = require('../lib/browser');
    격자:[...document.querySelectorAll('#app svg.ic')].slice(0,4).map(s=>s.getAttribute('viewBox')),
  }));
  L('', icons);
- if(icons.개수<6) fail.push('아이콘이 너무 적다: '+icons.개수);
+ /* 장세 표시 셋(강세·보합·약세)이 도트 삼각형에서 작은 도표(SVG)로 나갔다 —
+    95의 정렬 화살표라 종이 위에서 혼자 튀었다. 한 번에 하나만 뜨므로 이 자리의
+    픽셀 아이콘은 하나 줄어든다. */
+ if(icons.개수<5) fail.push('아이콘이 너무 적다: '+icons.개수);
+ want('장세 도표 하나', icons.장세도표, 1);
  want('탭 컨트롤 없음', icons.탭없음, true);
  want('종목 여섯 칸에 그래프', icons.종목에그래프, 6);
  want('종목에 픽셀 아이콘 없음', icons.종목에픽셀아이콘, false);

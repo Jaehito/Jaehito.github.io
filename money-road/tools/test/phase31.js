@@ -40,8 +40,9 @@ const { launch, GAME: url } = require('../lib/browser');
  const ko=await p.evaluate(()=>({
    lang:LANG,
    탭없음:!document.querySelector('.main-tab'),
-   퀵최대:[...document.querySelectorAll('.bet-quicks button')].pop().textContent,
+   퀵최대:[...document.querySelectorAll('.bet-row button[data-q]')].pop().textContent,
    레버리지:document.querySelector('.lev-row button').textContent.replace(/\s+/g,' ').trim(),
+   청산줄:document.querySelector('.lev-note').textContent.replace(/\s+/g,' ').trim(),
    방향있음:!!document.querySelector('[data-d="1"]'),
    시작버튼:$('tradeGo').textContent.trim(),
    스트립:$('strip').querySelector('.fire').textContent.trim(),
@@ -55,7 +56,10 @@ const { launch, GAME: url } = require('../lib/browser');
     눌러 여는 대화상자로 갔다. 책상에 놓이는 것은 지금 결재할 종이 한 장이다. */
  want('탭이 없다', ko.탭없음, true);
  want('퀵 최대', ko.퀵최대, '최대');
- want('레버리지 3배', ko.레버리지, '3배 청산 0.67x');
+/* 청산선은 버튼 안이 아니라 칸 밖 한 줄로 내려왔다 — 배율이 셋이 되면
+    버튼마다 적을 폭이 안 나온다. */
+ want('레버리지 3배', ko.레버리지, '3배');
+ want('청산 줄', ko.청산줄, '청산 0.67x — 여기서 손실이 투자금 전액이 됩니다');
  want('연승 없음', ko.스트립, '연승 없음');
  want('목표 칩', ko.목표칩, '50만원·D-13');   // 한국어 표기는 만/억으로 끊는다
  /* 시작 버튼이 결재 도장이 됐다 — 「…로 시작」이라는 문장 대신 「매 수」 아래
@@ -70,7 +74,7 @@ const { launch, GAME: url } = require('../lib/browser');
  /* 탭이 사라져서 「영어 탭」으로 잡던 자리를 주문표 머리로 옮긴다 —
     로케일이 먹었는지를 보는 게 목적이라 어느 문자열이든 상관없다. */
  const enDetect=await en1.evaluate(()=>({lang:LANG, 머리:$('formTitle').textContent,
-   퀵:[...document.querySelectorAll('.bet-quicks button')].pop().textContent}));
+   퀵:[...document.querySelectorAll('.bet-row button[data-q]')].pop().textContent}));
  L('en-US', enDetect);
  want('en 로케일 감지', enDetect.lang, 'en');
  want('영어 주문표 머리', enDetect.머리, 'ORDER  SLIP');

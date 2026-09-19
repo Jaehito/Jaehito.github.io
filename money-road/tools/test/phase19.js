@@ -77,7 +77,7 @@ const { launch, GAME: url } = require('../lib/browser');
    S.gate=0; S.level=1; S.cash=S.peakCash=GATES[0].goal; S.daysLeft=6;
    checkLevelUp(); out.push({관문:'1차', 남긴일:6, 누적XP:S.earlyXp});
    $('mOk').click();
-   S.cash=S.peakCash=GATES[1].goal; S.daysLeft=4;
+   S.cash=S.peakCash=gateOf().goal; S.daysLeft=4;
    checkLevelUp(); out.push({관문:'2차', 남긴일:4, 누적XP:S.earlyXp});
    return {단계:out, 기대:(6+4)*EARLY_XP_PER_DAY, 일치:S.earlyXp===(6+4)*EARLY_XP_PER_DAY};}));
  await p.close();

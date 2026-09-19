@@ -46,7 +46,9 @@ const { launch, GAME: url } = require('../lib/browser');
  L('완제 직전 상태', await p.evaluate(()=>{
    /* 마지막 관문만 남기고 목표를 채워 둔 뒤 한 판 끝내면 checkLevelUp이 완제로 넘긴다 */
    S.gate=GATES.length-1; S.level=7;
-   S.cash=S.peakCash=GATES[GATES.length-1].goal;
+   /* 사건이 이번 차수 목표를 8% 올릴 수 있다(EV_MOD) — GATES 원본이 아니라
+      실제로 걸린 목표를 읽어야 한다. 안 그러면 사유에 따라 간헐적으로 깨진다. */
+   S.cash=S.peakCash=gateOf().goal;
    S.daysLeft=5;
    return {gate:S.gate, gateDoneYet:gateDone(), xp:META.xp||0};}));
 
@@ -77,8 +79,10 @@ const { launch, GAME: url } = require('../lib/browser');
  console.log('\n=== 3. 조기 상환 보너스 — 이월을 대체한다 ===');
  p=await fresh();
  L('7거래일 남기고 2차 상환', await p.evaluate(()=>{
-   S.gate=1; S.level=2; S.cash=S.peakCash=GATES[1].goal; S.daysLeft=7;
-   const before=S.cash, want=Math.round(GATES[1].goal*EARLY_BONUS_RATE*7);
+   S.gate=1; S.level=2; S.daysLeft=7;
+   /* 사건이 이번 차수 목표를 올릴 수 있다(EV_MOD) — 실제 목표를 읽는다 */
+   S.cash=S.peakCash=gateOf().goal;
+   const before=S.cash, want=Math.round(gateOf().goal*EARLY_BONUS_RATE*7);
    checkLevelUp();
    const gain=$('modalBox').querySelector('.lv-gain.early');
    return {
@@ -96,7 +100,7 @@ const { launch, GAME: url } = require('../lib/browser');
  console.log('\n=== 4. 마지막 날에 겨우 갚으면 보너스 없음 ===');
  p=await fresh();
  L('', await p.evaluate(()=>{
-   S.gate=1; S.level=2; S.cash=S.peakCash=GATES[1].goal; S.daysLeft=0;
+   S.gate=1; S.level=2; S.daysLeft=0; S.cash=S.peakCash=gateOf().goal;
    const before=S.cash;
    checkLevelUp();
    return {현금증가:S.cash-before,

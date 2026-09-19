@@ -64,12 +64,12 @@ const { launch, GAME: url } = require('../lib/browser');
  await p.waitForTimeout(150);
  L('1단계 완제', await p.evaluate(()=>{
    META.pendingSettle=null; saveMeta(); startRunAt(0);
-   S.gate=GATES.length-1; S.level=7; S.cash=S.peakCash=GATES[GATES.length-1].goal; S.daysLeft=3;
+   S.gate=GATES.length-1; S.level=7; S.daysLeft=3; S.cash=S.peakCash=gateOf().goal;
    checkLevelUp();
    return {cleared:META.cleared, 고를수있는최고:maxTierIdx()+1};}));
  L('같은 단계를 또 완제해도 안 늘어남', await p.evaluate(()=>{
    $('mOk').click(); META.pendingSettle=null; saveMeta(); startRunAt(0);
-   S.gate=GATES.length-1; S.level=7; S.cash=S.peakCash=GATES[GATES.length-1].goal; S.daysLeft=3;
+   S.gate=GATES.length-1; S.level=7; S.daysLeft=3; S.cash=S.peakCash=gateOf().goal;
    checkLevelUp();
    return {cleared:META.cleared, 고를수있는최고:maxTierIdx()+1};}));
  await p.close();

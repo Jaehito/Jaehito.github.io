@@ -8,6 +8,11 @@ const { launch, GAME: url } = require('../lib/browser');
    await p.goto(url); await p.waitForTimeout(150);
    await p.evaluate(()=>localStorage.clear()); await p.reload(); await p.waitForTimeout(300); return p;}
  const L=(t,v)=>console.log(t,JSON.stringify(v,null,1));
+ /* 기한이 사흘 안으로 들어오면 지하노역장 통보가 한 장 낀다(결과 팝업을 닫은 뒤에 뜬다).
+    다음 라운드로 넘어가기 전에 열려 있는 대화상자를 전부 닫아 준다. */
+ const clearAll=async(p)=>{ for(let i=0;i<4;i++){
+   const on=await p.evaluate(()=>{ if($('modal').classList.contains('on')&&$('mOk')){$('mOk').click();return true;} return false;});
+   if(!on)break; await p.waitForTimeout(80); } };
  const helper=`window.playRound=async(mult)=>{ setBet(Math.max(MIN_BET,Math.floor(S.cash*0.5)));
    startRound(); S.activeRound.path=S.activeRound.path.map(()=>mult);
    S.activeRound.startedAt=Date.now()-(ROUND_TICKS+2)*ROUND_TICK_MS;
@@ -50,14 +55,13 @@ const { launch, GAME: url } = require('../lib/browser');
  await p.evaluate(helper);
  L('평상시(D-12→11)', await p.evaluate(async()=>{ await window.playRound(1.10);
    return $('modalBox').querySelector('.rs-close').textContent.replace(/\s+/g,' ').trim();}));
- await p.evaluate(()=>$('mOk').click());
- await p.waitForTimeout(100);
+ await clearAll(p);
  L('일수/현금 확인', await p.evaluate(()=>({dayCount:S.dayCount,daysLeft:S.daysLeft})));
  L('위험(D-3→2)', await p.evaluate(async()=>{ S.daysLeft=3; S.cash=120000;
    await window.playRound(0.9);
    const e=$('modalBox').querySelector('.rs-close');
    return {cls:e.className, txt:e.textContent.replace(/\s+/g,' ').trim()};}));
- await p.evaluate(()=>$('mOk').click()); await p.waitForTimeout(100);
+ await clearAll(p);
  L('마지막날(D-1→만료)', await p.evaluate(async()=>{ S.daysLeft=1; S.cash=120000; S.peakCash=120000;
    await window.playRound(0.9);
    const e=$('modalBox').querySelector('.rs-close');

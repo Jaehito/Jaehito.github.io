@@ -3229,11 +3229,13 @@ function checkLevelUp(){
   if(bonus>0){ S.cash+=bonus; bumpPeak(); }
   S.earlyXp=(S.earlyXp||0)+early*EARLY_XP_PER_DAY;   // 판이 끝날 때 정산에 더해진다
   if(!gateDone())S.daysLeft=gateDaysOf(S.gate);
-  S.pitShown=0;
+  /* 카운트다운을 본 판인지 먼저 집어 두고 센 것을 지운다 — 순서를 바꾸면
+     명단 정정이 영영 안 뜬다(실제로 그랬다). */
+  const sawPit=!!S.pitShown; S.pitShown=0;
   /* LEVELS의 고정 보상은 더 이상 자동으로 안 떨어진다 — 차수 통과 화면에서 고른다 */
   saveRun(); render();
   /* 카운트다운을 이미 본 판이면 먼저 명단에서 지워 준다 */
-  if(S.pitShown){ S.pitShown=0; showPitClearModal(()=>showRepayModal(g,early,bonus)); }
+  if(sawPit&&!gateDone()) showPitClearModal(()=>showRepayModal(g,early,bonus));
   else showRepayModal(g,early,bonus);
   return true;
 }

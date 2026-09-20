@@ -1028,8 +1028,8 @@ const L={
   ko:{
     /* 메인 탭 · 섹션 */
     tabTrade:'단타', tabUnlock:'배정',
-    unlockTitle:'배정', unlockNote:'차수를 넘으면 배정됩니다',
-    docShop:'비 품 신 청 서', docUnlock:'배 정 표',
+    unlockTitle:'배정',
+docUnlock:'배 정 표',
     /* 오늘 기록 스트립 */
     stRounds:'오늘 판수', stBestMult:'최고 배율', stBestProfit:'최대 수익',
     stBestStreak:'최다 연승', stSCount:'S등급 매도', stNextTicket:'다음 티켓까지',
@@ -1156,7 +1156,7 @@ const L={
     rpSettle:'기록 정산', rpNext:'다음 차수 계좌로',
     /* 반대매매 · 파산 · 은퇴 */
     dfTitle:'지하노역장 이관',
-    dfDesc:'{n} 목표 <b>{v}</b> — 기한 안에 채우지 못했습니다.<br>내일 아홉 시, 후문으로 오십시오.',
+    dfDesc:'{n} 목표 <b>{v}</b> — 기한 안에 채우지 못했습니다.<br>배정 명단은 오늘 자로 확정되었습니다.',
     exToast:'{n}거래일 연장 — {v} 지불',
     bkTitle:'계좌가 비었습니다',
     bkDesc:'남은 자금이 최소 투자금 <b>{v}</b>에 미치지 못합니다.<br>더 걸 수 없어 여기서 끝냅니다.',
@@ -1240,6 +1240,7 @@ const L={
     grvacancyN:'가족 통보',   grvacancyD:'등본상 주소로도 통지가 갑니다.',
     grvacancyL:'다음 발송분에 들어 있습니다.',
     grLab:'사유',
+    deedsMore:'외 {n}건', deedsAll:'모두 {n}건',
     /* ── 엔딩 ── 마지막 승격(이사 → 채권자) 직후 한 번. 게임의 첫 화면과
        같은 양식·같은 세 조항이고 수신인과 금액과 담당란만 다르다.
        「수 령」이 「발 송」이 된다 — 끝나는 것은 게임이 아니라 역할이다. */
@@ -1467,12 +1468,16 @@ const L={
     docGate:'차 수 통 과', docDone:'완 제 통 지', stampPass:'통과', stampDone:'완제',
     grantLead:'이 계좌에 <b>하나</b>를 배정해 드립니다.',
     grantFoot:'배정은 이 계좌에만 남습니다. 이관되면 같이 사라집니다.',
-    gncash:'운용 한도',  gwcash:'현금을 더 주십시오',
-    gntheme:'네코프로 접근', gwtheme:'변동이 큰 쪽을 주십시오', getheme:'종목 해금',
-    gnsurge:'유메이드 접근', gwsurge:'제일 크게 움직이는 쪽으로', gesurge:'종목 해금',
-    gnlev:'레버리지 승인', gwlev:'한도를 올려 주십시오', gvLevTo:'최대 {v}배',
-    gninfo:'리서치 열람', gwinfo:'신호를 더 믿고 싶습니다', gvInfoTo:'적중률 {a}% → {b}%',
-    gnstop:'손절 보험',  gwstop:'잃을 것을 먼저 세겠습니다', gvStopTo:'청산 시 {p}% 환급',
+    gncash:'운용 한도',    gntheme:'네코프로 접근',
+getheme:'종목 해금',
+    gnsurge:'유메이드 접근',
+gesurge:'종목 해금',
+    gnlev:'레버리지 승인',
+gvLevTo:'최대 {v}배',
+    gninfo:'리서치 열람',
+gvInfoTo:'적중률 {a}% → {b}%',
+    gnstop:'손절 보험',
+gvStopTo:'청산 시 {p}% 환급',
     grantN:'{n}회', grantFull:'마감', grantCount:'이 계좌에 {n}건 배정',
     docRank:'채 권 기 록', grantApply:'{n}번째 계좌',
     rankNext:'다음 승진 <b>{n}</b> — {v} XP 남았습니다', rankTop:'마지막 직급입니다.',
@@ -1497,14 +1502,13 @@ const L={
     gCond:'레버리지', gForm:'주 문 표', stampGo:'매 수',
     docResult:'체 결 통 지', docSeize:'이 관 통 지',
     stampFill:'체결', stampSeize:'이관', stampNext:'다 음 판',
-    stampNote:'기한 안에 목표를 못 채우면 계좌를 회수합니다.',
     mnKo:'한국어', mnEn:'English', mnAuto:'브라우저 설정 따르기',
     mnAbout:'이 게임에 대하여', mnIntro:'규칙 다시 보기'
   },
   en:{
     tabTrade:'Trade', tabUnlock:'Grants',
-    unlockTitle:'Grants', unlockNote:'granted as you clear phases',
-    docShop:'SUPPLY  REQUEST', docUnlock:'GRANT  SCHEDULE',
+    unlockTitle:'Grants',
+docUnlock:'GRANT  SCHEDULE',
     stRounds:'Sessions today', stBestMult:'Best mult', stBestProfit:'Best profit',
     stBestStreak:'Best streak', stSCount:'S-grade sells', stNextTicket:'Next ticket',
     stWinRate:'win {p}%', stStreakN:'{n} in a row', stStreakNone:'no streak',
@@ -1611,7 +1615,7 @@ const L={
     rpEarly:'{n} sessions early', kNextGoal:'{n} target',
     rpSettle:'Settle XP', rpNext:'On to the next phase',
     dfTitle:'Transfer to the pit',
-    dfDesc:'{n} target <b>{v}</b> — not met inside the window.<br>Nine tomorrow morning. Use the back gate.',
+    dfDesc:'{n} target <b>{v}</b> — not met inside the window.<br>The assignment list was finalised today.',
     exToast:'+{n} sessions — {v} paid',
     bkTitle:'The account is empty',
     bkDesc:'What is left does not cover the <b>{v}</b> minimum.<br>There is nothing more to trade, so this is where it ends.',
@@ -1681,6 +1685,7 @@ const L={
     grvacancyN:'Family notice',    grvacancyD:'The notice also goes to your registered address.',
     grvacancyL:'It is in the next batch.',
     grLab:'Reason',
+    deedsMore:'and {n} more', deedsAll:'{n} in total',
     edWho:'Mr. P', edTo:'To : {n} &nbsp;·&nbsp; From : Collections',
     edN1:'March 4, 01:12. Your account was force-liquidated.',
     edN2:'Futures at 50x. Realised loss {v}.',
@@ -1688,7 +1693,7 @@ const L={
     edFoot:'Handled by : {r} &nbsp;·&nbsp; They all say one good session will fix it.',
     edGo:'SEND',
     docMgr:'MANAGED  ACCOUNT  NOTICE',
-    mg1:'This is {n} account.', mg2:'You manage it.', mg3:'If it misses, he goes.',
+    mg1:'This account belongs to {n}.', mg2:'You manage it.', mg3:'If it misses, he goes.',
     mc2:'If it misses, the <b>nominee</b> is transferred.',
     mgFoot:'You do not go any more.',
     ap2a:'Back again.', ap2b:'Account number {n}.', ap2c:'Same terms.',
@@ -1828,7 +1833,7 @@ const L={
     pd3:'Money does not clear that.',
     pdFoot:'Keep working and we keep only filing it.',
     docTrust:'MANAGED  FUNDS  NOTICE',
-    tr1:'You owe nothing. This is the firm money.',
+    tr1:'You owe nothing. This money belongs to the firm.',
     tr2:'Whatever you miss becomes your debt again.',
     tr3:'Walk away and the file gets processed the usual way.',
     tc2:'Any shortfall is <b>re-registered as your debt</b>.',
@@ -1879,12 +1884,16 @@ const L={
     docGate:'PHASE  CLEARED', docDone:'SETTLED  IN  FULL', stampPass:'CLEARED', stampDone:'SETTLED',
     grantLead:'We will assign <b>one</b> of these to this account.',
     grantFoot:'Grants live on this account only. They go with the transfer.',
-    gncash:'Capital line',  gwcash:'Give me more cash',
-    gntheme:'NEKOPRO access', gwtheme:'Give me the one that moves', getheme:'Instrument',
-    gnsurge:'YUMADE access', gwsurge:'Give me the one that moves most', gesurge:'Instrument',
-    gnlev:'Leverage',  gwlev:'Raise my limit', gvLevTo:'up to {v}x',
-    gninfo:'Research',  gwinfo:'I want to trust the read', gvInfoTo:'accuracy {a}% → {b}%',
-    gnstop:'Stop insurance', gwstop:'Let me count the downside first', gvStopTo:'{p}% back on liquidation',
+    gncash:'Capital line',    gntheme:'NEKOPRO access',
+getheme:'Instrument',
+    gnsurge:'YUMADE access',
+gesurge:'Instrument',
+    gnlev:'Leverage',
+gvLevTo:'up to {v}x',
+    gninfo:'Research',
+gvInfoTo:'accuracy {a}% → {b}%',
+    gnstop:'Stop insurance',
+gvStopTo:'{p}% back on liquidation',
     grantN:'×{n}', grantFull:'maxed', grantCount:'{n} assigned to this account',
     docRank:'DEBT  RECORD', grantApply:'account no. {n}',
     rankNext:'Next promotion <b>{n}</b> — {v} XP to go', rankTop:'This is the top rank.',
@@ -1905,7 +1914,6 @@ const L={
     gCond:'LEVERAGE', gForm:'ORDER  SLIP', stampGo:'BUY',
     docResult:'FILL  NOTICE', docSeize:'TRANSFER  NOTICE',
     stampFill:'FILLED', stampSeize:'TRANSFER', stampNext:'NEXT ROUND',
-    stampNote:'Miss the window and the firm closes the account.',
     mnKo:'한국어', mnEn:'English', mnAuto:'Follow browser',
     mnAbout:'About this game', mnIntro:'Show the rules again'
   }
@@ -3219,11 +3227,6 @@ function showPromoModal(after){
       <div class="rankline"><span class="rk-from">${rankName(n)}</span>
         <span class="rk-ar">&rarr;</span><span class="rk-to">${rankName(n+1)}</span></div>
       ${rmLine2([t('pr'+n+'a'),t('pr'+n+'b')],'lead')}
-      ${n===2?`<div class="doc-head" style="margin-top:12px">${t('pdT')}<small>${t('pdS')}</small></div>
-        ${rmLine2([t('pd1',{v:fmtMoney(DEBT0)}),t('pd2')])}
-        ${deedsHTML()}
-        ${rmLine2([t('pd3')])}
-        <div class="foot-note">${t('pdFoot')}</div>`:''}
       ${cands.length>1?`<div class="pk-lead">${t('promoLead')}</div>`:
         `<div class="pk-lead">${t('promoLast')}</div>`}
       ${cards}
@@ -3237,10 +3240,8 @@ function showPromoModal(after){
       $('modal').classList.remove('on');
       /* 한 번에 두 단계를 넘었을 수도 있다 — 남아 있으면 다음 장면으로 잇는다 */
       if(promoDue()){ showPromoModal(after); return; }
-      /* 마지막 승격이었다면 그 다음이 엔딩이다 */
-      if(promoCount()>=META_UNLOCKS.length&&!META.sent){
-        META.sent=1; saveMeta(); showEndingModal(after); return;
-      }
+      /* 마지막 승격이고 완제도 해 봤다면 그 다음이 엔딩이다 */
+      if(endingDue()){ META.sent=1; saveMeta(); showEndingModal(after); return; }
       after&&after();
     };
   };
@@ -3253,6 +3254,9 @@ function showPromoModal(after){
    양식·같은 세 조항이고, 다른 것은 수신인과 금액과 담당란뿐이다.
    「수 령」이 「발 송」이 된다 — 끝나는 것은 게임이 아니라 역할이다.
    한 번만 뜬다(META.sent). 닫으면 평소처럼 다음 판으로 간다. */
+function endingDue(){
+  return promoCount()>=META_UNLOCKS.length && (META.cleared||0)>0 && !META.sent;
+}
 function showEndingModal(after){
   const cl=(n,tx)=>`<div class="cl"><span class="no">${t('inCl',{n})}</span><span>${tx}</span></div>`;
   $('modalBox').innerHTML=`<div class="doc-head">${t('docFund')}<small>No. 01-0001</small></div>
@@ -3301,6 +3305,8 @@ function showSettleModal(st){
       startRunAt(0); render();
     };
     if(promoDue()){ showPromoModal(go); return; }
+    /* 승격이 먼저 끝나 있고 나중에 완제한 경우 — 그 런의 정산 뒤에 엔딩이 온다 */
+    if(endingDue()){ META.sent=1; saveMeta(); showEndingModal(go); return; }
     go();
   };
 }
@@ -3325,7 +3331,7 @@ function showRecordModal(){
     <div class="lv-gain">${nx?t('rankNext',{n:rankName(nx.lv),v:Math.max(0,nx.need-(META.xp||0))})
       :t('rankTop')}</div>
     <div class="doc-head" style="margin-top:14px">${t('docDeeds')}<small>${
-      (S.deeds||[]).length?t('deedsN',{n:S.deeds.length}):t('deedsKeep')}</small></div>
+      deeds().length?t('deedsAll',{n:deeds().length}):t('deedsKeep')}</small></div>
     ${deedsHTML()}
     <div class="doc-head" id="unlockTitle" style="margin-top:14px"></div>
     <div id="unlockList"></div><div id="retireBox"></div>
@@ -3336,13 +3342,15 @@ function showRecordModal(){
 }
 /* 하신 일 목록 — 이 화면의 무게중심이다. 배정표는 「무엇을 받았나」인데
    이쪽은 「무엇을 쥐여 줬나」라, 회차가 쌓일수록 아래가 길어진다. */
-function deedsHTML(){
-  const d=S.deeds||[];
-  if(!d.length)return `<div class="foot-note">${t('deedsNone')}</div>`;
+/* 회차가 쌓이면 목록이 길어진다 — 최근 여섯 건만 펼치고 나머지는 세어서 적는다 */
+function deedsHTML(lim){
+  const all=deeds(), n=lim||6;
+  if(!all.length)return `<div class="foot-note">${t('deedsNone')}</div>`;
+  const d=all.slice(-n), rest=all.length-d.length;
   return d.map(x=>`<div class="biz"><div class="mid">
       <div class="nm">${x.act?t(x.act):t('gn'+x.id)}<span class="cnt">${x.no}</span></div>
       <div class="ds">${t('apKeep',{e:deedEv(x)})}</div></div></div>`).join('')
-    +`<div class="foot-note">${t('deedsFoot')}</div>`;
+    +`<div class="foot-note">${rest>0?t('deedsMore',{n:rest})+' · ':''}${t('deedsFoot')}</div>`;
 }
 function renderUnlock(){
   if(!$('unlockList'))return;
@@ -3593,8 +3601,13 @@ function grantCandidates(){
 /* 하신 일은 저희가 보관합니다 — 고른 행동이 증거와 함께 기록에 쌓인다.
    이 목록이 곧 목줄이라, 빚을 다 갚아도 안 지워진다. */
 function deedEv(d){ return d.act?t('ax'+d.act.slice(2)):t('ev'+d.id); }
+/* 하신 일은 META에 쌓인다. 계좌(S)에 담으면 이관될 때 같이 지워지는데,
+   그러면 「기록은 계좌가 이관돼도 남습니다」가 거짓말이 되고 못 나가는 이유가
+   기계적으로 사라진다. 이 목록이 목줄이라 사람 쪽에 붙어야 한다. */
+function deeds(){ return META.deeds||(META.deeds=[]); }
 function addDeed(id,act){
-  (S.deeds||(S.deeds=[])).push({no:docNo(), id, act:act||null});
+  deeds().push({no:docNo(), id, act:act||null});
+  saveMeta();
 }
 function checkLevelUp(){
   if(gateDone())return false;
@@ -3616,9 +3629,16 @@ function checkLevelUp(){
   const sawPit=!!S.pitShown; S.pitShown=0;
   /* LEVELS의 고정 보상은 더 이상 자동으로 안 떨어진다 — 차수 통과 화면에서 고른다 */
   saveRun(); render();
-  /* 카운트다운을 이미 본 판이면 먼저 명단에서 지워 준다 */
-  if(sawPit&&!gateDone()) showPitClearModal(()=>showRepayModal(g,early,bonus));
-  else showRepayModal(g,early,bonus);
+  /* 서류가 겹칠 수 있다 — 명단 정정 → 완납 확인서 → 차수 통과 순으로 잇는다.
+     완납은 최고 기록이 빚을 처음 넘긴 그 한 번뿐이다. */
+  /* 완제(마지막 차수)에는 안 끼운다 — 완제 통지가 이미 「전부 갚았습니다」라고 한다 */
+  const paidNow=!META.paidOff&&S.peakCash>=DEBT0&&!gateDone();
+  if(!META.paidOff&&S.peakCash>=DEBT0){ META.paidOff=1; saveMeta(); }
+  const chain=[];
+  if(sawPit&&!gateDone())chain.push(showPitClearModal);
+  if(paidNow)chain.push(showPaidModal);
+  const next=()=>{ const f=chain.shift(); if(f)f(next); else showRepayModal(g,early,bonus); };
+  next();
   return true;
 }
 /* 완제(마지막 관문 통과)는 그 판의 끝이다. 예전에는 "계속 플레이" 버튼이 팝업만 닫아서,
@@ -3712,6 +3732,25 @@ function showRepayModal(g,early,bonus){
   draw();
   openModal('doc');
   sfx.win();
+}
+/* ===== 완납 확인서 =====
+   빚을 실제로 갚은 그 한 번. 예전에는 두 번째 승격에 붙어 있었는데 승격은
+   최고 기록에서 나온 XP로 오므로, 3차에서 끝난 사람에게도 「전액 상환 확인」이
+   떴다 — 서류가 거짓말을 했다. 이제 최고 기록이 빚을 넘긴 차수 통과에 붙는다.
+
+   빚은 0이 되는데 하신 일 목록은 같이 나온다. 그래서 다음 런부터는 갚는 게
+   아니라 막는 것이 된다. */
+function showPaidModal(after){
+  $('modalBox').innerHTML=`<div class="doc-head">${t('pdT')}<small>No. ${docNo()}</small></div>
+    <div class="doc-stamp">${t('pdS')}</div>
+    ${rmLine2([t('pd1',{v:fmtMoney(DEBT0)}),t('pd2')],'lead')}
+    ${deedsHTML()}
+    ${rmLine2([t('pd3')])}
+    <div class="foot-note">${t('pdFoot')}</div>
+    <button class="ok stamp" id="mOk">${t('btnOk')}</button>`;
+  openModal('doc');
+  sfx.win();
+  $('mOk').onclick=()=>{sfx.tap();$('modal').classList.remove('on');after&&after();};
 }
 /* 기한 내 미상환 — 반대매매로 런 종료 */
 function showDefaultModal(){
@@ -4169,7 +4208,8 @@ function renderTrade(){
     ${buffLine}
     ${paceLine}
     <div class="stamp-foot">${goRowHTML(canGo,canShort,curLev,pr)}</div>
-    ${gateDone()?'':`<div class="foot-note"><b>${reasonN(reasonOf())}</b> — ${reasonD(reasonOf())}</div>`}
+    ${gateDone()?'':`<div class="foot-note"><b>${reasonN(reasonOf())}</b> — ${reasonD(reasonOf())}${
+      evModText()?` · ${evModText().replace(/<[^>]+>/g,'')}`:''}</div>`}
     ${(S.today.rounds<3)?`<div class="trade-note">${t('tradeNote')}</div>`:''}`;
   const step=Math.max(MIN_BET,Math.round(S.cash*0.05));
   $('betMinus').onclick=()=>{sfx.tap();setBet(S.betAmount-step);};
@@ -4589,7 +4629,9 @@ function showIntroModal(){
   /* 8단계면 남의 계좌를 맡고, 3단계면 회사 돈을 굴리고, 그 아래면 내 빚이다.
      내 빚일 때는 몇 번째 계좌인지가 메모에 남는다 — 같은 서류가 또 온다. */
   const lv=metaLv(), ap=META.apply||1;
-  const mgr=lv>=8, trust=!mgr&&lv>=3;
+  /* 「귀하 빚은 없습니다」도 실제로 갚았을 때만 한다 — 직급이 올랐다고
+     빚이 사라지는 게 아니다(고침 2와 같은 이유). */
+  const mgr=lv>=8, trust=!mgr&&!!META.paidOff;
   const memo = mgr   ? [t('mg1',{n:t('edWho')}),t('mg2'),t('mg3')]
              : trust ? [t('tr1'),t('tr2'),t('tr3')]
              : ap>=10? [t('ap10a',{n:ap}),t('ap10b'),t('ap10c')]

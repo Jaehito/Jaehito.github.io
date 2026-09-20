@@ -91,16 +91,18 @@ function run() {
       ends[r.e] = (ends[r.e] || 0) + 1;
     }
     const EN = { clear: '클리어', deadline: '기한초과', broke: '파산', retire: '은퇴' };
-    const realE = {}; for (const r of runs) realE[EN[r.end] || r.end] = (realE[EN[r.end] || r.end] || 0) + 1;
+    /* 중단된 판은 결과 비교에서 뺀다 — 어떻게 끝났는지가 그 판에 없다 */
+    const done = runs.filter(r => r.end !== 'abandoned');
+    const realE = {}; for (const r of done) realE[EN[r.end] || r.end] = (realE[EN[r.end] || r.end] || 0) + 1;
     let worst = 0;
     for (const k of new Set([...Object.keys(realE), ...Object.keys(ends)]))
-      worst = Math.max(worst, Math.abs((realE[k] || 0) / sm.runs - (ends[k] || 0) / (M * 4)));
+      worst = Math.max(worst, Math.abs((realE[k] || 0) / Math.max(1, done.length) - (ends[k] || 0) / (M * 4)));
     checked++;
     /* 허용치는 표본 수가 정한다. 원본이 M런뿐이면 그 비율 자체가 ±√(0.25/M)만큼
        흔들리므로, 그보다 엄한 기준을 걸면 멀쩡한 복제를 탓하게 된다
        (M=20에서 「공격」이 그랬다 — 파산률 71%짜리 고분산 페르소나였다).
        3표준오차를 쓰되 25%p 밑으로는 안 내린다. */
-    const tol = Math.max(0.25, 3 * Math.sqrt(0.25 / sm.runs));
+    const tol = Math.max(0.25, 3 * Math.sqrt(0.25 / Math.max(1, done.length)));
     const distOk = worst <= tol;
     if (!distOk) bad++;
     console.log('  ' + ''.padEnd(7) + '결과분포'.padEnd(12) + ''.padStart(8) +

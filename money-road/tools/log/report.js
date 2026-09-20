@@ -21,13 +21,18 @@ const N = Number(process.argv[3] || 1000);
 if (!file) { console.error('쓰는 법: node tools/log/report.js <기록.json> [복제런수]'); process.exit(2); }
 
 const runs = parse(fs.readFileSync(file, 'utf8'));
-const sm = summary(runs);
+/* 끝을 못 본 판(앱을 닫으신 판)은 **결정 자료로는 쓰고 결과 비교에서는 뺀다.**
+   어떻게 두셨는지는 그대로 들어 있지만, 어떻게 끝났는지는 그 판에 없다. */
+const done = runs.filter(r => r.end !== 'abandoned');
+const dropped = runs.length - done.length;
+const sm = summary(done);
 
 const P = n => (n * 100).toFixed(0) + '%';
 const line = (k, v) => console.log('  ' + String(k).padEnd(16) + v);
 
 console.log('■ 실제 기록\n');
-line('판', sm.runs + '런 · ' + sm.rounds + '거래일');
+line('판', sm.runs + '런 · ' + sm.rounds + '거래일' +
+  (dropped ? `   (끝을 못 본 ${dropped}런은 결과 비교에서 뺐습니다 — 규칙 되뽑기에는 씁니다)` : ''));
 line('끝난 이유', Object.entries(sm.by).map(([k, v]) => k + ' ' + v).join(' · '));
 line('종목', Object.entries(sm.stocks).sort((a, b) => b[1] - a[1]).map(([k, v]) => k + ' ' + v).join(' · '));
 line('레버리지', Object.entries(sm.levs).sort((a, b) => b[1] - a[1]).map(([k, v]) => k + '배 ' + v).join(' · '));
@@ -40,7 +45,7 @@ const goals = G.A.get('GATES').map(g => g.goal);
 const levMults = G.A.get('LEVERAGE_MULTS');
 bindRelief(G);
 
-const f = fit(runs, { goals, levMults });
+const f = fit(runs, { goals, levMults });   // 되뽑기에는 중단된 판도 쓴다
 console.log('\n■ 뽑은 규칙\n');
 const KEY = {
   stopPct: '손절 (고점 대비)', takePnl: '익절 (투자금 대비)', panicPnl: '손실 한계',
@@ -66,7 +71,7 @@ const ends = {}, gates = {}, peaks = [];
 for (let k = 0; k < N; k++) {
   G.reseed(424242 + k * 7919);
   const pl = makePlayer(f.params, Math.random);
-  const r = playRun(G, pl, { tier: runs[runs.length - 1].tier || 0 });
+  const r = playRun(G, pl, { tier: (done[done.length - 1] || runs[runs.length - 1] || {}).tier || 0 });
   ends[r.e] = (ends[r.e] || 0) + 1;
   gates[r.gate] = (gates[r.gate] || 0) + 1;
   peaks.push(r.peak);
@@ -78,7 +83,7 @@ line('도달 차수', Object.entries(gates).sort((a, b) => a[0] - b[0]).map(([k,
 /* ── 검증: 복제가 원본을 닮았나 ── */
 console.log('\n■ 검증 — 복제가 실제를 닮았습니까\n');
 const realEnd = {};
-for (const r of runs) realEnd[EN[r.end] || r.end] = (realEnd[EN[r.end] || r.end] || 0) + 1;
+for (const r of done) realEnd[EN[r.end] || r.end] = (realEnd[EN[r.end] || r.end] || 0) + 1;
 const keys = [...new Set([...Object.keys(realEnd), ...Object.keys(ends)])];
 console.log('  ' + '끝난 이유'.padEnd(10) + '실제'.padStart(8) + '복제'.padStart(8) + '   차이');
 let worst = 0;
@@ -87,7 +92,7 @@ for (const k of keys) {
   const d = Math.abs(a - b); if (d > worst) worst = d;
   console.log('  ' + k.padEnd(10) + P(a).padStart(8) + P(b).padStart(8) + '   ' + (d * 100).toFixed(0) + '%p');
 }
-const realGate = runs.reduce((a, r) => a + r.gate, 0) / sm.runs;
+const realGate = done.reduce((a, r) => a + r.gate, 0) / Math.max(1, sm.runs);
 const cloneGate = Object.entries(gates).reduce((a, [k, v]) => a + k * v, 0) / N;
 console.log('  ' + '평균 도달차수'.padEnd(10) + realGate.toFixed(2).padStart(8) + cloneGate.toFixed(2).padStart(8) +
   '   ' + Math.abs(realGate - cloneGate).toFixed(2));

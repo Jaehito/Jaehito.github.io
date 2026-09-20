@@ -3065,25 +3065,36 @@ const LOG_KEY='moneyroad2_log_v1', LOG_MAX_RUNS=150;
 const LOG_STOCKS=['stable','theme','surge','etf','penny','coin'];
 const LOG_SIGS=['strong','mid','weak'];
 const LOG_GRADES=['S','A','B','C','D'];
-let LOG=null, LOGRUN=null;
+/* 진행 중인 판은 LOG.cur에 둔다. 끝날 때만 저장하면 앱을 닫는 순간 그 판이
+   통째로 날아가고, 기록 화면도 한참 두신 뒤에 「판 0」이라고 말한다.
+   판마다 저장하므로 닫았다 열어도 이어진다. */
+let LOG=null;
 function logLoad(){
   if(LOG)return LOG;
   try{ const o=JSON.parse(localStorage.getItem(LOG_KEY)); if(o&&o.v===1&&Array.isArray(o.runs))LOG=o; }catch(e){}
-  if(!LOG)LOG={v:1,runs:[]};
+  if(!LOG)LOG={v:1,runs:[],cur:null};
   return LOG;
 }
 function logSave(){ try{ localStorage.setItem(LOG_KEY,JSON.stringify(LOG)); }catch(e){} }
 function logRunStart(tier){
   logLoad();
+  /* 지난번에 끝을 못 본 판이 남아 있으면 그대로 챙겨 둔다 — 버리면 그만큼이 사라진다 */
+  if(LOG.cur&&LOG.cur.r&&LOG.cur.r.length){
+    LOG.cur.e='abandoned'; LOG.cur.g=LOG.cur.g|0;
+    LOG.runs.push(LOG.cur);
+    while(LOG.runs.length>LOG_MAX_RUNS)LOG.runs.shift();
+  }
   /* un = 이 판에 열려 있던 권한. "안 썼다"와 "못 썼다"를 가르려면 이게 있어야 한다 —
      물타기를 한 번도 안 한 기록만 보고는 그 사람이 안 하는 사람인지 아직 못 여는
      사람인지 알 수가 없다. ex = 기한을 몇 번 연장했나. */
-  LOGRUN={t:tier|0, a:META.apply||1, mx:META.xp||0, pr:promoCount(),
-          un:granted().slice(), ex:0, s:Date.now(), r:[], gr:[]};
+  LOG.cur={t:tier|0, a:META.apply||1, mx:META.xp||0, pr:promoCount(),
+           un:granted().slice(), ex:0, s:Date.now(), r:[], gr:[]};
+  logSave();
 }
 /* 판 하나. sellRound가 정산을 끝낸 직후에 부른다. */
 function logRound(R,idx,res,view){
-  if(!LOGRUN||!R)return;
+  logLoad();
+  if(!LOG.cur||!R)return;
   const flags=(R.watered?1:0)|(R.half?2:0)|(idx>=R.ticks-1?4:0)|((R.dir||1)<0?8:0);
   /* 매도 시점의 "불리한 쪽으로 얼마나 밀렸나". 두 가지를 조심해야 한다:
      · **판 시점까지 본 구간**으로만 잰다. sellRound의 lo/hi는 등급용이라 전 구간이고,
@@ -3094,7 +3105,7 @@ function logRound(R,idx,res,view){
   let best=R.path[0];
   for(let i=1;i<=idx;i++){ const v=R.path[i]; if(dir>0?v>best:v<best)best=v; }
   const adverse = dir>0 ? (R.path[idx]/best-1) : (best/R.path[idx]-1);
-  LOGRUN.r.push([
+  LOG.cur.r.push([
     S.gate|0, S.daysLeft|0, Math.round(S.cash),
     LOG_STOCKS.indexOf(R.stockId), Math.round(R.bet0||R.bet),
     R.leverage||1, LOG_SIGS.indexOf((view&&view.sig)||''),
@@ -3111,31 +3122,35 @@ function logRound(R,idx,res,view){
       let o=true; try{ o=st&&st.open?!!st.open():!!st; }catch(e){}
       return m|(o?1<<i:0); },0)
   ]);
+  logSave();          /* 판마다 저장한다 — 앱을 닫아도 이 판까지는 남는다 */
 }
 /* 배정 한 건. av = 이번 차수에 완화 선택지가 있었나, rel = 그걸 골랐나.
    av 없이 rel만 세면 "완화를 얼마나 우선하는가"를 못 잰다 — 3택에 완화가
    아예 없던 차수까지 분모에 들어가기 때문이다. */
-function logGrant(id,act,av,rel){ if(LOGRUN)LOGRUN.gr.push({i:id,a:act||null,v:av?1:0,r:rel?1:0}); }
+function logGrant(id,act,av,rel){ logLoad(); if(LOG.cur){ LOG.cur.gr.push({i:id,a:act||null,v:av?1:0,r:rel?1:0}); logSave(); } }
 /* 런이 끝났다. 끝난 이유는 상태에서 읽는다 — 부르는 쪽마다 다르게 넘기면 어긋난다. */
 function logRunEnd(st){
-  if(!LOGRUN)return;
+  logLoad();
+  if(!LOG.cur)return;
+  const LOGRUN=LOG.cur;
   const e = gateDone() ? 'clear'
     : (S.daysLeft<=0 ? 'deadline'
     : (S.cash<BROKE_LIMIT ? 'broke' : 'retire'));
   LOGRUN.e=e; LOGRUN.g=S.gate|0; LOGRUN.pk=Math.round(S.peakCash);
   LOGRUN.xp=st?st.total:0; LOGRUN.d=S.dayCount|0; LOGRUN.f=Date.now();
-  logLoad(); LOG.runs.push(LOGRUN);
+  LOG.runs.push(LOGRUN); LOG.cur=null;
   while(LOG.runs.length>LOG_MAX_RUNS)LOG.runs.shift();
-  logSave(); LOGRUN=null;
+  logSave();
 }
 function logStats(){
   logLoad();
-  const rs=LOG.runs, rounds=rs.reduce((a,r)=>a+r.r.length,0);
+  const rs=LOG.runs, cur=(LOG.cur&&LOG.cur.r)?LOG.cur.r.length:0;
+  const rounds=rs.reduce((a,r)=>a+r.r.length,0)+cur;
   const by={}; for(const r of rs)by[r.e]=(by[r.e]||0)+1;
   let bytes=0; try{ bytes=(localStorage.getItem(LOG_KEY)||'').length; }catch(e){}
-  return {runs:rs.length, rounds, by, bytes};
+  return {runs:rs.length, rounds, cur, by, bytes};
 }
-function logWipe(){ LOG={v:1,runs:[]}; LOGRUN=null; logSave(); }
+function logWipe(){ LOG={v:1,runs:[],cur:null}; logSave(); }
 function saveRun(){if(WIPING)return;try{localStorage.setItem(RUN_KEY,JSON.stringify(S));}catch(e){}}
 function clearRun(){try{localStorage.removeItem(RUN_KEY);}catch(e){}}
 function bumpPeak(){if(S.cash>S.peakCash)S.peakCash=S.cash;}
@@ -3878,7 +3893,7 @@ function extendDeadline(){
   const cost=Math.floor(S.cash*EXTEND_COST_FRAC);
   if(cost<=0||S.cash-cost<MIN_BET)return;
   S.cash-=cost; S.daysLeft+=EXTEND_DAYS;
-  if(LOGRUN)LOGRUN.ex=(LOGRUN.ex||0)+1;
+  if(LOG&&LOG.cur){ LOG.cur.ex=(LOG.cur.ex||0)+1; logSave(); }
   sfx.buy(); toast(t('exToast',{n:EXTEND_DAYS,v:fmtMoney(cost)}));
   saveRun(); render();
 }
@@ -5187,7 +5202,7 @@ function devLogScreen(){
     <div class="dv-row"><span class="dv-lab">판</span>
       <span class="dv-val">${st.runs}<small>최대 ${LOG_MAX_RUNS}판까지</small></span></div>
     <div class="dv-row"><span class="dv-lab">거래일</span>
-      <span class="dv-val">${st.rounds}<small>한 줄이 하루</small></span></div>
+      <span class="dv-val">${st.rounds}<small>${st.cur?`지금 판 ${st.cur}일 포함`:'한 줄이 하루'}</small></span></div>
     <div class="dv-row"><span class="dv-lab">크기</span>
       <span class="dv-val">${Math.round(st.bytes/1024)}<small>KB</small></span></div>
     <div class="dv-sec">끝난 이유</div>

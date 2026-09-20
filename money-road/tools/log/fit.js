@@ -198,9 +198,17 @@ function fit(runs, opts) {
   else out.stockPref = Object.keys(pick).sort((a, b) => pick[b] - pick[a]);
 
   /* ── 종목 충성도: 직전 판과 같은 종목을 쓴 비율 ── */
-  let same = 0, pairs = 0;
-  for (const r of runs) for (let i = 1; i < r.rounds.length; i++) { pairs++; if (r.rounds[i].stock === r.rounds[i - 1].stock) same++; }
+  let same = 0, pairs = 0, soloRounds = 0;
+  for (const r of runs) for (let i = 1; i < r.rounds.length; i++) {
+    pairs++;
+    if (r.rounds[i].stock === r.rounds[i - 1].stock) same++;
+    if ((r.rounds[i].openStocks || []).length <= 1) soloRounds++;
+  }
   if (pairs >= 10) { out.loyalty = +(same / pairs).toFixed(3); ev.loyalty = pairs; }
+  /* 고를 종목이 하나뿐이었다면 "안 바꿨다"는 선택이 아니라 사정이다.
+     그 기록에서 나온 충성도 1.0은 성향이 아니라 "바꿀 데가 없었다"는 뜻이다. */
+  if (pairs && soloRounds / pairs > 0.7)
+    notes.push(`loyalty: 판의 ${Math.round(soloRounds / pairs * 100)}%가 고를 종목이 하나뿐 — 바꾸실 성향인지는 알 수 없습니다`);
 
   /* ── 오래 들고 가는 사람인가 ──
      시간 만료로 끝난 판이 많다는 건 매도 규칙이 거의 발동하지 않는다는 뜻이다.

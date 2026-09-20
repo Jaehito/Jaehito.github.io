@@ -4,7 +4,10 @@
   "description": "머니로드 밸런스 시뮬레이션 · 회귀 테스트 · 배포 도구",
   "scripts": {
     "check": "./check.sh",
-    "test": "for f in test/phase*.js; do echo \"── $f\"; node \"$f\" || exit 1; done"
+    "test": "npm run test:phase && npm run test:harness",
+    "test:phase": "for f in test/phase*.js; do echo \"── $f\"; node \"$f\" || exit 1; done",
+    "test:harness": "echo '── 커버리지 감사' && node harness/audit.js 15 && echo '── 기록 파이프라인' && node log/selftest.js 20",
+    "balance": "node harness/balance.js"
   },
   "dependencies": { "playwright-core": "^1.62.1" }
 }
